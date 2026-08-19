@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Expresso.Core/Expresso.Core.csproj" />
+    <Project Path="src/Expresso.Parsing/Expresso.Parsing.csproj" />
+  </Folder>
+  <Folder Name="/src/Rendering/">
+    <Project Path="src/Rendering/Expresso.Rendering.SqlServer/Expresso.Rendering.SqlServer.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Expresso.Core.Test/Expresso.Core.Test.csproj" />
+    <Project Path="test/Expresso.Parsing.Test/Expresso.Parsing.Test.csproj" />
+  </Folder>
+  <Folder Name="/test/Rendering/">
+    <Project Path="test/Rendering/Expresso.Rendering.SqlServer.Test/Expresso.SqlServer.Test.csproj" />
+  </Folder>
+</Solution>

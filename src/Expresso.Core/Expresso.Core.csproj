@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Expresso.Core</PackageId>
+    <Title>Expresso.Core</Title>
+    <Description>Expresso expression tree, filter criteria, and sort directives.</Description>
+  </PropertyGroup>
+
+</Project>

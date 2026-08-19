@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Expresso.Rendering.SqlServer</PackageId>
+    <Title>Expresso.Rendering.SqlServer</Title>
+    <Description>Render Expresso expression trees to parameterized SQL Server WHERE and ORDER BY clauses.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Expresso.Core\Expresso.Core.csproj" />
+  </ItemGroup>
+
+</Project>
