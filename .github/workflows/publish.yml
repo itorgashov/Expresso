@@ -1,0 +1,59 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag points to a commit on main
+        run: |
+          git fetch origin main --no-tags
+          if ! git merge-base --is-ancestor "${{ github.sha }}" origin/main; then
+            echo "::error::Tag ${{ github.ref_name }} must point to a commit on main."
+            exit 1
+          fi
+
+      - name: Set version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Test
+        run: dotnet test Expresso.slnx -c Release --nologo
+
+      - name: Pack
+        run: dotnet pack Expresso.slnx -c Release -o artifacts /p:Version=${{ env.VERSION }} --nologo
+
+      - name: NuGet login (OIDC)
+        uses: NuGet/login@v1
+        id: nuget_login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Publish to NuGet.org
+        run: |
+          dotnet nuget push artifacts/*.nupkg \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" \
+            --skip-duplicate
+          dotnet nuget push artifacts/*.snupkg \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" \
+            --skip-duplicate
