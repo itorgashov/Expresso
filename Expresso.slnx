@@ -13,4 +13,7 @@
   <Folder Name="/test/Rendering/">
     <Project Path="test/Rendering/Expresso.Rendering.SqlServer.Test/Expresso.SqlServer.Test.csproj" />
   </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Expresso.Sample.WebApi/Expresso.Sample.WebApi.csproj" />
+  </Folder>
 </Solution>

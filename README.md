@@ -63,6 +63,10 @@ Names are case-insensitive.
 
 The library does not ship an application field list. Implement `IRequestFieldsInfoProvider` (or pass `(name, Type)[]` into the parsers) in the consuming app.
 
+## Sample
+
+[samples/Expresso.Sample.WebApi](samples/Expresso.Sample.WebApi) — .NET 10 Web API with ADO.NET repositories, Swagger, and filter/sort on books/authors/publishers. See the sample [README](samples/Expresso.Sample.WebApi/README.md).
+
 ## Build
 
 ```powershell
