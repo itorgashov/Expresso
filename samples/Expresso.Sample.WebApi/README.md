@@ -8,7 +8,7 @@ For a guided walkthrough of the architecture and design decisions, see [docs/sam
 
 - .NET 10 SDK
 - SQL Server with database **Expresso_Sample** (see [database/schema.sql](database/schema.sql))
-- NuGet packages `Expresso.Core`, `Expresso.Parsing`, `Expresso.Rendering.SqlServer` **0.3.0**
+- NuGet packages `Expresso.Core`, `Expresso.Parsing`, `Expresso.Rendering.SqlServer` **0.4.0**
 
 ## Connection string
 

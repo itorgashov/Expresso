@@ -172,7 +172,8 @@ namespace Expresso.SqlServer
                     break;
                 default:
                     if (TryGenerateStringFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix)
-                        || TryGenerateDateTimeFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix))
+                        || TryGenerateDateTimeFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix)
+                        || TryGenerateNumericFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix))
                     {
                         break;
                     }

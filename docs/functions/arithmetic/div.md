@@ -38,4 +38,5 @@ Example: `gt(div(revenue,unitsSold),10)` renders as `(([revenue] / [unitsSold]) 
 
 - SQL Server performs **integer division** when both operands are integral (`byte`/`int`) — `div(sub(price,1), 2)` truncates just like plain SQL `/` would. Cast a field to `double`-typed data or use a `double` literal if you need fractional results.
 - `ReturnType` is copied from `argument1` only.
-- See [`add`](add.md), [`sub`](sub.md), [`mult`](mult.md) for the other arithmetic operators.
+- See [`add`](add.md), [`sub`](sub.md), [`mult`](mult.md) for the other arithmetic operators, and [`mod`](mod.md) for the remainder of an integer division.
+- See also [`round`](round.md), [`floor`](floor.md), [`ceiling`](ceiling.md), [`sign`](sign.md), [`power`](power.md), [`sqrt`](sqrt.md), [`min`](min.md), [`max`](max.md) for the wider numeric function set.

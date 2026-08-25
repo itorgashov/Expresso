@@ -328,6 +328,10 @@ namespace Expresso.Parsing
                     {
                         return dateTimeFunction;
                     }
+                    if (TryCreateNumericFunction(functionName, arguments, out var numericFunction))
+                    {
+                        return numericFunction;
+                    }
                     throw new ArgumentException($"Unknown function: {functionName}");
             }
         }

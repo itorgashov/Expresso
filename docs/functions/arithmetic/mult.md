@@ -38,3 +38,4 @@ Example: `gt(mult(price,quantity),1000)` renders as `(([price] * [quantity]) > @
 
 - `ReturnType` is copied from `argument1` only.
 - See [`add`](add.md), [`sub`](sub.md), [`div`](div.md) for the other arithmetic operators.
+- See also [`mod`](mod.md), [`round`](round.md), [`floor`](floor.md), [`ceiling`](ceiling.md), [`sign`](sign.md), [`power`](power.md), [`sqrt`](sqrt.md), [`min`](min.md), [`max`](max.md) for the wider numeric function set.

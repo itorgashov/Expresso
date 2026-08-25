@@ -37,6 +37,15 @@ Every filter/sort function Expresso supports, grouped by semantic category. Func
 | [`sub`](arithmetic/sub.md) | Subtraction |
 | [`mult`](arithmetic/mult.md) | Multiplication |
 | [`div`](arithmetic/div.md) | Division |
+| [`mod`](arithmetic/mod.md) | Remainder of division |
+| [`floor`](arithmetic/floor.md) | Rounds down to the nearest integer |
+| [`ceiling`](arithmetic/ceiling.md) | Rounds up to the nearest integer (alias: `ceil`) |
+| [`round`](arithmetic/round.md) | Rounds to a given number of decimal digits (alias-free; 1 or 2 args) |
+| [`sign`](arithmetic/sign.md) | `-1`, `0`, or `1` depending on the argument's sign |
+| [`power`](arithmetic/power.md) | Raises to a power (alias: `pow`) |
+| [`sqrt`](arithmetic/sqrt.md) | Square root |
+| [`min`](arithmetic/min.md) | Smaller of two arguments |
+| [`max`](arithmetic/max.md) | Larger of two arguments |
 
 ## String predicates (return `bool`)
 

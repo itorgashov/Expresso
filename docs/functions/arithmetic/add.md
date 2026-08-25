@@ -37,4 +37,4 @@ Example: `gt(add(price,tax),100)` renders as `(([price] + [tax]) > @wparam_0)`.
 ## Notes
 
 - `ReturnType` is copied from `argument1` only.
-- See [`sub`](sub.md), [`mult`](mult.md), [`div`](div.md) for the other arithmetic operators, and [`abs`](abs.md) for the unary one.
+- See [`sub`](sub.md), [`mult`](mult.md), [`div`](div.md) for the other arithmetic operators, [`abs`](abs.md) for the unary one, and [`mod`](mod.md), [`round`](round.md), [`floor`](floor.md), [`ceiling`](ceiling.md), [`sign`](sign.md), [`power`](power.md), [`sqrt`](sqrt.md), [`min`](min.md), [`max`](max.md) for the wider numeric function set.

@@ -36,4 +36,4 @@ Example: `eq(abs(balance),100)` renders as `(ABS([balance]) = @wparam_0)`.
 ## Notes
 
 - `ReturnType` is copied from the argument, not promoted — `abs` of a `byte` field is still typed `byte`.
-- See [`add`](add.md), [`sub`](sub.md), [`mult`](mult.md), [`div`](div.md) for binary arithmetic.
+- See [`add`](add.md), [`sub`](sub.md), [`mult`](mult.md), [`div`](div.md) for binary arithmetic, and [`sign`](sign.md) for the related unary numeric function.

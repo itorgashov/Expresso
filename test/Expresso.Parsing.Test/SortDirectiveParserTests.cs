@@ -154,5 +154,29 @@ namespace Expresso.Tests.Parsing
             Assert.IsType<YearFunc>(result.Items[0].Expression);
             Assert.Equal(SortDirection.Ascending, result.Items[0].Direction);
         }
+
+        [Fact]
+        public void Parse_FloorFunction_ReturnsCorrectSortDirective()
+        {
+            var query = "floor(age),asc";
+
+            var result = _parser.Parse(query, _validFields);
+
+            Assert.Single(result.Items);
+            Assert.IsType<FloorFunc>(result.Items[0].Expression);
+            Assert.Equal(SortDirection.Ascending, result.Items[0].Direction);
+        }
+
+        [Fact]
+        public void Parse_ModFunction_ReturnsCorrectSortDirective()
+        {
+            var query = "mod(age,2),desc";
+
+            var result = _parser.Parse(query, _validFields);
+
+            Assert.Single(result.Items);
+            Assert.IsType<ModFunc>(result.Items[0].Expression);
+            Assert.Equal(SortDirection.Descending, result.Items[0].Direction);
+        }
     }
 }

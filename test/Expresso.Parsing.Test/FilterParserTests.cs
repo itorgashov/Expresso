@@ -780,5 +780,76 @@ namespace Expresso.Tests.Parsing
             var exception = Assert.Throws<Exception>(() => _parser.Parse(query, _validFields));
             Assert.Contains("Adddays() function should have 2 arguments", exception.Message);
         }
+
+        [Theory]
+        [InlineData("eq(mod(age, 2), 0)", typeof(ModFunc))]
+        [InlineData("eq(floor(doubleField), 1.5)", typeof(FloorFunc))]
+        [InlineData("eq(ceiling(doubleField), 2.0)", typeof(CeilingFunc))]
+        [InlineData("eq(ceil(doubleField), 2.0)", typeof(CeilingFunc))]
+        [InlineData("eq(round(doubleField), 2.0)", typeof(RoundFunc))]
+        [InlineData("eq(round(doubleField, -1), 20.0)", typeof(RoundFunc))]
+        [InlineData("eq(sign(age), 1)", typeof(SignFunc))]
+        [InlineData("eq(power(age, 2), 25)", typeof(PowerFunc))]
+        [InlineData("eq(pow(age, 2), 25)", typeof(PowerFunc))]
+        [InlineData("eq(sqrt(age), 5)", typeof(SqrtFunc))]
+        [InlineData("eq(min(age, 18), 18)", typeof(MinFunc))]
+        [InlineData("eq(max(age, 65), 65)", typeof(MaxFunc))]
+        public void Parse_ValidNumericFunction_ReturnsExpectedFunc(string query, Type expectedFuncType)
+        {
+            var result = _parser.Parse(query, _validFields);
+
+            Assert.NotNull(result);
+            Assert.IsType<EqFunc>(result.Expression);
+            var eqFunc = (EqFunc)result.Expression;
+            Assert.IsType(expectedFuncType, eqFunc.Arguments[0]);
+        }
+
+        [Fact]
+        public void Parse_RoundWithNegativeDigits_ReturnsRoundFunc()
+        {
+            var query = "eq(round(age, -1), 30)";
+
+            var result = _parser.Parse(query, _validFields);
+
+            Assert.IsType<RoundFunc>(((EqFunc)result.Expression).Arguments[0]);
+            var roundFunc = (RoundFunc)((EqFunc)result.Expression).Arguments[0];
+            Assert.Equal(2, roundFunc.Arguments.Count);
+            Assert.IsType<Literal>(roundFunc.Arguments[1]);
+            Assert.Equal(-1, ((Literal)roundFunc.Arguments[1]).Value);
+        }
+
+        [Fact]
+        public void Parse_ModOnStringField_Throws()
+        {
+            var query = "eq(mod(name, 2), 0)";
+
+            Assert.ThrowsAny<Exception>(() => _parser.Parse(query, _validFields));
+        }
+
+        [Fact]
+        public void Parse_RoundWithDoubleDigits_Throws()
+        {
+            var query = "eq(round(age, 1.5), 30)";
+
+            Assert.Throws<ArgumentException>(() => _parser.Parse(query, _validFields));
+        }
+
+        [Fact]
+        public void Parse_InvalidModArity_ThrowsException()
+        {
+            var query = "eq(mod(age), 0)";
+
+            var exception = Assert.Throws<Exception>(() => _parser.Parse(query, _validFields));
+            Assert.Contains("Mod() function should have 2 arguments", exception.Message);
+        }
+
+        [Fact]
+        public void Parse_InvalidRoundArity_ThrowsException()
+        {
+            var query = "eq(round(age, 1, 2), 30)";
+
+            var exception = Assert.Throws<Exception>(() => _parser.Parse(query, _validFields));
+            Assert.Contains("Round() function should have 1 or 2 arguments", exception.Message);
+        }
     }
 }
