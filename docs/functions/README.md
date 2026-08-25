@@ -67,3 +67,30 @@ Every filter/sort function Expresso supports, grouped by semantic category. Func
 |---|---|
 | [`len`](string-inspect/len.md) | Length of a string |
 | [`indexof`](string-inspect/indexof.md) | 0-based index of a substring, or `-1` if not found |
+
+## DateTime getters
+
+| Function | Description | Return type |
+|---|---|---|
+| [`year`](datetime-getter/year.md) | Calendar year | `int` |
+| [`month`](datetime-getter/month.md) | Month (1–12) | `int` |
+| [`day`](datetime-getter/day.md) | Day of month (1–31) | `int` |
+| [`dayofyear`](datetime-getter/dayofyear.md) | Day of year (1–366) | `int` |
+| [`hour`](datetime-getter/hour.md) | Hour (0–23) | `int` |
+| [`minute`](datetime-getter/minute.md) | Minute (0–59) | `int` |
+| [`second`](datetime-getter/second.md) | Second (0–59) | `int` |
+| [`dayofweek`](datetime-getter/dayofweek.md) | Day of week, `Sunday=0` … `Saturday=6` | `int` |
+| [`date`](datetime-getter/date.md) | Truncates to midnight (drops time-of-day) | `DateTime` |
+
+## DateTime arithmetic (return `DateTime`)
+
+| Function | Description |
+|---|---|
+| [`addyears`](datetime-add/addyears.md) | Adds/subtracts whole years |
+| [`addmonths`](datetime-add/addmonths.md) | Adds/subtracts whole months |
+| [`adddays`](datetime-add/adddays.md) | Adds/subtracts whole days |
+| [`addhours`](datetime-add/addhours.md) | Adds/subtracts whole hours |
+| [`addminutes`](datetime-add/addminutes.md) | Adds/subtracts whole minutes |
+| [`addseconds`](datetime-add/addseconds.md) | Adds/subtracts whole seconds |
+
+All `add*` functions take an `int` amount; zero and negative values are allowed (e.g. `adddays(createdat,-7)`).

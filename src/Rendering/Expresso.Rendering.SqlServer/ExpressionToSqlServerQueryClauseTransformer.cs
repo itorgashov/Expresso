@@ -171,11 +171,12 @@ namespace Expresso.SqlServer
                     sqlBuilder.Append(AddParameter(literal.Value, parameters, paramNamePrefix));
                     break;
                 default:
-                    if (!TryGenerateStringFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix))
+                    if (TryGenerateStringFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix)
+                        || TryGenerateDateTimeFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix))
                     {
-                        throw new NotSupportedException($"Expression type '{expression.GetType().Name}' is not supported.");
+                        break;
                     }
-                    break;
+                    throw new NotSupportedException($"Expression type '{expression.GetType().Name}' is not supported.");
             }
         }
 

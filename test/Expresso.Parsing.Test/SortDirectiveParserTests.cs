@@ -138,5 +138,21 @@ namespace Expresso.Tests.Parsing
             Assert.IsType<LowerFunc>(result.Items[0].Expression);
             Assert.Equal(SortDirection.Ascending, result.Items[0].Direction);
         }
+
+        [Fact]
+        public void Parse_YearFunction_ReturnsCorrectSortDirective()
+        {
+            var validFields = new (string, Type)[]
+            {
+                ("createdat", typeof(DateTime)),
+            };
+            var query = "year(createdat),asc";
+
+            var result = _parser.Parse(query, validFields);
+
+            Assert.Single(result.Items);
+            Assert.IsType<YearFunc>(result.Items[0].Expression);
+            Assert.Equal(SortDirection.Ascending, result.Items[0].Direction);
+        }
     }
 }

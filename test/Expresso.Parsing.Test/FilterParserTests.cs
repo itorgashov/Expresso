@@ -1,4 +1,5 @@
 using Expresso.Core.CriteriaExpressions;
+using Expresso.Core.CriteriaExpressions.Abstract;
 using Expresso.Parsing;
 
 namespace Expresso.Tests.Parsing
@@ -645,6 +646,139 @@ namespace Expresso.Tests.Parsing
             Assert.Equal(2, andFunc.Arguments.Count);
             Assert.IsType<GtFunc>(andFunc.Arguments[0]);
             Assert.IsType<LtFunc>(andFunc.Arguments[1]);
+        }
+
+        [Theory]
+        [InlineData("eq(year(dateFrom), 2020)", typeof(YearFunc))]
+        [InlineData("eq(month(dateFrom), 1)", typeof(MonthFunc))]
+        [InlineData("eq(day(dateFrom), 15)", typeof(DayFunc))]
+        [InlineData("eq(dayofyear(dateFrom), 32)", typeof(DayOfYearFunc))]
+        [InlineData("eq(hour(dateFrom), 12)", typeof(HourFunc))]
+        [InlineData("eq(minute(dateFrom), 30)", typeof(MinuteFunc))]
+        [InlineData("eq(second(dateFrom), 0)", typeof(SecondFunc))]
+        [InlineData("eq(dayofweek(dateFrom), 0)", typeof(DayOfWeekFunc))]
+        public void Parse_ValidDateTimeGetter_ReturnsExpectedFunc(string query, Type expectedFuncType)
+        {
+            var result = _parser.Parse(query, _validFields);
+
+            Assert.NotNull(result);
+            Assert.IsType<EqFunc>(result.Expression);
+            var eqFunc = (EqFunc)result.Expression;
+            Assert.IsType(expectedFuncType, eqFunc.Arguments[0]);
+        }
+
+        [Fact]
+        public void Parse_ValidDateFunction_ReturnsDateFunc()
+        {
+            var query = "eq(date(dateFrom), dateTo)";
+
+            var result = _parser.Parse(query, _validFields);
+
+            Assert.NotNull(result);
+            Assert.IsType<EqFunc>(result.Expression);
+            var eqFunc = (EqFunc)result.Expression;
+            Assert.IsType<DateFunc>(eqFunc.Arguments[0]);
+        }
+
+        [Fact]
+        public void Parse_YearQuotedDateLiteral_ReturnsYearFunc()
+        {
+            var query = "eq(year(\"2020-01-15\"), 2020)";
+
+            var result = _parser.Parse(query, _validFields);
+
+            Assert.NotNull(result);
+            Assert.IsType<EqFunc>(result.Expression);
+            var eqFunc = (EqFunc)result.Expression;
+            Assert.IsType<YearFunc>(eqFunc.Arguments[0]);
+            var yearFunc = (YearFunc)eqFunc.Arguments[0];
+            Assert.IsType<Literal>(yearFunc.Arguments[0]);
+            Assert.Equal(typeof(DateTime), yearFunc.Arguments[0].ReturnType);
+        }
+
+        [Theory]
+        [InlineData("gt(addyears(dateFrom, 1), dateTo)", typeof(AddYearsFunc), 1)]
+        [InlineData("gt(addmonths(dateFrom, 0), dateTo)", typeof(AddMonthsFunc), 0)]
+        [InlineData("gt(adddays(dateFrom, -7), dateTo)", typeof(AddDaysFunc), -7)]
+        [InlineData("gt(addhours(dateFrom, 24), dateTo)", typeof(AddHoursFunc), 24)]
+        [InlineData("gt(addminutes(dateFrom, -30), dateTo)", typeof(AddMinutesFunc), -30)]
+        [InlineData("gt(addseconds(dateFrom, 0), dateTo)", typeof(AddSecondsFunc), 0)]
+        public void Parse_ValidDateTimeAdd_ReturnsExpectedFunc(string query, Type expectedFuncType, int expectedAmount)
+        {
+            var result = _parser.Parse(query, _validFields);
+
+            Assert.NotNull(result);
+            Assert.IsType<GtFunc>(result.Expression);
+            var gtFunc = (GtFunc)result.Expression;
+            Assert.IsType(expectedFuncType, gtFunc.Arguments[0]);
+            var addFunc = (AbstractFunction)gtFunc.Arguments[0];
+            Assert.IsType<Literal>(addFunc.Arguments[1]);
+            Assert.Equal(expectedAmount, ((Literal)addFunc.Arguments[1]).Value);
+        }
+
+        [Fact]
+        public void Parse_NestedYearOfAddDays_ReturnsYearFunc()
+        {
+            var query = "eq(year(adddays(dateFrom, 1)), 2020)";
+
+            var result = _parser.Parse(query, _validFields);
+
+            Assert.NotNull(result);
+            Assert.IsType<EqFunc>(result.Expression);
+            var eqFunc = (EqFunc)result.Expression;
+            Assert.IsType<YearFunc>(eqFunc.Arguments[0]);
+            var yearFunc = (YearFunc)eqFunc.Arguments[0];
+            Assert.IsType<AddDaysFunc>(yearFunc.Arguments[0]);
+        }
+
+        [Fact]
+        public void Parse_AddDaysOnStringField_Throws()
+        {
+            var query = "eq(adddays(name, 1), dateTo)";
+
+            Assert.Throws<ArgumentException>(() => _parser.Parse(query, _validFields));
+        }
+
+        [Fact]
+        public void Parse_AddDaysFractionalAmount_Throws()
+        {
+            var query = "gt(adddays(dateFrom, 1.5), dateTo)";
+
+            Assert.Throws<ArgumentException>(() => _parser.Parse(query, _validFields));
+        }
+
+        [Fact]
+        public void Parse_YearOnIntField_Throws()
+        {
+            var query = "eq(year(age), 2020)";
+
+            Assert.Throws<ArgumentException>(() => _parser.Parse(query, _validFields));
+        }
+
+        [Fact]
+        public void Parse_InvalidYearArity_ThrowsException()
+        {
+            var query = "eq(year(), 2020)";
+
+            Assert.ThrowsAny<Exception>(() => _parser.Parse(query, _validFields));
+        }
+
+        [Fact]
+        public void Parse_InvalidYearExtraArgs_ThrowsException()
+        {
+            var query = "eq(year(dateFrom, dateTo), 2020)";
+
+            var exception = Assert.Throws<Exception>(() => _parser.Parse(query, _validFields));
+            Assert.Contains("Year() function should have 1 argument", exception.Message);
+        }
+
+        [Fact]
+        public void Parse_InvalidAddDaysMissingArgs_ThrowsException()
+        {
+            var query = "gt(adddays(dateFrom), dateTo)";
+
+            var exception = Assert.Throws<Exception>(() => _parser.Parse(query, _validFields));
+            Assert.Contains("Adddays() function should have 2 arguments", exception.Message);
         }
     }
 }
