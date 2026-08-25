@@ -39,7 +39,11 @@ jobs:
         run: dotnet test Expresso.slnx -c Release --nologo
 
       - name: Pack
-        run: dotnet pack Expresso.slnx -c Release -o artifacts /p:Version=${{ env.VERSION }} --nologo
+        run: |
+          dotnet pack Expresso.slnx -c Release -o artifacts \
+            /p:Version=${{ env.VERSION }} \
+            /p:PackageProjectUrl=https://github.com/itorgashov/Expresso/tree/${{ github.ref_name }}/docs \
+            --nologo
 
       - name: NuGet login (OIDC)
         uses: NuGet/login@v1
