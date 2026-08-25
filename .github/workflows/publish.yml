@@ -38,6 +38,17 @@ jobs:
       - name: Test
         run: dotnet test Expresso.slnx -c Release --nologo
 
+      - name: Rewrite README links for NuGet
+        run: |
+          TAG="${{ github.ref_name }}"
+          BLOB="https://github.com/itorgashov/Expresso/blob/${TAG}/"
+          TREE="https://github.com/itorgashov/Expresso/tree/${TAG}/"
+          # nuget.org resolves relative README hrefs against nuget.org, not GitHub.
+          # Rewrite only in this working copy (repo README stays relative for GitHub).
+          sed -i "s|](docs/|](${BLOB}docs/|g" README.md
+          sed -i "s|](samples/Expresso.Sample.WebApi/README.md)|](${BLOB}samples/Expresso.Sample.WebApi/README.md)|g" README.md
+          sed -i "s|](samples/Expresso.Sample.WebApi)|](${TREE}samples/Expresso.Sample.WebApi)|g" README.md
+
       - name: Pack
         run: |
           dotnet pack Expresso.slnx -c Release -o artifacts \

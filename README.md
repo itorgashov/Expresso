@@ -56,7 +56,7 @@ Full grammar, literal/quoting rules, and supported types: [docs/query-syntax.md]
 
 ## Sample
 
-[samples/Expresso.Sample.WebApi](https://github.com/itorgashov/Expresso/tree/main/samples/Expresso.Sample.WebApi) — .NET 10 Web API with ADO.NET repositories, Swagger, and filter/sort on books/authors/publishers. See [docs/sample-app.md](docs/sample-app.md) for a guided walkthrough, or the sample's own [README](https://github.com/itorgashov/Expresso/blob/main/samples/Expresso.Sample.WebApi/README.md) for setup/run instructions.
+[samples/Expresso.Sample.WebApi](samples/Expresso.Sample.WebApi) — .NET 10 Web API with ADO.NET repositories, Swagger, and filter/sort on books/authors/publishers. See [docs/sample-app.md](docs/sample-app.md) for a guided walkthrough, or the sample's own [README](samples/Expresso.Sample.WebApi/README.md) for setup/run instructions.
 
 ## Build
 
