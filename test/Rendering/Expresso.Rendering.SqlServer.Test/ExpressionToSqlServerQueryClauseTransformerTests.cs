@@ -284,9 +284,9 @@ namespace Expresso.Tests.SqlServer
 
                 var result = _transformer.RenderWhereClause(filterCriteria, _fieldMap, _paramPrefix);
 
-                Assert.Equal($"([{_fieldMap["name"]}] LIKE @{_paramPrefix}_0 + '%')", result.whereClause);
+                Assert.Equal($"([{_fieldMap["name"]}] LIKE @{_paramPrefix}_0 ESCAPE '\\')", result.whereClause);
                 Assert.Single(result.parameters);
-                Assert.Equal("Jo", result.parameters[$"@{_paramPrefix}_0"]);
+                Assert.Equal("Jo%", result.parameters[$"@{_paramPrefix}_0"]);
             }
 
             [Fact]
@@ -329,9 +329,9 @@ namespace Expresso.Tests.SqlServer
 
                 var result = _transformer.RenderWhereClause(filterCriteria, _fieldMap, _paramPrefix);
 
-                Assert.Equal($"((([{_fieldMap["name"]}] LIKE @{_paramPrefix}_0 + '%') OR ([{_fieldMap["age"]}] IN (@{_paramPrefix}_1, @{_paramPrefix}_2))) AND ([{_fieldMap["salary"]}] > @{_paramPrefix}_3))", result.whereClause);
+                Assert.Equal($"((([{_fieldMap["name"]}] LIKE @{_paramPrefix}_0 ESCAPE '\\') OR ([{_fieldMap["age"]}] IN (@{_paramPrefix}_1, @{_paramPrefix}_2))) AND ([{_fieldMap["salary"]}] > @{_paramPrefix}_3))", result.whereClause);
                 Assert.Equal(4, result.parameters.Count);
-                Assert.Equal("Jo", result.parameters[$"@{_paramPrefix}_0"]);
+                Assert.Equal("Jo%", result.parameters[$"@{_paramPrefix}_0"]);
                 Assert.Equal(25, result.parameters[$"@{_paramPrefix}_1"]);
                 Assert.Equal(30, result.parameters[$"@{_paramPrefix}_2"]);
                 Assert.Equal(50000.0, result.parameters[$"@{_paramPrefix}_3"]);

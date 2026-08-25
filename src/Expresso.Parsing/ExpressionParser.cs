@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Expresso.Parsing
 {
-    internal sealed class ExpressionParser
+    internal sealed partial class ExpressionParser
     {
         private static ExpressionParser Instance = null;
         private static readonly object Instancelock = new object();
@@ -313,34 +313,6 @@ namespace Expresso.Parsing
                         throw new Exception("In() function should have at least 2 arguments.");
                     }
                     return CreateInFunction(arguments);
-                case "startswith":
-                    {
-                        if (arguments.Count != 2)
-                        {
-                            throw new Exception("Startswith() function should have 2 arguments.");
-                        }
-                        AbstractExpression secondArgument = (arguments[1] is StringLiteral stringLiteral)
-                            ? CreateLiteral(stringLiteral.Value, typeof(string))
-                            : arguments[1];
-                        return new StrStartswithFunc(arguments[0], secondArgument);
-                    }
-                case "substring":
-                    {
-                        if (arguments.Count != 3)
-                        {
-                            throw new Exception("Substring() function should have 3 arguments.");
-                        }
-                        AbstractExpression firstArgument = (arguments[0] is StringLiteral stringLiteral0)
-                            ? CreateLiteral(stringLiteral0.Value, typeof(string))
-                            : arguments[0];
-                        AbstractExpression secondArgument = (arguments[1] is StringLiteral stringLiteral1)
-                            ? CreateLiteral(stringLiteral1.Value, typeof(int))
-                            : arguments[1];
-                        AbstractExpression thirdArgument = (arguments[2] is StringLiteral stringLiteral2)
-                            ? CreateLiteral(stringLiteral2.Value, typeof(int))
-                            : arguments[2];
-                        return new SubStringFunc(firstArgument, secondArgument, thirdArgument);
-                    }
                 case "isnull":
                     if (arguments.Count != 1)
                     {
@@ -348,6 +320,10 @@ namespace Expresso.Parsing
                     }
                     return new IsNullFunc(arguments[0]);
                 default:
+                    if (TryCreateStringFunction(functionName, arguments, out var stringFunction))
+                    {
+                        return stringFunction;
+                    }
                     throw new ArgumentException($"Unknown function: {functionName}");
             }
         }

@@ -51,7 +51,9 @@ Names are case-insensitive.
 | Comparison | `eq`, `neq`, `gt`, `gte`, `lt`, `lte` |
 | Membership / null | `in`, `isnull` |
 | Arithmetic | `abs`, `add`, `sub`, `mult`, `div` |
-| String | `startswith`, `substring` |
+| String | `startswith`, `endswith`, `contains`, `substring` / `substr`, `left`, `right`, `concat`, `lower`, `upper`, `trim`, `ltrim`, `rtrim`, `len`, `replace`, `indexof` |
+
+`startswith` / `endswith` / `contains` treat `%`, `_`, and `\` in string literals as literal characters (SQL `LIKE` + `ESCAPE`). `indexof(s, find)` is 0-based and returns **-1** when `find` is not present. `len` maps to SQL Server `LEN` (trailing spaces are not counted). `concat` requires SQL Server 2012+.
 
 ## Supported types (v1)
 

@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace Expresso.SqlServer
 {
-    public class ExpressionToSqlServerQueryClauseTransformer : IExpressionToQueryClauseTransformer
+    public partial class ExpressionToSqlServerQueryClauseTransformer : IExpressionToQueryClauseTransformer
     {
         private const string _prefixPattern = @"^[A-Za-z][A-Za-z0-9_]*$";
 
@@ -156,12 +156,6 @@ namespace Expresso.SqlServer
                 case InFunc inFunc:
                     GenerateInClause(inFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
                     break;
-                case StrStartswithFunc startsWithFunc:
-                    GenerateStartsWithClause(startsWithFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
-                    break;
-                case SubStringFunc substringFunc:
-                    GenerateSubstringClause(substringFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
-                    break;
                 case IsNullFunc isNullFunc:
                     GenerateIsNullClause(isNullFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
                     break;
@@ -177,7 +171,11 @@ namespace Expresso.SqlServer
                     sqlBuilder.Append(AddParameter(literal.Value, parameters, paramNamePrefix));
                     break;
                 default:
-                    throw new NotSupportedException($"Expression type '{expression.GetType().Name}' is not supported.");
+                    if (!TryGenerateStringFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix))
+                    {
+                        throw new NotSupportedException($"Expression type '{expression.GetType().Name}' is not supported.");
+                    }
+                    break;
             }
         }
 
@@ -266,26 +264,6 @@ namespace Expresso.SqlServer
                 GenerateClause(inFunc.Arguments[i], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
             }
             sqlBuilder.Append("))");
-        }
-
-        private void GenerateStartsWithClause(StrStartswithFunc startsWithFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
-        {
-            sqlBuilder.Append('(');
-            GenerateClause(startsWithFunc.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
-            sqlBuilder.Append(" LIKE ");
-            GenerateClause(startsWithFunc.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
-            sqlBuilder.Append(" + '%')");
-        }
-
-        private void GenerateSubstringClause(SubStringFunc substringFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
-        {
-            sqlBuilder.Append("SUBSTRING(");
-            GenerateClause(substringFunc.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
-            sqlBuilder.Append(", ");
-            GenerateClause(substringFunc.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
-            sqlBuilder.Append(", ");
-            GenerateClause(substringFunc.Arguments[2], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
-            sqlBuilder.Append(')');
         }
 
         private void GenerateIsNullClause(IsNullFunc isNullFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)

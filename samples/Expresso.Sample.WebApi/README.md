@@ -38,6 +38,7 @@ Open Swagger UI at `/swagger`.
 
 - `GET /api/books?filter=gt(year,2000)&sort=rating,desc,title,asc`
 - `GET /api/books?filter=startswith(publisher,"North")`
+- `GET /api/books?filter=contains(title,"War")`
 - `GET /api/books?filter=gte(createdat,"2020-01-01")`
 
 **Authors**

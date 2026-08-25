@@ -126,5 +126,17 @@ namespace Expresso.Tests.Parsing
             Assert.Equal("age", ((Field)result.Items[1].Expression).Name);
             Assert.Equal(SortDirection.Descending, result.Items[1].Direction);
         }
+
+        [Fact]
+        public void Parse_LowerFunction_ReturnsCorrectSortDirective()
+        {
+            var query = "lower(name),asc";
+
+            var result = _parser.Parse(query, _validFields);
+
+            Assert.Single(result.Items);
+            Assert.IsType<LowerFunc>(result.Items[0].Expression);
+            Assert.Equal(SortDirection.Ascending, result.Items[0].Direction);
+        }
     }
 }
