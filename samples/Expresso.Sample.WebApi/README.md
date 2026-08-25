@@ -2,11 +2,13 @@
 
 Sample ASP.NET Core Web API demonstrating [Expresso](https://github.com/itorgashov/Expresso) filter/sort query strings rendered to parameterized SQL Server queries.
 
+For a guided walkthrough of the architecture and design decisions, see [docs/sample-app.md](../../docs/sample-app.md).
+
 ## Prerequisites
 
 - .NET 10 SDK
 - SQL Server with database **Expresso_Sample** (see [database/schema.sql](database/schema.sql))
-- NuGet packages `Expresso.Core`, `Expresso.Parsing`, `Expresso.Rendering.SqlServer` **0.1.1**
+- NuGet packages `Expresso.Core`, `Expresso.Parsing`, `Expresso.Rendering.SqlServer` **0.2.0**
 
 ## Connection string
 
