@@ -1,4 +1,4 @@
-namespace Expresso.Sample.WebApi.Models;
+namespace Expresso.Sample.Shared.Models;
 
 public sealed class Publisher
 {

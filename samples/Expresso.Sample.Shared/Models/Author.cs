@@ -1,6 +1,8 @@
-namespace Expresso.Sample.WebApi.ViewModels;
+using System;
 
-public sealed class AuthorViewModel
+namespace Expresso.Sample.Shared.Models;
+
+public sealed class Author
 {
     public int Id { get; init; }
     public string FirstName { get; init; } = string.Empty;

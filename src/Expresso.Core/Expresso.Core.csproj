@@ -1,9 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
     <PackageId>Expresso.Core</PackageId>
     <Title>Expresso.Core</Title>
     <Description>Expresso expression tree, filter criteria, and sort directives.</Description>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <Compile Include="..\Compatibility\IsExternalInit.cs" Link="Compatibility\IsExternalInit.cs" />
+  </ItemGroup>
 
 </Project>

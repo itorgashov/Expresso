@@ -36,7 +36,7 @@ jobs:
           dotnet-version: 6.0.x
 
       - name: Test
-        run: dotnet test Expresso.slnx -c Release --nologo
+        run: dotnet test Expresso.slnx -c Release -f net6.0 --nologo
 
       - name: Rewrite README links for NuGet
         run: |

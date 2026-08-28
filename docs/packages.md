@@ -43,7 +43,8 @@ Typically referenced by the **data-access layer** (ADO.NET/Dapper repository) th
 
 ## Target framework and supported types
 
-- **Target framework:** `net6.0` (binary-compatible / usable from .NET 6, 7, 8, and 10 consumers).
+- **Target frameworks:** `netstandard2.0` and `net6.0`. NuGet packages contain both assemblies under `lib/netstandard2.0` and `lib/net6.0`.
+- **Typical consumers:** .NET Framework 4.6.1+ (via `netstandard2.0`), .NET Standard 2.0 libraries, and .NET 6+ (prefer `net6.0` when your app targets .NET 6 or later).
 - **Supported CLR types (v1):** `string`, `bool`, `byte`, `int`, `double`, `DateTime`.
 - **Not supported in v1:** `DateOnly`, `TimeOnly`, `Guid`, `float`, `decimal`. Model dates as `DateTime` fields and use quoted date/time literals in queries.
 

@@ -1,4 +1,4 @@
-namespace Expresso.Sample.WebApi.ViewModels;
+namespace Expresso.Sample.Shared.ViewModels;
 
 public sealed class PublisherViewModel
 {

@@ -2,13 +2,14 @@
 
 Sample ASP.NET Core Web API demonstrating [Expresso](https://github.com/itorgashov/Expresso) filter/sort query strings rendered to parameterized SQL Server queries.
 
-For a guided walkthrough of the architecture and design decisions, see [docs/sample-app.md](../../docs/sample-app.md).
+Shared models, repositories, and filtering live in [Expresso.Sample.Shared](../Expresso.Sample.Shared). A .NET Framework 4.8 counterpart is [Expresso.Sample.WebApi.NetFx](../Expresso.Sample.WebApi.NetFx).
+
+For a guided walkthrough, see [docs/sample-app.md](../../docs/sample-app.md).
 
 ## Prerequisites
 
 - .NET 10 SDK
 - SQL Server with database **Expresso_Sample** (see [database/schema.sql](database/schema.sql))
-- NuGet packages `Expresso.Core`, `Expresso.Parsing`, `Expresso.Rendering.SqlServer` **0.4.0**
 
 ## Connection string
 
@@ -49,7 +50,5 @@ Open Swagger UI at `/swagger`.
 
 ## Architecture
 
-- **Presentation:** controllers parse `filter` / `sort`, map models to view models in-place.
-- **Data access:** ADO.NET repositories implement `IRepository<T>`, use Expresso SQL renderer for `WHERE` / `ORDER BY`.
-
-Filter/sort field catalogs are defined in `Filtering/RequestFieldsInfoProvider.cs`.
+- **This project:** ASP.NET Core host, Swagger, `SqlConnectionFactory`, and thin controllers.
+- **Expresso.Sample.Shared:** ADO.NET repositories, field catalogs, view models, and query-parameter parsing.

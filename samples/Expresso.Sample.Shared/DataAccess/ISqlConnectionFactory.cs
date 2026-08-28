@@ -1,6 +1,8 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 
-namespace Expresso.Sample.WebApi.DataAccess;
+namespace Expresso.Sample.Shared.DataAccess;
 
 public interface ISqlConnectionFactory
 {

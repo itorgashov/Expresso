@@ -1,7 +1,10 @@
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Expresso.Core.Filtering;
 using Expresso.Core.Sorting;
 
-namespace Expresso.Sample.WebApi.DataAccess;
+namespace Expresso.Sample.Shared.DataAccess;
 
 public interface IRepository<T>
 {

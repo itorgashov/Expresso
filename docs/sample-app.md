@@ -1,12 +1,19 @@
 # Sample app walkthrough
 
-[samples/Expresso.Sample.WebApi](../samples/Expresso.Sample.WebApi) is a runnable .NET 10 Web API that wires up every step from [docs/getting-started.md](getting-started.md) against a real SQL Server database. Use it as a reference implementation, or clone its patterns into your own project.
+Expresso ships two runnable API hosts that share the same data and filtering logic:
 
-For setup/run instructions (connection string, `dotnet run`, Swagger URL), see the sample's own [README](../samples/Expresso.Sample.WebApi/README.md). This page focuses on *why* it's structured the way it is.
+| Project | Host | TFM |
+|---|---|---|
+| [samples/Expresso.Sample.WebApi](../samples/Expresso.Sample.WebApi) | ASP.NET Core + Swagger | `net10` |
+| [samples/Expresso.Sample.WebApi.NetFx](../samples/Expresso.Sample.WebApi.NetFx) | OWIN self-host + Web API 2 + Swagger | `net48` |
+
+Shared code lives in [samples/Expresso.Sample.Shared](../samples/Expresso.Sample.Shared) (`netstandard2.0`): models, ADO.NET repositories, `RequestFieldsInfoProvider`, and `QueryParametersParser`.
+
+For setup/run instructions, see each sample's README. This page focuses on *why* it's structured the way it is.
 
 ## Domain: books, authors, publishers
 
-The sample database (`database/schema.sql`) models a small library catalog:
+The sample database (`database/schema.sql` under the WebApi project) models a small library catalog:
 
 | Table | Purpose |
 |---|---|
@@ -15,30 +22,35 @@ The sample database (`database/schema.sql`) models a small library catalog:
 | `dbo.book` | Books (`title`, `year`, `isbn`, `publisher_id`, `rating`, `price`, `created_at`) |
 | `dbo.book_author` | Many-to-many join between `book` and `author` |
 
-## Two-layer architecture
+## Architecture
 
 ```mermaid
 flowchart TD
-    subgraph presentation ["Presentation layer"]
-        Controllers["Controllers\nBooksController / AuthorsController / PublishersController"]
+    subgraph hosts ["API hosts"]
+        CoreHost["Expresso.Sample.WebApi\nASP.NET Core"]
+        NetFxHost["Expresso.Sample.WebApi.NetFx\nWeb API 2"]
     end
-    subgraph dataaccess ["Data access layer"]
+    subgraph shared ["Expresso.Sample.Shared"]
+        ControllersLogic["QueryParametersParser\nViewModelMapper"]
         Repositories["ADO.NET repositories\nIRepository of T"]
+        Fields["RequestFieldsInfoProvider"]
     end
-    Controllers -->|"filter / sort query strings"| Parsers["Expresso.Parsing\nIFilterParser / ISortDirectiveParser"]
-    Parsers -->|"FilterCriteria / SortDirective"| Controllers
-    Controllers -->|"FilterCriteria / SortDirective"| Repositories
-    Repositories --> Transformer["Expresso.Rendering.SqlServer\nIExpressionToQueryClauseTransformer"]
-    Transformer -->|"WHERE / ORDER BY + parameters"| Repositories
-    Repositories --> DB[("SQL Server")]
+    CoreHost --> ControllersLogic
+    NetFxHost --> ControllersLogic
+    ControllersLogic --> Parsers["Expresso.Parsing"]
+    Parsers --> Repositories
+    Repositories --> Transformer["Expresso.Rendering.SqlServer"]
+    Transformer --> DB[("SQL Server")]
+    Fields --> Parsers
 ```
 
-- **Presentation layer** ([Controllers/](../samples/Expresso.Sample.WebApi/Controllers)): parses `filter`/`sort` query parameters using `IFilterParser`/`ISortDirectiveParser`, guarded by field catalogs from `IRequestFieldsInfoProvider`. Any parse exception (or a sort directive that lost items to `RemoveDuplicates()`) becomes a `400 Bad Request` — see [docs/error-handling.md](error-handling.md). Controllers then map domain models to view models field-by-field (no auto-mapper).
-- **Data access layer** ([DataAccess/](../samples/Expresso.Sample.WebApi/DataAccess)): plain ADO.NET repositories implementing a shared `IRepository<T>` (`GetAllAsync(FilterCriteria?, SortDirective?, CancellationToken)`, `GetByIdAsync(int, CancellationToken)`). Each repository holds `IExpressionToQueryClauseTransformer` and a private, `OrdinalIgnoreCase` `fieldToColumnMap` to render `WHERE`/`ORDER BY` fragments onto a hand-written base query.
+- **Shared layer** ([Expresso.Sample.Shared](../samples/Expresso.Sample.Shared)): domain models, view models, repositories, field catalogs, and query-parameter parsing. Each host only supplies `ISqlConnectionFactory` and thin controllers.
+- **Presentation (per host):** controllers parse `filter`/`sort` via `QueryParametersParser`, guarded by `IRequestFieldsInfoProvider`. Parse failures → `400 Bad Request`.
+- **Data access (shared):** repositories implement `IRepository<T>` and use `IExpressionToQueryClauseTransformer` with per-entity `fieldToColumnMap` dictionaries.
 
 ## Field catalog
 
-[Filtering/RequestFieldsInfoProvider.cs](../samples/Expresso.Sample.WebApi/Filtering/RequestFieldsInfoProvider.cs) implements `IRequestFieldsInfoProvider` with one allow-list per entity, keyed by a lower-cased `context` string (`"book"`, `"author"`, `"publisher"`); unknown contexts return `[]`. See [docs/field-providers.md](field-providers.md) for why this shape exists.
+[Filtering/RequestFieldsInfoProvider.cs](../samples/Expresso.Sample.Shared/Filtering/RequestFieldsInfoProvider.cs) implements `IRequestFieldsInfoProvider` with one allow-list per entity, keyed by a lower-cased `context` string (`"book"`, `"author"`, `"publisher"`). See [docs/field-providers.md](field-providers.md).
 
 | Context | Fields |
 |---|---|
@@ -66,6 +78,7 @@ GET /api/authors?filter=eq(firstname,"George")&sort=lastname,asc
 
 ## Reading further
 
-- The controller pattern (parse → 400 on failure → call repository) is shown in full in [Controllers/BooksController.cs](../samples/Expresso.Sample.WebApi/Controllers/BooksController.cs).
-- The repository pattern (base SQL + rendered `WHERE`/`ORDER BY` + parameter binding) is shown in full in [DataAccess/BookRepository.cs](../samples/Expresso.Sample.WebApi/DataAccess/BookRepository.cs).
-- For the underlying grammar and function set these queries use, see [docs/query-syntax.md](query-syntax.md) and [docs/functions/README.md](functions/README.md).
+- ASP.NET Core controller: [Controllers/BooksController.cs](../samples/Expresso.Sample.WebApi/Controllers/BooksController.cs)
+- Web API 2 controller: [Controllers/BooksController.cs](../samples/Expresso.Sample.WebApi.NetFx/Controllers/BooksController.cs)
+- Repository pattern: [DataAccess/BookRepository.cs](../samples/Expresso.Sample.Shared/DataAccess/BookRepository.cs)
+- Grammar and functions: [docs/query-syntax.md](query-syntax.md), [docs/functions/README.md](functions/README.md)

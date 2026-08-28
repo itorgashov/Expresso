@@ -1,8 +1,9 @@
 using Expresso.Core.Filtering;
 using Expresso.Parsing;
+using Expresso.Sample.Shared.DataAccess;
+using Expresso.Sample.Shared.Filtering;
+using Expresso.Sample.Shared.Models;
 using Expresso.Sample.WebApi.DataAccess;
-using Expresso.Sample.WebApi.Filtering;
-using Expresso.Sample.WebApi.Models;
 using Expresso.SqlServer;
 
 var builder = WebApplication.CreateBuilder(args);

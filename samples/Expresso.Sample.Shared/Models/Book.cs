@@ -1,6 +1,9 @@
-namespace Expresso.Sample.WebApi.ViewModels;
+using System;
+using System.Collections.Generic;
 
-public sealed class BookViewModel
+namespace Expresso.Sample.Shared.Models;
+
+public sealed class Book
 {
     public int Id { get; init; }
     public string Title { get; init; } = string.Empty;
@@ -10,5 +13,5 @@ public sealed class BookViewModel
     public double Rating { get; init; }
     public DateTime CreatedAt { get; init; }
     public string Publisher { get; init; } = string.Empty;
-    public List<string> Authors { get; init; } = [];
+    public List<string> Authors { get; init; } = new List<string>();
 }

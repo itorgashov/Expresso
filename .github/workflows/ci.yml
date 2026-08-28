@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,7 +15,22 @@ jobs:
             6.0.x
             9.0.x
             10.0.x
-      - name: Test
-        run: dotnet test Expresso.slnx -c Release --nologo
+      - name: Test (net6.0)
+        run: dotnet test Expresso.slnx -c Release -f net6.0 --nologo
       - name: Pack
         run: dotnet pack Expresso.slnx -c Release -o artifacts --nologo
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            6.0.x
+            9.0.x
+            10.0.x
+      - name: Test (net48)
+        run: dotnet test Expresso.slnx -c Release -f net48 --nologo
+      - name: Build NetFx sample
+        run: dotnet build samples/Expresso.Sample.WebApi.NetFx/Expresso.Sample.WebApi.NetFx.csproj -c Release --nologo

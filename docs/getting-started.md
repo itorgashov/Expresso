@@ -1,6 +1,6 @@
 # Getting started
 
-Step-by-step guide to adding Expresso to an application. For a complete, runnable version of all the steps below, see [docs/sample-app.md](sample-app.md) and [samples/Expresso.Sample.WebApi](../samples/Expresso.Sample.WebApi).
+Step-by-step guide to adding Expresso to an application. For a complete, runnable version of all the steps below, see [docs/sample-app.md](sample-app.md) and the sample projects under [samples/](../samples/).
 
 ## 1. Install the right packages in the right layer
 

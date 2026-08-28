@@ -186,7 +186,7 @@ namespace Expresso.SqlServer
             //if (string.IsNullOrWhiteSpace(input))
             //    throw new ArgumentException("Input cannot be null or empty.", nameof(input));
 
-            var parts = input.Split('.', StringSplitOptions.RemoveEmptyEntries);
+            var parts = input.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
 
             return string.Join(".", parts.Select(p => $"[{p}]"));
         }

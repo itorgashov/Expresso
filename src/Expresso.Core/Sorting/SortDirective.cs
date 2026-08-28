@@ -18,7 +18,7 @@ namespace Expresso.Core.Sorting
             if (_items.Count < 2)
                 return this;
 
-            var uniqueExpressions = new HashSet<AbstractExpression>(_items.Count);
+            var uniqueExpressions = new HashSet<AbstractExpression>();
             var uniqueItems = new List<SortDirectiveItem>(_items.Count);
 
             foreach (var item in _items)

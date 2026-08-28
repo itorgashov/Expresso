@@ -1,11 +1,12 @@
+using System;
 using Expresso.Core.Filtering;
 
-namespace Expresso.Sample.WebApi.Filtering;
+namespace Expresso.Sample.Shared.Filtering;
 
 public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider
 {
     private static readonly (string, Type)[] BookFields =
-    [
+    {
         ("title", typeof(string)),
         ("year", typeof(int)),
         ("isbn", typeof(string)),
@@ -13,22 +14,22 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider
         ("price", typeof(double)),
         ("rating", typeof(double)),
         ("createdat", typeof(DateTime)),
-    ];
+    };
 
     private static readonly (string, Type)[] AuthorFields =
-    [
+    {
         ("firstname", typeof(string)),
         ("lastname", typeof(string)),
         ("displayname", typeof(string)),
         ("dateofbirth", typeof(DateTime)),
-    ];
+    };
 
     private static readonly (string, Type)[] PublisherFields =
-    [
+    {
         ("name", typeof(string)),
         ("country", typeof(string)),
         ("location", typeof(string)),
-    ];
+    };
 
     public (string, Type)[] GetValidFilterFields(string context) => GetFields(context);
 
@@ -40,6 +41,6 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider
             "book" => BookFields,
             "author" => AuthorFields,
             "publisher" => PublisherFields,
-            _ => [],
+            _ => Array.Empty<(string, Type)>(),
         };
 }

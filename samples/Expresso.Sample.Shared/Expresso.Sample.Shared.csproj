@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <RootNamespace>Expresso.Sample.Shared</RootNamespace>
+    <UserSecretsId>6d59db8e-bd5b-4bf9-a54a-b045486033c5</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\Compatibility\IsExternalInit.cs" Link="Compatibility\IsExternalInit.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Expresso.Core\Expresso.Core.csproj" />
+    <ProjectReference Include="..\..\src\Expresso.Parsing\Expresso.Parsing.csproj" />
+    <ProjectReference Include="..\..\src\Rendering\Expresso.Rendering.SqlServer\Expresso.Rendering.SqlServer.csproj" />
+  </ItemGroup>
+
+</Project>

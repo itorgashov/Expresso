@@ -10,11 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Expresso.Core" Version="0.1.1" />
-    <PackageReference Include="Expresso.Parsing" Version="0.1.1" />
-    <PackageReference Include="Expresso.Rendering.SqlServer" Version="0.1.1" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Expresso.Sample.Shared\Expresso.Sample.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Expresso.Parsing\Expresso.Parsing.csproj" />
+    <ProjectReference Include="..\..\src\Rendering\Expresso.Rendering.SqlServer\Expresso.Rendering.SqlServer.csproj" />
   </ItemGroup>
 
 </Project>

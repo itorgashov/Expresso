@@ -1,9 +1,9 @@
 using Expresso.Core.Filtering;
-using Expresso.Core.Sorting;
 using Expresso.Parsing;
-using Expresso.Sample.WebApi.DataAccess;
-using Expresso.Sample.WebApi.Models;
-using Expresso.Sample.WebApi.ViewModels;
+using Expresso.Sample.Shared.DataAccess;
+using Expresso.Sample.Shared.Filtering;
+using Expresso.Sample.Shared.Models;
+using Expresso.Sample.Shared.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Expresso.Sample.WebApi.Controllers;
@@ -22,49 +22,14 @@ public sealed class PublishersController(
         [FromQuery] string? sort,
         CancellationToken cancellationToken)
     {
-        FilterCriteria? filterCriteria = null;
-        if (filter is not null)
+        var parsed = QueryParametersParser.Parse(filter, sort, "publisher", filterParser, sortDirectiveParser, requestFieldsProvider);
+        if (parsed.IsBadRequest)
         {
-            try
-            {
-                var validFields = requestFieldsProvider.GetValidFilterFields("publisher");
-                filterCriteria = filterParser.Parse(filter, validFields);
-            }
-            catch (Exception)
-            {
-                return BadRequest();
-            }
+            return BadRequest();
         }
 
-        SortDirective? sortDirective = null;
-        if (sort is not null)
-        {
-            try
-            {
-                var validFields = requestFieldsProvider.GetValidSortFields("publisher");
-                var rawSortDirective = sortDirectiveParser.Parse(sort, validFields);
-                sortDirective = rawSortDirective.RemoveDuplicates();
-                if (sortDirective.Items.Count < rawSortDirective.Items.Count)
-                {
-                    return BadRequest();
-                }
-            }
-            catch (Exception)
-            {
-                return BadRequest();
-            }
-        }
-
-        var publishers = await repository.GetAllAsync(filterCriteria, sortDirective, cancellationToken);
-        var viewModels = publishers.Select(p => new PublisherViewModel
-        {
-            Id = p.Id,
-            Name = p.Name,
-            Country = p.Country,
-            Location = p.Location,
-        }).ToList();
-
-        return Ok(viewModels);
+        var publishers = await repository.GetAllAsync(parsed.FilterCriteria, parsed.SortDirective, cancellationToken);
+        return Ok(publishers.Select(ViewModelMapper.ToViewModel).ToList());
     }
 
     [HttpGet("{id:int}")]
@@ -76,12 +41,6 @@ public sealed class PublishersController(
             return NotFound();
         }
 
-        return Ok(new PublisherViewModel
-        {
-            Id = publisher.Id,
-            Name = publisher.Name,
-            Country = publisher.Country,
-            Location = publisher.Location,
-        });
+        return Ok(ViewModelMapper.ToViewModel(publisher));
     }
 }

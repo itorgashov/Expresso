@@ -153,7 +153,7 @@ namespace Expresso.Parsing
         private static bool IsFieldNameCandidate(string token)
         {
             var first = token[0];
-            var last = token[^1];
+            var last = token[token.Length - 1];
             return (first >= 'A' && first <= 'Z' || first >= 'a' && first <= 'z' || first == '_')
                 && (last >= 'A' && last <= 'Z' || last >= 'a' && last <= 'z' || last >= '0' && last <= '9' || last == '_');
         }
@@ -426,7 +426,7 @@ namespace Expresso.Parsing
         {
             if (!string.IsNullOrEmpty(s) && s.Length > 0 && s[0] >= '0' && s[0] <= '9')
             {
-                return s.Contains('.') || s.Contains('e') || s.Contains('E')
+                return s.IndexOf('.') >= 0 || s.IndexOf('e') >= 0 || s.IndexOf('E') >= 0
                     ? typeof(double)
                     : typeof(int);
             }
