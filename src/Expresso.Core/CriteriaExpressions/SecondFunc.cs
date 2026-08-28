@@ -4,7 +4,7 @@ namespace Expresso.Core.CriteriaExpressions
 {
     public sealed class SecondFunc : DateTimeSingleArgIntFunction
     {
-        public SecondFunc(AbstractExpression argument) : base(argument)
+        public SecondFunc(AbstractExpression argument) : base(argument, DateTimeTypes.Time)
         {
         }
     }

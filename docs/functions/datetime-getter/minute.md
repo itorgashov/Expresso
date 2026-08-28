@@ -17,7 +17,7 @@ Exactly 1 argument.
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `argument` | `DateTime` |
+| 1 | `argument` | `DateTime` or `TimeOnly` (net6.0) |
 
 ## Validation & exceptions
 

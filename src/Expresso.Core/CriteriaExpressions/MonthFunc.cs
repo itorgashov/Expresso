@@ -4,7 +4,7 @@ namespace Expresso.Core.CriteriaExpressions
 {
     public sealed class MonthFunc : DateTimeSingleArgIntFunction
     {
-        public MonthFunc(AbstractExpression argument) : base(argument)
+        public MonthFunc(AbstractExpression argument) : base(argument, DateTimeTypes.Calendar)
         {
         }
     }

@@ -8,8 +8,8 @@ namespace Expresso.Core.CriteriaExpressions
         {
             AssertNotNull(leftOperand, nameof(leftOperand));
             AssertNotNull(rightOperand, nameof(rightOperand));
-            AssertExpressionOfTypes(leftOperand, nameof(leftOperand), typeof(byte), typeof(int), typeof(double), typeof(DateTime), typeof(bool), typeof(string));
-            AssertExpressionOfTypes(rightOperand, nameof(rightOperand), typeof(byte), typeof(int), typeof(double), typeof(DateTime), typeof(bool), typeof(string));
+            AssertExpressionOfTypes(leftOperand, nameof(leftOperand), SupportedOperandTypes.Equality);
+            AssertExpressionOfTypes(rightOperand, nameof(rightOperand), SupportedOperandTypes.Equality);
         }
 
         public override bool Equals(object? obj)

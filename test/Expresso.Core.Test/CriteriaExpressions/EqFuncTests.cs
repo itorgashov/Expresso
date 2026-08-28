@@ -12,6 +12,11 @@ namespace Expresso.Tests.Core.CriteriaExpressions
         [InlineData(typeof(bool), typeof(bool))]
         [InlineData(typeof(string), typeof(string))]
         [InlineData(typeof(DateTime), typeof(DateTime))]
+        [InlineData(typeof(Guid), typeof(Guid))]
+#if NET6_0_OR_GREATER
+        [InlineData(typeof(DateOnly), typeof(DateOnly))]
+        [InlineData(typeof(TimeOnly), typeof(TimeOnly))]
+#endif
         [InlineData(typeof(byte), typeof(int))]
         [InlineData(typeof(byte), typeof(double))]
         [InlineData(typeof(int), typeof(byte))]
@@ -33,6 +38,11 @@ namespace Expresso.Tests.Core.CriteriaExpressions
         [InlineData(typeof(int), typeof(string))]
         [InlineData(typeof(string), typeof(double))]
         [InlineData(typeof(bool), typeof(DateTime))]
+        [InlineData(typeof(Guid), typeof(int))]
+#if NET6_0_OR_GREATER
+        [InlineData(typeof(DateOnly), typeof(DateTime))]
+        [InlineData(typeof(DateTime), typeof(DateOnly))]
+#endif
         public void NumEqFunc_InvalidOperands_ThrowsArgumentException(Type leftType, Type rightType)
         {
             var left = new MockExpressionOfType(leftType);

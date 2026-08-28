@@ -8,7 +8,7 @@ Expresso is a small .NET library for **dynamic filtering and sorting**. A functi
 Query string → Expresso.Parsing → expression tree (Expresso.Core) → Expresso.Rendering.SqlServer → SQL + parameters
 ```
 
-**Target framework:** .NET 6.0 (usable from .NET 6, 7, 8, and 10).
+**Target frameworks:** `netstandard2.0` and `net6.0` (usable from .NET Framework 4.6.1+, .NET Standard 2.0 libraries, and .NET 6+).
 **License:** MIT.
 
 ## Packages
@@ -56,11 +56,15 @@ Full grammar, literal/quoting rules, and supported types: [docs/query-syntax.md]
 
 ## Sample
 
-[samples/Expresso.Sample.WebApi](samples/Expresso.Sample.WebApi) — .NET 10 Web API with ADO.NET repositories, Swagger, and filter/sort on books/authors/publishers. See [docs/sample-app.md](docs/sample-app.md) for a guided walkthrough, or the sample's own [README](samples/Expresso.Sample.WebApi/README.md) for setup/run instructions.
+- [samples/Expresso.Sample.WebApi](samples/Expresso.Sample.WebApi) — .NET 10 ASP.NET Core host with Swagger
+- [samples/Expresso.Sample.WebApi.NetFx](samples/Expresso.Sample.WebApi.NetFx) — .NET Framework 4.8 OWIN + Web API 2 host
+
+Both share [samples/Expresso.Sample.Shared](samples/Expresso.Sample.Shared) (models, ADO.NET repositories, field catalogs). See [docs/sample-app.md](docs/sample-app.md) for a guided walkthrough.
 
 ## Build
 
 ```powershell
-dotnet test .\Expresso.slnx -c Release
+dotnet test .\Expresso.slnx -c Release -f net6.0
+dotnet test .\Expresso.slnx -c Release -f net48    # Windows; validates .NET Framework consumers
 dotnet pack .\Expresso.slnx -c Release -o .\artifacts
 ```

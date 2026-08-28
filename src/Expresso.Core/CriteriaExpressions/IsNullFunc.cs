@@ -7,7 +7,7 @@ namespace Expresso.Core.CriteriaExpressions
         public IsNullFunc(AbstractExpression argument) : base()
         {
             AssertNotNull(argument, nameof(argument));
-            AssertExpressionOfTypes(argument, nameof(argument), typeof(bool), typeof(string), typeof(byte), typeof(int), typeof(double), typeof(DateTime));
+            AssertExpressionOfTypes(argument, nameof(argument), SupportedOperandTypes.IsNull);
 
             Arguments.Add(argument);
         }

@@ -11,13 +11,13 @@ addmonths(datetime, amount)
 Exactly 2 arguments.
 
 - **Category:** DateTime arithmetic
-- **Return type:** `DateTime`
+- **Return type:** same as first argument (`DateTime` or `DateOnly` on net6.0)
 
 ## Arguments
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `dateTime` | `DateTime` |
+| 1 | `dateTime` | `DateTime` or `DateOnly` (net6.0) |
 | 2 | `amount` | `int` — zero and negative values are allowed |
 
 ## Validation & exceptions

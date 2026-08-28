@@ -4,7 +4,7 @@ namespace Expresso.Core.CriteriaExpressions
 {
     public sealed class DayFunc : DateTimeSingleArgIntFunction
     {
-        public DayFunc(AbstractExpression argument) : base(argument)
+        public DayFunc(AbstractExpression argument) : base(argument, DateTimeTypes.Calendar)
         {
         }
     }

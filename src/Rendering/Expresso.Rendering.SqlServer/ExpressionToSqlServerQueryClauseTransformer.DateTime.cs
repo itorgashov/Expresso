@@ -42,6 +42,11 @@ namespace Expresso.SqlServer
                 case DateFunc date:
                     GenerateDateClause(date.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
                     return true;
+#if NET6_0_OR_GREATER
+                case TimeFunc time:
+                    GenerateTimeClause(time.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    return true;
+#endif
                 case AddYearsFunc addYears:
                     GenerateDateAddClause("year", addYears, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
                     return true;
@@ -104,6 +109,20 @@ namespace Expresso.SqlServer
             GenerateClause(argument, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
             sqlBuilder.Append(" AS date)");
         }
+
+#if NET6_0_OR_GREATER
+        private void GenerateTimeClause(
+            AbstractExpression argument,
+            Dictionary<string, string> fieldToColumnMap,
+            StringBuilder sqlBuilder,
+            Dictionary<string, object> parameters,
+            string paramNamePrefix)
+        {
+            sqlBuilder.Append("CAST(");
+            GenerateClause(argument, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            sqlBuilder.Append(" AS time)");
+        }
+#endif
 
         private void GenerateDateAddClause(
             string datePart,

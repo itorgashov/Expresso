@@ -4,7 +4,7 @@ namespace Expresso.Core.CriteriaExpressions
 {
     public sealed class AddDaysFunc : DateTimeAddFunction
     {
-        public AddDaysFunc(AbstractExpression dateTime, AbstractExpression amount) : base(dateTime, amount)
+        public AddDaysFunc(AbstractExpression dateTime, AbstractExpression amount) : base(dateTime, amount, DateTimeTypes.Calendar)
         {
         }
     }

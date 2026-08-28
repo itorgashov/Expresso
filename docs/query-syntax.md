@@ -39,17 +39,24 @@ createdAt,desc,name,asc
 |---|---|---|
 | `string` | `"text"` | Must be double-quoted. No escaped quotes inside the literal. |
 | `DateTime` | `"2021-01-01"` | Double-quoted; parsed with `DateTime.TryParse` using the **current culture** — prefer ISO `yyyy-MM-dd` (or a full ISO timestamp) to avoid locale-dependent parsing. |
+| `Guid` | `"550e8400-e29b-41d4-a716-446655440000"` | Must be double-quoted; `Guid.TryParse` after stripping quotes. |
+| `DateOnly` | `"2021-01-01"` | **net6.0 package TFM only.** Double-quoted; ISO `yyyy-MM-dd` preferred (`DateOnly.TryParseExact`), with culture fallback. |
+| `TimeOnly` | `"14:30:00"` or `"14:30"` | **net6.0 package TFM only.** Double-quoted; `HH:mm:ss` / `HH:mm` preferred, with culture fallback. |
 | `int` / `byte` | `25` | Unquoted. Whichever of `byte`/`int` matches the target type (usually inferred from the paired field). |
 | `double` | `19.99` or `1e3` | Unquoted; a value is treated as a `double` if it contains `.`, `e`, or `E`. |
-| `bool` | *(not supported)* | There is no boolean literal syntax. A `bool` field can only be compared against another boolean **expression** (e.g. another bool field, or a boolean function's result is never itself comparable since boolean functions return the top-level predicate, not a value you can `eq` against) — in practice, v1 has no way to write `eq(isActive, true)`. |
+| `bool` | *(not supported)* | There is no boolean literal syntax. |
 
 Numeric literal type inference: when a literal is compared against a field or another literal, its target type is generally taken from the first operand's `ReturnType` (or an explicit target type for single-typed functions, e.g. `substring`'s 2nd/3rd arguments always coerce to `int`). See each function's page under [docs/functions/](functions/README.md) for the exact per-argument coercion.
 
-## Supported types (v1)
+## Supported types
 
-`string`, `bool`, `byte`, `int`, `double`, `DateTime`.
+**All TFMs:** `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`.
 
-**Not supported in v1:** `DateOnly`, `TimeOnly`, `Guid`, `float`, `decimal`. Model dates/times as `DateTime` fields.
+**net6.0 package TFM only:** `DateOnly`, `TimeOnly` (not available when referencing `lib/netstandard2.0`).
+
+**Not supported:** `float`, `decimal`.
+
+`DateTime`, `DateOnly`, and `TimeOnly` are **not interchangeable** in comparisons — use [`date()`](functions/datetime-getter/date.md) / [`time()`](functions/datetime-getter/time.md) to convert in SQL when needed.
 
 ## Field and literal "operands"
 

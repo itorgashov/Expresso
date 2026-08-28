@@ -1,41 +1,43 @@
 # `date`
 
-Truncates a `DateTime` value to midnight, discarding the time-of-day component.
+Converts a value to a SQL Server `date` (calendar day only). Conversion happens in SQL via `CAST`; no C# conversion is performed in the function itself.
 
 ## Syntax
 
 ```text
-date(datetime)
+date(value)
 ```
 
 Exactly 1 argument.
 
-- **Category:** DateTime getter
-- **Return type:** `DateTime`
+- **Category:** DateTime getter / conversion
+- **Return type:** `DateOnly` on **net6.0**; `DateTime` on **netstandard2.0**
 
 ## Arguments
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `argument` | `DateTime` |
+| 1 | `value` | `DateTime`, `string`, or `DateOnly` (net6.0) |
+
+On **netstandard2.0**, only `DateTime` is accepted.
 
 ## Validation & exceptions
 
 - **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Date() function should have 1 argument."`
-- **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
+- **Parser coercion:** quoted tokens become **string** literals (not parsed as `DateTime` in C#).
 - **IR construction** (`DateFunc`):
   - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not `DateTime` → `ArgumentException`
+  - Argument's `ReturnType` is not allowed → `ArgumentException`
 
 ## SQL Server rendering
 
 ```sql
-CAST(datetime AS date)
+CAST(value AS date)
 ```
 
-Example: `eq(date(createdat),"2020-01-01")` renders as `(CAST([created_at] AS date) = @wparam_0)`.
+Example: `eq(date(createdat),"2020-01-01")` renders as `(CAST([created_at] AS date) = @wparam_0)` where the parameter is a `DateOnly` literal on net6.0.
 
 ## Notes
 
-- Unlike the other DateTime getters, `date` returns `DateTime` (not `int`) — the result can be used anywhere a `DateTime` expression is expected, including comparisons against other `DateTime` fields or `date(...)` calls.
-- Equivalent to comparing "same calendar day", ignoring the time-of-day portion. Commonly paired with [`eq`](../comparison/eq.md) to match an exact day regardless of the stored time component.
+- On **net6.0**, compare `date(...)` results to `DateOnly` fields/literals, not raw `DateTime` fields. Use `eq(date(createdat), date(other))` or compare to a `DateOnly` literal.
+- Equivalent to comparing "same calendar day" when the underlying column is `datetime`/`datetime2`.

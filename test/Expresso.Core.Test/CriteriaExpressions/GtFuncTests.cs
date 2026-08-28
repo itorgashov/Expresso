@@ -15,6 +15,7 @@ namespace Expresso.Tests.Core.CriteriaExpressions
         [InlineData(typeof(int), typeof(double))]
         [InlineData(typeof(double), typeof(byte))]
         [InlineData(typeof(double), typeof(int))]
+        [InlineData(typeof(DateTime), typeof(DateTime))]
         public void NumGtFunc_ValidOperands_SetsArguments(Type leftType, Type rightType)
         {
             var left = new MockExpressionOfType(leftType);
@@ -44,6 +45,11 @@ namespace Expresso.Tests.Core.CriteriaExpressions
         [InlineData(typeof(int), typeof(string))]
         [InlineData(typeof(int), typeof(DateTime))]
         [InlineData(typeof(int), typeof(bool))]
+        [InlineData(typeof(Guid), typeof(Guid))]
+#if NET6_0_OR_GREATER
+        [InlineData(typeof(DateOnly), typeof(DateTime))]
+        [InlineData(typeof(DateTime), typeof(DateOnly))]
+#endif
         public void NumGtFunc_InvalidOperands_ThrowsArgumentException(Type leftType, Type rightType)
         {
             var left = new MockExpressionOfType(leftType);

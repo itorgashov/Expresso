@@ -20,7 +20,8 @@ namespace Expresso.Tests.Parsing
                 ( "dateTo", typeof(DateTime) ),
                 ( "foo", typeof(string) ),
                 ( "doubleField", typeof(double) ),
-                ( "file_name", typeof(string) )
+                ( "file_name", typeof(string) ),
+                ( "id", typeof(Guid) )
             ];
         }
 
@@ -670,7 +671,11 @@ namespace Expresso.Tests.Parsing
         [Fact]
         public void Parse_ValidDateFunction_ReturnsDateFunc()
         {
+#if NET6_0_OR_GREATER
+            var query = "eq(date(dateFrom), \"2020-01-01\")";
+#else
             var query = "eq(date(dateFrom), dateTo)";
+#endif
 
             var result = _parser.Parse(query, _validFields);
 

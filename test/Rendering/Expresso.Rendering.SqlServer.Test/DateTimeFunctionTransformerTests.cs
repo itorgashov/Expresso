@@ -71,11 +71,16 @@ namespace Expresso.Tests.SqlServer
         [Fact]
         public void GenerateWhereClause_Date_ReturnsCastSql()
         {
+#if NET6_0_OR_GREATER
+            var right = new Literal(new DateOnly(2020, 1, 1));
+#else
+            var right = new Literal(new DateTime(2020, 1, 1));
+#endif
             FilterCriteria filter = new()
             {
                 Expression = new EqFunc(
                     new DateFunc(CreatedAt()),
-                    new Literal(new DateTime(2020, 1, 1)))
+                    right)
             };
 
             var result = _transformer.RenderWhereClause(filter, _fieldMap, ParamPrefix);

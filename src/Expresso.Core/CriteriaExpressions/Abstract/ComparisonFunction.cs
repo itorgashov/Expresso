@@ -7,16 +7,7 @@ namespace Expresso.Core.CriteriaExpressions.Abstract
             AssertNotNull(leftOperand, nameof(leftOperand));
             AssertNotNull(rightOperand, nameof(rightOperand));
 
-            bool isLeftNumber = leftOperand.ReturnType == typeof(byte) 
-                || leftOperand.ReturnType == typeof(int) 
-                || leftOperand.ReturnType == typeof(double);
-            bool isRightNumber = rightOperand.ReturnType == typeof(byte) 
-                || rightOperand.ReturnType == typeof(int) 
-                || rightOperand.ReturnType == typeof(double);
-            if (!(leftOperand.ReturnType == typeof(bool) && rightOperand.ReturnType == typeof(bool)
-                || leftOperand.ReturnType == typeof(string) && rightOperand.ReturnType == typeof(string)
-                || leftOperand.ReturnType == typeof(DateTime) && rightOperand.ReturnType == typeof(DateTime)
-                || isLeftNumber && isRightNumber))
+            if (!AreCompatibleTypes(leftOperand.ReturnType, rightOperand.ReturnType))
             {
                 throw new ArgumentException("Incompatible argument types");
             }
@@ -24,6 +15,19 @@ namespace Expresso.Core.CriteriaExpressions.Abstract
             Arguments.Add(leftOperand);
             Arguments.Add(rightOperand);
         }
+
+        private static bool AreCompatibleTypes(Type left, Type right)
+        {
+            if (left == right)
+            {
+                return true;
+            }
+
+            return IsNumeric(left) && IsNumeric(right);
+        }
+
+        private static bool IsNumeric(Type type) =>
+            type == typeof(byte) || type == typeof(int) || type == typeof(double);
 
         public override bool Equals(object? obj)
         {

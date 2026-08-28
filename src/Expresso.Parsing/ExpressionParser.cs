@@ -1,4 +1,5 @@
 using Expresso.Core.CriteriaExpressions;
+using System.Globalization;
 using Expresso.Core.CriteriaExpressions.Abstract;
 using System.Text.RegularExpressions;
 
@@ -464,29 +465,63 @@ namespace Expresso.Parsing
             }
             else if (targetType == typeof(DateTime))
             {
-                if (string.IsNullOrEmpty(value) || value.Length < 2 || value[0] != '"' || value[value.Length - 1] != '"')
-                {
-                    throw new ArgumentException($"Cannot parse token '{value}' as {targetType}.");
-                }
-                string strippedValue = value.Substring(1, value.Length - 2);
+                string strippedValue = StripQuotedToken(value, targetType);
                 if (DateTime.TryParse(strippedValue, out var dateValue))
                 {
                     return new Literal(dateValue);
                 }
                 throw new ArgumentException($"Cannot parse '{strippedValue}' as {targetType}.");
             }
+            else if (targetType == typeof(Guid))
+            {
+                string strippedValue = StripQuotedToken(value, targetType);
+                if (Guid.TryParse(strippedValue, out var guidValue))
+                {
+                    return new Literal(guidValue);
+                }
+                throw new ArgumentException($"Cannot parse '{strippedValue}' as {targetType}.");
+            }
+#if NET6_0_OR_GREATER
+            else if (targetType == typeof(DateOnly))
+            {
+                string strippedValue = StripQuotedToken(value, targetType);
+                if (DateOnly.TryParseExact(strippedValue, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateOnlyValue)
+                    || DateOnly.TryParse(strippedValue, out dateOnlyValue))
+                {
+                    return new Literal(dateOnlyValue);
+                }
+                throw new ArgumentException($"Cannot parse '{strippedValue}' as {targetType}.");
+            }
+            else if (targetType == typeof(TimeOnly))
+            {
+                string strippedValue = StripQuotedToken(value, targetType);
+                if (TimeOnly.TryParseExact(strippedValue, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var timeOnlyValue)
+                    || TimeOnly.TryParseExact(strippedValue, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out timeOnlyValue)
+                    || TimeOnly.TryParse(strippedValue, out timeOnlyValue))
+                {
+                    return new Literal(timeOnlyValue);
+                }
+                throw new ArgumentException($"Cannot parse '{strippedValue}' as {targetType}.");
+            }
+#endif
             else if (targetType == typeof(string))
             {
-                if (string.IsNullOrEmpty(value) || value.Length < 2 || value[0] != '"' || value[value.Length - 1] != '"')
-                {
-                    throw new ArgumentException($"Cannot parse '{value}' as {targetType}.");
-                }
-                return new Literal(value.Substring(1, value.Length - 2));
+                return new Literal(StripQuotedToken(value, targetType));
             }
             else
             {
                 throw new ArgumentException($"Unsupported target type: {targetType}.");
             }
+        }
+
+        private static string StripQuotedToken(string value, Type targetType)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length < 2 || value[0] != '"' || value[value.Length - 1] != '"')
+            {
+                throw new ArgumentException($"Cannot parse token '{value}' as {targetType}.");
+            }
+
+            return value.Substring(1, value.Length - 2);
         }
 
         private class StringLiteral : AbstractExpression

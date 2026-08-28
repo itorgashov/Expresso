@@ -18,6 +18,9 @@ namespace Expresso.Parsing
                 "second" => CreateSecond(arguments),
                 "dayofweek" => CreateDayOfWeek(arguments),
                 "date" => CreateDate(arguments),
+#if NET6_0_OR_GREATER
+                "time" => CreateTime(arguments),
+#endif
                 "addyears" => CreateAddYears(arguments),
                 "addmonths" => CreateAddMonths(arguments),
                 "adddays" => CreateAddDays(arguments),
@@ -81,8 +84,16 @@ namespace Expresso.Parsing
         private static AbstractExpression CreateDate(List<AbstractExpression> arguments)
         {
             RequireCount(arguments, 1, "Date() function should have 1 argument.");
-            return new DateFunc(CoerceToDateTime(arguments[0]));
+            return new DateFunc(CoerceToString(arguments[0]));
         }
+
+#if NET6_0_OR_GREATER
+        private static AbstractExpression CreateTime(List<AbstractExpression> arguments)
+        {
+            RequireCount(arguments, 1, "Time() function should have 1 argument.");
+            return new TimeFunc(CoerceToString(arguments[0]));
+        }
+#endif
 
         private static AbstractExpression CreateAddYears(List<AbstractExpression> arguments)
         {

@@ -17,7 +17,7 @@ Exactly 2 arguments.
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `leftOperand` | `byte`, `int`, `double`, `DateTime`, `bool`, or `string` |
+| 1 | `leftOperand` | `byte`, `int`, `double`, `DateTime`, `bool`, `string`, `Guid`; plus `DateOnly`/`TimeOnly` on net6.0 |
 | 2 | `rightOperand` | Same set; see compatibility rule below |
 
 ## Type compatibility rule
@@ -27,6 +27,9 @@ Exactly 2 arguments.
 - both `bool`
 - both `string`
 - both `DateTime`
+- both `Guid`
+- both `DateOnly` (net6.0)
+- both `TimeOnly` (net6.0)
 - both numeric (`byte`/`int`/`double`, mixed numeric types allowed, e.g. `byte` vs `int`)
 
 Any other pairing → `ArgumentException("Incompatible argument types")`.

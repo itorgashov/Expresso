@@ -27,6 +27,15 @@ namespace Expresso.Tests.Core.CriteriaExpressions
         }
 
         [Fact]
+        public void Literal_GuidValue_SetsReturnType()
+        {
+            var guid = Guid.Parse("550e8400-e29b-41d4-a716-446655440000");
+            var literal = new Literal(guid);
+            Assert.Equal(guid, literal.Value);
+            Assert.Equal(typeof(Guid), literal.ReturnType);
+        }
+
+        [Fact]
         public void Equals_ReturnsTrue_ForSameValue()
         {
             Literal literal1 = new(42);

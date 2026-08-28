@@ -12,6 +12,11 @@ namespace Expresso.Tests.Core.CriteriaExpressions
         [InlineData(typeof(int))]
         [InlineData(typeof(double))]
         [InlineData(typeof(DateTime))]
+        [InlineData(typeof(Guid))]
+#if NET6_0_OR_GREATER
+        [InlineData(typeof(DateOnly))]
+        [InlineData(typeof(TimeOnly))]
+#endif
         public void IsNullFunc_ValidArgumentTypes_SetsReturnType(Type argumentType)
         {
             var argument = new MockExpressionOfType(argumentType);
