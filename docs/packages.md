@@ -27,7 +27,8 @@ Namespace: `Expresso.Parsing`.
 
 - `IFilterParser` / `FilterParser` — turns a filter query string into a `FilterCriteria` (throws if the parsed root is not a boolean expression).
 - `ISortDirectiveParser` / `SortDirectiveParser` — turns a sort query string into a `SortDirective`.
-- DI registration: `services.AddRequestParametersParsers()` registers both as singletons.
+- `LiteralParseOptions` — optional culture and date/time format patterns for quoted literals (defaults preserve ISO dates and invariant time-of-day rules).
+- DI registration: `services.AddRequestParametersParsers()` (defaults), `AddRequestParametersParsers(Action<LiteralParseOptions>)`, or `AddRequestParametersParsers(LiteralParseOptions)`.
 - The tokenizer/recursive-descent parser (`ExpressionParser`) is internal — not part of the public API.
 
 Typically referenced by whichever layer reads incoming query parameters (usually the **presentation/API layer** — a controller, minimal API handler, or an application-service method that accepts raw query strings).
@@ -45,7 +46,7 @@ Typically referenced by the **data-access layer** (ADO.NET/Dapper repository) th
 
 - **Target frameworks:** `netstandard2.0` and `net6.0`. NuGet packages contain both assemblies under `lib/netstandard2.0` and `lib/net6.0`.
 - **Typical consumers:** .NET Framework 4.6.1+ (via `netstandard2.0`), .NET Standard 2.0 libraries, and .NET 6+ (prefer `net6.0` when your app targets .NET 6 or later).
-- **Supported CLR types:** `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid` on all TFMs; `DateOnly` and `TimeOnly` when referencing the **net6.0** assembly.
+- **Supported CLR types:** `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`, `TimeSpan` (time-of-day) on all TFMs; `DateOnly` and `TimeOnly` when referencing the **net6.0** assembly.
 - **Not supported:** `float`, `decimal`.
 
 See [docs/query-syntax.md](query-syntax.md) for literal syntax and quoting rules for each type.

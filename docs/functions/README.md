@@ -90,11 +90,11 @@ Every filter/sort function Expresso supports, grouped by semantic category. Func
 | [`second`](datetime-getter/second.md) | Second (0–59) | `int` |
 | [`dayofweek`](datetime-getter/dayofweek.md) | Day of week, `Sunday=0` … `Saturday=6` | `int` |
 | [`date`](datetime-getter/date.md) | SQL `CAST` to calendar date | `DateOnly` (net6.0) / `DateTime` (netstandard2.0) |
-| [`time`](datetime-getter/time.md) | SQL `CAST` to time-of-day (net6.0 only) | `TimeOnly` |
+| [`time`](datetime-getter/time.md) | SQL `CAST` to time-of-day | `TimeOnly` (net6.0) / `TimeSpan` (netstandard2.0) |
 
 ## DateTime arithmetic
 
-Return type matches the first argument: `DateTime`, `DateOnly` (calendar `add*`), or `TimeOnly` (time `add*`) on net6.0.
+Return type matches the first argument: `DateTime`, `DateOnly` (calendar `add*`), `TimeOnly` (time `add*` on net6.0), or `TimeSpan` (time `add*` on netstandard2.0).
 
 | Function | Description |
 |---|---|

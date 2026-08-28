@@ -11,13 +11,13 @@ addhours(datetime, amount)
 Exactly 2 arguments.
 
 - **Category:** DateTime arithmetic
-- **Return type:** same as first argument (`DateTime` or `TimeOnly` on net6.0)
+- **Return type:** same as first argument (`DateTime`, `TimeSpan` on netstandard2.0, or `TimeOnly` on net6.0)
 
 ## Arguments
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `dateTime` | `DateTime` or `TimeOnly` (net6.0) |
+| 1 | `dateTime` | `DateTime`, `TimeSpan` (time-of-day), or `TimeOnly` (net6.0) |
 | 2 | `amount` | `int` — zero and negative values are allowed |
 
 ## Validation & exceptions

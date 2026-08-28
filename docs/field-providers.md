@@ -25,7 +25,12 @@ Each method returns an array of `(string fieldName, Type fieldType)` tuples — 
 
 ## The `context` parameter
 
-`context` lets one provider serve multiple endpoints/entities from a single implementation — for example, a `"book"` context returning book fields and an `"author"` context returning author fields, both looked up by the same injected `IRequestFieldsInfoProvider`. It is an opaque string you define; there is no fixed vocabulary. The convention used by the sample app is a lower-cased entity name (`"book"`, `"author"`, `"publisher"`) matched case-insensitively, with an empty array (`[]`, i.e. nothing filterable/sortable) returned for unknown contexts — see [samples/Expresso.Sample.WebApi/Filtering/RequestFieldsInfoProvider.cs](../samples/Expresso.Sample.WebApi/Filtering/RequestFieldsInfoProvider.cs).
+`context` lets one provider serve multiple endpoints/entities from a single implementation — for example, a `"book"` context returning book fields and an `"author"` context returning author fields, both looked up by the same injected `IRequestFieldsInfoProvider`. It is an opaque string you define; there is no fixed vocabulary. The convention used by the sample apps is a lower-cased entity name (`"book"`, `"author"`, `"publisher"`) matched case-insensitively, with an empty array (`[]`, i.e. nothing filterable/sortable) returned for unknown contexts. Each host has its own implementation:
+
+- [samples/Expresso.Sample.WebApi/Filtering/RequestFieldsInfoProvider.cs](../samples/Expresso.Sample.WebApi/Filtering/RequestFieldsInfoProvider.cs) — `DateOnly` / `TimeOnly` (net10, Expresso `net6.0`)
+- [samples/Expresso.Sample.WebApi.NetFx/Filtering/RequestFieldsInfoProvider.cs](../samples/Expresso.Sample.WebApi.NetFx/Filtering/RequestFieldsInfoProvider.cs) — `DateTime` / `TimeSpan` (net48, Expresso `netstandard2.0`)
+
+Query field names are the same (`opens` → SQL `opens_at`). `externalid` (Guid) is listed for filter but omitted from sort (Guid is not orderable).
 
 ## Filter fields vs. sort fields
 
@@ -49,6 +54,7 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider
             ("price", typeof(double)),
             ("rating", typeof(double)),
             ("createdat", typeof(DateTime)),
+            ("externalid", typeof(Guid)),
         ],
         "author" =>
         [
@@ -56,6 +62,15 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider
             ("lastname", typeof(string)),
             ("displayname", typeof(string)),
             ("dateofbirth", typeof(DateTime)),
+            ("createdat", typeof(DateTime)),
+        ],
+        "publisher" =>
+        [
+            ("name", typeof(string)),
+            ("country", typeof(string)),
+            ("location", typeof(string)),
+            ("opens", typeof(TimeSpan)),
+            ("closes", typeof(TimeSpan)),
         ],
         _ => []
     };

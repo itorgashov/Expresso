@@ -27,8 +27,22 @@ If a single project does both jobs (as in the sample), install `Expresso.Parsing
 using Expresso.Parsing;
 using Expresso.SqlServer;
 
-builder.Services.AddRequestParametersParsers();     // IFilterParser, ISortDirectiveParser
+builder.Services.AddRequestParametersParsers();     // IFilterParser, ISortDirectiveParser (default literal rules)
 builder.Services.AddExpressionTransformations();    // IExpressionToQueryClauseTransformer
+```
+
+Optional: configure date/time literal parsing (culture and format patterns):
+
+```csharp
+builder.Services.AddRequestParametersParsers(o =>
+{
+    o.CultureName = "nl-NL";
+    o.DateTimeFormats = new[] { "dd-MM-yyyy", "yyyy-MM-dd" };
+});
+
+// Or bind from appsettings (host only — Expresso.Parsing does not reference IConfiguration):
+// builder.Services.AddRequestParametersParsers(
+//     builder.Configuration.GetSection("Expresso:Parsing").Get<LiteralParseOptions>() ?? new());
 ```
 
 ## 3. Implement `IRequestFieldsInfoProvider`

@@ -17,12 +17,12 @@ Exactly 2 arguments.
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `leftOperand` | `byte`, `int`, `double`, `DateTime`; plus `DateOnly`/`TimeOnly` on net6.0 |
+| 1 | `leftOperand` | `byte`, `int`, `double`, `DateTime`, `TimeSpan`; plus `DateOnly`/`TimeOnly` on net6.0 |
 | 2 | `rightOperand` | Same set; see compatibility rule below |
 
 ## Type compatibility rule
 
-`GtFunc` first applies the base comparison check (both `bool`, both `string`, both `DateTime`, both `Guid`, both `DateOnly`/`TimeOnly` on net6.0, or both numeric), then narrows further: only **numeric-vs-numeric** (mixed `byte`/`int`/`double`), **`DateTime` vs `DateTime`**, or same-type **`DateOnly`/`TimeOnly`** on net6.0 are accepted. `Guid` and `bool`/`string` pairs pass the base check but are then rejected — ordering comparisons don't apply to those types.
+`GtFunc` first applies the base comparison check (both `bool`, both `string`, both `DateTime`, both `Guid`, both `TimeSpan`, both `DateOnly`/`TimeOnly` on net6.0, or both numeric), then narrows further: only **numeric-vs-numeric** (mixed `byte`/`int`/`double`), **`DateTime` vs `DateTime`**, **`TimeSpan` vs `TimeSpan`**, or same-type **`DateOnly`/`TimeOnly`** on net6.0 are accepted. `Guid` and `bool`/`string` pairs pass the base check but are then rejected — ordering comparisons don't apply to those types.
 
 ## Validation & exceptions
 

@@ -17,7 +17,7 @@ Exactly 2 arguments.
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `leftOperand` | `byte`, `int`, `double`, `DateTime`, `bool`, `string`, `Guid`; plus `DateOnly`/`TimeOnly` on net6.0 |
+| 1 | `leftOperand` | `byte`, `int`, `double`, `DateTime`, `bool`, `string`, `Guid`, `TimeSpan`; plus `DateOnly`/`TimeOnly` on net6.0 |
 | 2 | `rightOperand` | Same set; see compatibility rule below |
 
 ## Type compatibility rule
@@ -28,6 +28,7 @@ Exactly 2 arguments.
 - both `string`
 - both `DateTime`
 - both `Guid`
+- both `TimeSpan` (time-of-day)
 - both `DateOnly` (net6.0)
 - both `TimeOnly` (net6.0)
 - both numeric (`byte`/`int`/`double`, mixed numeric types allowed, e.g. `byte` vs `int`)

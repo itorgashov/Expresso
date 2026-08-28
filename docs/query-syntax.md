@@ -38,25 +38,47 @@ createdAt,desc,name,asc
 | Type | Syntax | Notes |
 |---|---|---|
 | `string` | `"text"` | Must be double-quoted. No escaped quotes inside the literal. |
-| `DateTime` | `"2021-01-01"` | Double-quoted; parsed with `DateTime.TryParse` using the **current culture** — prefer ISO `yyyy-MM-dd` (or a full ISO timestamp) to avoid locale-dependent parsing. |
+| `DateTime` | `"2021-01-01"` | Double-quoted; default ISO `yyyy-MM-dd` exact parse (invariant), then current-culture `TryParse` fallback. Overridable via `LiteralParseOptions` (see below). |
 | `Guid` | `"550e8400-e29b-41d4-a716-446655440000"` | Must be double-quoted; `Guid.TryParse` after stripping quotes. |
-| `DateOnly` | `"2021-01-01"` | **net6.0 package TFM only.** Double-quoted; ISO `yyyy-MM-dd` preferred (`DateOnly.TryParseExact`), with culture fallback. |
-| `TimeOnly` | `"14:30:00"` or `"14:30"` | **net6.0 package TFM only.** Double-quoted; `HH:mm:ss` / `HH:mm` preferred, with culture fallback. |
+| `TimeSpan` (time-of-day) | `"14:30:00"` or `"14:30"` | **All TFMs.** Clock time only; default invariant `hh:mm` / `hh:mm:ss` exact parse (no culture fallback). Overridable via `LiteralParseOptions`. |
+| `DateOnly` | `"2021-01-01"` | **net6.0 package TFM only.** Default ISO `yyyy-MM-dd` exact, then culture fallback. Overridable via `LiteralParseOptions`. |
+| `TimeOnly` | `"14:30:00"` or `"14:30"` | **net6.0 package TFM only.** Default `HH:mm:ss` / `HH:mm` exact, then culture fallback. Overridable via `LiteralParseOptions`. |
 | `int` / `byte` | `25` | Unquoted. Whichever of `byte`/`int` matches the target type (usually inferred from the paired field). |
 | `double` | `19.99` or `1e3` | Unquoted; a value is treated as a `double` if it contains `.`, `e`, or `E`. |
 | `bool` | *(not supported)* | There is no boolean literal syntax. |
 
 Numeric literal type inference: when a literal is compared against a field or another literal, its target type is generally taken from the first operand's `ReturnType` (or an explicit target type for single-typed functions, e.g. `substring`'s 2nd/3rd arguments always coerce to `int`). See each function's page under [docs/functions/](functions/README.md) for the exact per-argument coercion.
 
+### Configuring date/time literal parsing
+
+Use `LiteralParseOptions` (in `Expresso.Parsing`) to set `CultureName`, per-type format arrays (`DateTimeFormats`, `DateFormats`, `TimeFormats`, `TimeSpanFormats`), and `AllowCultureFallback`. When nothing is configured, the defaults in the table above apply.
+
+```csharp
+services.AddRequestParametersParsers(o =>
+{
+    o.CultureName = "nl-NL";
+    o.DateTimeFormats = new[] { "dd-MM-yyyy", "yyyy-MM-dd" };
+});
+```
+
+Bind from `IConfiguration` in your host (not inside the library):
+
+```csharp
+services.AddRequestParametersParsers(
+    configuration.GetSection("Expresso:Parsing").Get<LiteralParseOptions>() ?? new());
+```
+
+First matching format wins when multiple patterns are listed.
+
 ## Supported types
 
-**All TFMs:** `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`.
+**All TFMs:** `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`, `TimeSpan` (time-of-day only — not SQL intervals).
 
 **net6.0 package TFM only:** `DateOnly`, `TimeOnly` (not available when referencing `lib/netstandard2.0`).
 
 **Not supported:** `float`, `decimal`.
 
-`DateTime`, `DateOnly`, and `TimeOnly` are **not interchangeable** in comparisons — use [`date()`](functions/datetime-getter/date.md) / [`time()`](functions/datetime-getter/time.md) to convert in SQL when needed.
+`DateTime`, `DateOnly`, `TimeOnly`, and `TimeSpan` are **not interchangeable** in comparisons — use [`date()`](functions/datetime-getter/date.md) / [`time()`](functions/datetime-getter/time.md) to convert in SQL when needed. `TimeOnly` and `TimeSpan` are also not interchangeable with each other.
 
 ## Field and literal "operands"
 

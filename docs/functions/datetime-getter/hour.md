@@ -17,7 +17,7 @@ Exactly 1 argument.
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `argument` | `DateTime` or `TimeOnly` (net6.0) |
+| 1 | `argument` | `DateTime`, `TimeSpan` (time-of-day), or `TimeOnly` (net6.0) |
 
 ## Validation & exceptions
 
@@ -25,7 +25,7 @@ Exactly 1 argument.
 - **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
 - **IR construction** (`HourFunc`, via base `DateTimeSingleArgIntFunction`):
   - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not `DateTime` → `ArgumentException`
+  - Argument's `ReturnType` is not an allowed time type → `ArgumentException`
 
 ## SQL Server rendering
 

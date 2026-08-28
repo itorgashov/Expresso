@@ -17,7 +17,7 @@ Exactly 1 argument.
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `argument` | `bool`, `string`, `byte`, `int`, `double`, `DateTime`, `Guid`; plus `DateOnly`/`TimeOnly` on net6.0 |
+| 1 | `argument` | `bool`, `string`, `byte`, `int`, `double`, `DateTime`, `Guid`, `TimeSpan`; plus `DateOnly`/`TimeOnly` on net6.0 |
 
 ## Validation & exceptions
 

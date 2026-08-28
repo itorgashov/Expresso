@@ -2,7 +2,7 @@
 
 Converts a value to a SQL Server `time` (time-of-day only). Conversion happens in SQL via `CAST`; no C# conversion is performed in the function itself.
 
-**Availability:** net6.0 package TFM only (`time` is not compiled into `netstandard2.0`).
+**Availability:** all package TFMs (`netstandard2.0` and `net6.0`).
 
 ## Syntax
 
@@ -13,13 +13,13 @@ time(value)
 Exactly 1 argument.
 
 - **Category:** DateTime getter / conversion
-- **Return type:** `TimeOnly`
+- **Return type:** `TimeOnly` on **net6.0**; `TimeSpan` (time-of-day) on **netstandard2.0**
 
 ## Arguments
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `value` | `DateTime`, `string`, or `TimeOnly` |
+| 1 | `value` | `DateTime`, `string`; plus `TimeOnly` on net6.0 or `TimeSpan` on netstandard2.0 |
 
 ## Validation & exceptions
 
@@ -35,9 +35,12 @@ Exactly 1 argument.
 CAST(value AS time)
 ```
 
-Example: `eq(time(createdat),"14:30:00")` renders as `(CAST([created_at] AS time) = @wparam_0)`.
+Example (netstandard2.0): `eq(time(createdat),"14:30")` renders as `(CAST([created_at] AS time) = @wparam_0)` with a `TimeSpan` parameter.
+
+Example (net6.0): `eq(time(createdat),"14:30:00")` renders similarly with a `TimeOnly` parameter.
 
 ## Notes
 
-- Compare `time(...)` results to `TimeOnly` fields/literals, not raw `DateTime` fields.
+- On **net6.0**, compare `time(...)` results to `TimeOnly` fields/literals. On **netstandard2.0**, use `TimeSpan` fields/literals (e.g. `eq(opens,"09:00")` on a SQL `time` column).
+- Do not use `TimeSpan` in the field catalog for SQL **interval** columns — Expresso treats it as clock time-of-day only.
 - Pair with [`hour`](hour.md), [`minute`](minute.md), [`second`](second.md) for time components.
