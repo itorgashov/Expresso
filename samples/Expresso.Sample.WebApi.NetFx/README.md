@@ -35,3 +35,5 @@ Same as the ASP.NET Core sample:
 | Books | `GET /api/books?filter=&sort=` | `GET /api/books/{id}` |
 | Authors | `GET /api/authors?filter=&sort=` | `GET /api/authors/{id}` |
 | Publishers | `GET /api/publishers?filter=&sort=` | `GET /api/publishers/{id}` |
+
+Example: `GET /api/publishers?filter=eq(opens,"09:00")` (time-of-day field mapped as `TimeSpan` on this host).

@@ -13,6 +13,7 @@ namespace Expresso.Tests.Core.CriteriaExpressions
         [InlineData(typeof(string), typeof(string))]
         [InlineData(typeof(DateTime), typeof(DateTime))]
         [InlineData(typeof(Guid), typeof(Guid))]
+        [InlineData(typeof(TimeSpan), typeof(TimeSpan))]
 #if NET6_0_OR_GREATER
         [InlineData(typeof(DateOnly), typeof(DateOnly))]
         [InlineData(typeof(TimeOnly), typeof(TimeOnly))]
@@ -39,7 +40,9 @@ namespace Expresso.Tests.Core.CriteriaExpressions
         [InlineData(typeof(string), typeof(double))]
         [InlineData(typeof(bool), typeof(DateTime))]
         [InlineData(typeof(Guid), typeof(int))]
+        [InlineData(typeof(TimeSpan), typeof(DateTime))]
 #if NET6_0_OR_GREATER
+        [InlineData(typeof(TimeSpan), typeof(TimeOnly))]
         [InlineData(typeof(DateOnly), typeof(DateTime))]
         [InlineData(typeof(DateTime), typeof(DateOnly))]
 #endif

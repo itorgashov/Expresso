@@ -31,9 +31,42 @@ namespace Expresso.Tests.SqlServer
             Assert.Equal(guid, result.parameters["@param_0"]);
         }
 
+        [Fact]
+        public void GenerateWhereClause_TimeSpanFieldEq_ReturnsParameterizedSql()
+        {
+            var fieldMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "opens", "p.opens" },
+            };
+            var timeOfDay = new TimeSpan(14, 30, 0);
+            FilterCriteria filter = new()
+            {
+                Expression = new EqFunc(new Field("opens", typeof(TimeSpan)), new Literal(timeOfDay))
+            };
+
+            var result = _transformer.RenderWhereClause(filter, fieldMap, ParamPrefix);
+
+            Assert.Equal("([p].[opens] = @param_0)", result.whereClause);
+            Assert.Equal(timeOfDay, result.parameters["@param_0"]);
+        }
+
+#if !NET6_0_OR_GREATER
+        [Fact]
+        public void GenerateWhereClause_TimeFuncWithTimeSpanLiteral_ReturnsCastSql()
+        {
+            var timeOfDay = new TimeSpan(14, 30, 0);
+            var result = RenderEq(
+                new TimeFunc(new Field("createdat", typeof(DateTime))),
+                new Literal(timeOfDay));
+
+            Assert.Equal("(CAST([b].[created_at] AS time) = @param_0)", result.whereClause);
+            Assert.Equal(timeOfDay, result.parameters["@param_0"]);
+        }
+#endif
+
 #if NET6_0_OR_GREATER
         [Fact]
-        public void GenerateWhereClause_Time_ReturnsCastSql()
+        public void GenerateWhereClause_TimeOnlyLiteral_ReturnsCastSql()
         {
             var result = RenderEq(
                 new TimeFunc(new Field("createdat", typeof(DateTime))),

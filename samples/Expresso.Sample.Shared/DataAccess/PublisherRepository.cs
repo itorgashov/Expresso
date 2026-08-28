@@ -24,6 +24,8 @@ public sealed class PublisherRepository : IRepository<Publisher>
         { "name", "p.name" },
         { "country", "p.country" },
         { "location", "p.location" },
+        { "opens", "p.opens_at" },
+        { "closes", "p.closes_at" },
     };
 
     private const string BaseSelect =
@@ -31,7 +33,9 @@ public sealed class PublisherRepository : IRepository<Publisher>
         " p.id," +
         " p.name," +
         " p.country," +
-        " p.location" +
+        " p.location," +
+        " p.opens_at," +
+        " p.closes_at" +
         " FROM dbo.publisher AS p";
 
     public PublisherRepository(
@@ -126,5 +130,7 @@ public sealed class PublisherRepository : IRepository<Publisher>
             Name = reader.GetString(1),
             Country = reader.GetString(2),
             Location = reader.IsDBNull(3) ? null : reader.GetString(3),
+            OpensAt = reader.GetTimeSpan(4),
+            ClosesAt = reader.GetTimeSpan(5),
         };
 }

@@ -9,6 +9,5 @@ public sealed class AuthorViewModel
     public string LastName { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;
     public DateTime? DateOfBirth { get; init; }
-    public DateTime? DateOfDeath { get; init; }
     public DateTime CreatedAt { get; init; }
 }

@@ -16,6 +16,7 @@ public static class ViewModelMapper
             Price = book.Price,
             Rating = book.Rating,
             CreatedAt = book.CreatedAt,
+            ExternalId = book.ExternalId,
             Publisher = book.Publisher,
             Authors = book.Authors.ToList(),
         };
@@ -28,7 +29,6 @@ public static class ViewModelMapper
             LastName = author.LastName,
             DisplayName = author.DisplayName,
             DateOfBirth = author.DateOfBirth,
-            DateOfDeath = author.DateOfDeath,
             CreatedAt = author.CreatedAt,
         };
 
@@ -39,5 +39,7 @@ public static class ViewModelMapper
             Name = publisher.Name,
             Country = publisher.Country,
             Location = publisher.Location,
+            OpensAt = publisher.OpensAt,
+            ClosesAt = publisher.ClosesAt,
         };
 }

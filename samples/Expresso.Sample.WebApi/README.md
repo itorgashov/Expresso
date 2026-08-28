@@ -48,6 +48,10 @@ Open Swagger UI at `/swagger`.
 
 - `GET /api/authors?filter=eq(firstname,"George")&sort=lastname,asc`
 
+**Publishers**
+
+- `GET /api/publishers?filter=eq(opens,"09:00")` — time-of-day field (`TimeOnly` on this host / SQL `TIME`)
+
 ## Architecture
 
 - **This project:** ASP.NET Core host, Swagger, `SqlConnectionFactory`, and thin controllers.

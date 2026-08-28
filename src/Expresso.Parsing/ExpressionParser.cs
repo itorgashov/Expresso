@@ -7,25 +7,12 @@ namespace Expresso.Parsing
 {
     internal sealed partial class ExpressionParser
     {
-        private static ExpressionParser Instance = null;
-        private static readonly object Instancelock = new object();
-        public static ExpressionParser GetInstance()
+        private readonly LiteralParseSettings _settings;
+
+        internal ExpressionParser(LiteralParseOptions? options = null)
         {
-            if (Instance == null)
-            {
-                lock (Instancelock)
-                {
-                    if (Instance == null)
-                    {
-                        Instance = new ExpressionParser();
-                    }
-                }
-            }
-
-            return Instance;
+            _settings = (options ?? LiteralParseOptions.Default).ToSettings();
         }
-
-        private ExpressionParser() { }
 
         private static readonly Regex _nameRegex = new Regex(@"^[a-zA-Z_][a-zA-Z0-9_]*$", RegexOptions.Compiled);
 
@@ -72,7 +59,7 @@ namespace Expresso.Parsing
             return expression;
         }
 
-        private TokenContainer Tokenize(string query)
+        private static TokenContainer Tokenize(string query)
         {
             var tokens = new TokenContainer();
             var regex = new Regex(@"(?<string>""[^""]*"")|(?<number>-?\d+(\.\d+)?([eE][+-]?\d+)?)|(?<alphanumeric>[a-zA-Z_][a-zA-Z0-9_]*)|(?<special>[(),])|(?<suspicious>[^\sa-zA-Z0-9_\-(),""][^\s(),""]*)");
@@ -109,7 +96,7 @@ namespace Expresso.Parsing
             return tokens;
         }
 
-        private static AbstractExpression ParseExpression(Dictionary<string, Type> validFields, TokenContainer tokens)
+        private AbstractExpression ParseExpression(Dictionary<string, Type> validFields, TokenContainer tokens)
         {
             var token = tokens.GetNextToken();
             if (token == null)
@@ -163,16 +150,16 @@ namespace Expresso.Parsing
         {
             if (string.IsNullOrEmpty(token))
             {
-                return false; // Empty or null names are invalid
+                return false;
             }
 
             return _nameRegex.IsMatch(token);
         }
 
-        private static AbstractExpression ParseFunction(string token, Dictionary<string, Type> validFields, TokenContainer tokens)
+        private AbstractExpression ParseFunction(string token, Dictionary<string, Type> validFields, TokenContainer tokens)
         {
             var functionName = token;
-            tokens.GetNextToken(); // Skip '('
+            tokens.GetNextToken();
 
             var arguments = new List<AbstractExpression>();
             string? currentToken;
@@ -220,7 +207,7 @@ namespace Expresso.Parsing
             return CreateFunction(functionName, arguments);
         }
 
-        private static AbstractExpression CreateFunction(string functionName, List<AbstractExpression> arguments)
+        private AbstractExpression CreateFunction(string functionName, List<AbstractExpression> arguments)
         {
             switch (functionName.ToLower())
             {
@@ -337,7 +324,7 @@ namespace Expresso.Parsing
             }
         }
 
-        private static AbstractExpression CreateComparisonFunction<T>(List<AbstractExpression> arguments) where T : ComparisonFunction
+        private AbstractExpression CreateComparisonFunction<T>(List<AbstractExpression> arguments) where T : ComparisonFunction
         {
             Type firstArgType;
             if (arguments[0] is StringLiteral ltrl)
@@ -362,20 +349,20 @@ namespace Expresso.Parsing
                 }
             }
 
-            return (T)Activator.CreateInstance(typeof(T), arguments[0], arguments[1]);
+            return (T)Activator.CreateInstance(typeof(T), arguments[0], arguments[1])!;
         }
 
-        private static AbstractExpression CreateNumericSingleArgFunction<T>(List<AbstractExpression> arguments) where T : NumericSingleArgFunction
+        private AbstractExpression CreateNumericSingleArgFunction<T>(List<AbstractExpression> arguments) where T : NumericSingleArgFunction
         {
             if (arguments[0] is StringLiteral ltrl)
             {
                 arguments[0] = CreateLiteral(ltrl.Value, GetLiteralType(ltrl.Value));
             }
 
-            return (T)Activator.CreateInstance(typeof(T), arguments[0]);
+            return (T)Activator.CreateInstance(typeof(T), arguments[0])!;
         }
 
-        private static AbstractExpression CreateNumericArithFunction<T>(List<AbstractExpression> arguments) where T : NumericArithFunction
+        private AbstractExpression CreateNumericArithFunction<T>(List<AbstractExpression> arguments) where T : NumericArithFunction
         {
             if (arguments[0] is StringLiteral ltrl1)
             {
@@ -386,10 +373,10 @@ namespace Expresso.Parsing
                 arguments[1] = CreateLiteral(ltrl2.Value, GetLiteralType(ltrl2.Value));
             }
 
-            return (T)Activator.CreateInstance(typeof(T), arguments[0], arguments[1]);
+            return (T)Activator.CreateInstance(typeof(T), arguments[0], arguments[1])!;
         }
 
-        private static AbstractExpression CreateInFunction(List<AbstractExpression> arguments)
+        private AbstractExpression CreateInFunction(List<AbstractExpression> arguments)
         {
             if (arguments.Count < 2)
             {
@@ -407,7 +394,6 @@ namespace Expresso.Parsing
                 firstArgType = arguments[0].ReturnType;
             }
 
-            // Ensure all arguments are of the same type as the first argument
             for (int i = 1; i < arguments.Count; i++)
             {
                 if (arguments[i] is StringLiteral stringLiteral)
@@ -437,7 +423,7 @@ namespace Expresso.Parsing
             }
         }
 
-        private static AbstractExpression CreateLiteral(string value, Type targetType)
+        private AbstractExpression CreateLiteral(string value, Type targetType)
         {
             if (targetType == typeof(byte))
             {
@@ -466,7 +452,7 @@ namespace Expresso.Parsing
             else if (targetType == typeof(DateTime))
             {
                 string strippedValue = StripQuotedToken(value, targetType);
-                if (DateTime.TryParse(strippedValue, out var dateValue))
+                if (TryParseDateTime(strippedValue, out var dateValue))
                 {
                     return new Literal(dateValue);
                 }
@@ -481,12 +467,20 @@ namespace Expresso.Parsing
                 }
                 throw new ArgumentException($"Cannot parse '{strippedValue}' as {targetType}.");
             }
+            else if (targetType == typeof(TimeSpan))
+            {
+                string strippedValue = StripQuotedToken(value, targetType);
+                if (TryParseTimeOfDay(strippedValue, out var timeOfDay))
+                {
+                    return new Literal(timeOfDay);
+                }
+                throw new ArgumentException($"Cannot parse '{strippedValue}' as {targetType}.");
+            }
 #if NET6_0_OR_GREATER
             else if (targetType == typeof(DateOnly))
             {
                 string strippedValue = StripQuotedToken(value, targetType);
-                if (DateOnly.TryParseExact(strippedValue, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateOnlyValue)
-                    || DateOnly.TryParse(strippedValue, out dateOnlyValue))
+                if (TryParseDateOnly(strippedValue, out var dateOnlyValue))
                 {
                     return new Literal(dateOnlyValue);
                 }
@@ -495,9 +489,7 @@ namespace Expresso.Parsing
             else if (targetType == typeof(TimeOnly))
             {
                 string strippedValue = StripQuotedToken(value, targetType);
-                if (TimeOnly.TryParseExact(strippedValue, "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var timeOnlyValue)
-                    || TimeOnly.TryParseExact(strippedValue, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out timeOnlyValue)
-                    || TimeOnly.TryParse(strippedValue, out timeOnlyValue))
+                if (TryParseTimeOnly(strippedValue, out var timeOnlyValue))
                 {
                     return new Literal(timeOnlyValue);
                 }
@@ -514,6 +506,74 @@ namespace Expresso.Parsing
             }
         }
 
+        private bool TryParseDateTime(string strippedValue, out DateTime dateValue)
+        {
+            if (DateTime.TryParseExact(
+                    strippedValue,
+                    _settings.DateTimeFormats,
+                    _settings.ExactCulture,
+                    DateTimeStyles.None,
+                    out dateValue))
+            {
+                return true;
+            }
+
+            if (_settings.AllowCultureFallback
+                && DateTime.TryParse(strippedValue, _settings.FallbackCulture, DateTimeStyles.None, out dateValue))
+            {
+                return true;
+            }
+
+            dateValue = default;
+            return false;
+        }
+
+#if NET6_0_OR_GREATER
+        private bool TryParseDateOnly(string strippedValue, out DateOnly dateOnlyValue)
+        {
+            if (DateOnly.TryParseExact(
+                    strippedValue,
+                    _settings.DateFormats,
+                    _settings.ExactCulture,
+                    DateTimeStyles.None,
+                    out dateOnlyValue))
+            {
+                return true;
+            }
+
+            if (_settings.AllowCultureFallback
+                && DateOnly.TryParse(strippedValue, _settings.FallbackCulture, DateTimeStyles.None, out dateOnlyValue))
+            {
+                return true;
+            }
+
+            dateOnlyValue = default;
+            return false;
+        }
+
+        private bool TryParseTimeOnly(string strippedValue, out TimeOnly timeOnlyValue)
+        {
+            if (TimeOnly.TryParseExact(
+                    strippedValue,
+                    _settings.TimeFormats,
+                    _settings.ExactCulture,
+                    DateTimeStyles.None,
+                    out timeOnlyValue))
+            {
+                return true;
+            }
+
+            if (_settings.AllowCultureFallback
+                && TimeOnly.TryParse(strippedValue, _settings.FallbackCulture, DateTimeStyles.None, out timeOnlyValue))
+            {
+                return true;
+            }
+
+            timeOnlyValue = default;
+            return false;
+        }
+#endif
+
         private static string StripQuotedToken(string value, Type targetType)
         {
             if (string.IsNullOrEmpty(value) || value.Length < 2 || value[0] != '"' || value[value.Length - 1] != '"')
@@ -522,6 +582,22 @@ namespace Expresso.Parsing
             }
 
             return value.Substring(1, value.Length - 2);
+        }
+
+        private bool TryParseTimeOfDay(string strippedValue, out TimeSpan timeOfDay)
+        {
+            timeOfDay = default;
+            if (!TimeSpan.TryParseExact(
+                    strippedValue,
+                    _settings.TimeSpanFormats,
+                    _settings.ExactCulture,
+                    TimeSpanStyles.None,
+                    out timeOfDay))
+            {
+                return false;
+            }
+
+            return timeOfDay >= TimeSpan.Zero && timeOfDay < TimeSpan.FromDays(1);
         }
 
         private class StringLiteral : AbstractExpression

@@ -17,6 +17,7 @@ namespace Expresso.Core.CriteriaExpressions.Abstract
                 typeof(bool),
                 typeof(string),
                 typeof(Guid),
+                typeof(TimeSpan),
             };
 
 #if NET6_0_OR_GREATER
@@ -35,6 +36,7 @@ namespace Expresso.Core.CriteriaExpressions.Abstract
                 typeof(int),
                 typeof(double),
                 typeof(DateTime),
+                typeof(TimeSpan),
             };
 
 #if NET6_0_OR_GREATER
@@ -56,6 +58,7 @@ namespace Expresso.Core.CriteriaExpressions.Abstract
                 typeof(double),
                 typeof(DateTime),
                 typeof(Guid),
+                typeof(TimeSpan),
             };
 
 #if NET6_0_OR_GREATER

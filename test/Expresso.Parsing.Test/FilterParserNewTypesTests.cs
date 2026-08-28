@@ -50,6 +50,67 @@ namespace Expresso.Tests.Parsing
             Assert.ThrowsAny<Exception>(() => _parser.Parse($"gt(id, \"{SampleGuid}\")", _validFields));
         }
 
+        [Fact]
+        public void Parse_EqDateTimeIsoLiteral_ParsesCalendarDate()
+        {
+            var result = _parser.Parse("eq(dateFrom, \"1899-12-31\")", _validFields);
+
+            var eqFunc = Assert.IsType<EqFunc>(result.Expression);
+            var literal = Assert.IsType<Literal>(eqFunc.Arguments[1]);
+            Assert.Equal(new DateTime(1899, 12, 31), literal.Value);
+        }
+
+        private readonly (string, Type)[] _timeSpanFields =
+        [
+            ("opens", typeof(TimeSpan)),
+            ("dateFrom", typeof(DateTime)),
+        ];
+
+        [Fact]
+        public void Parse_EqTimeSpanLiteral_ReturnsEqFuncWithTimeSpan()
+        {
+            var result = _parser.Parse("eq(opens, \"14:30\")", _timeSpanFields);
+            Assert.IsType<EqFunc>(result.Expression);
+            var eqFunc = (EqFunc)result.Expression;
+            Assert.IsType<Literal>(eqFunc.Arguments[1]);
+            Assert.Equal(typeof(TimeSpan), eqFunc.Arguments[1].ReturnType);
+            Assert.Equal(new TimeSpan(14, 30, 0), ((Literal)eqFunc.Arguments[1]).Value);
+        }
+
+        [Fact]
+        public void Parse_EqTimeSpanLiteralWithSeconds_ReturnsEqFunc()
+        {
+            var result = _parser.Parse("eq(opens, \"14:30:45\")", _timeSpanFields);
+            var eqFunc = (EqFunc)result.Expression!;
+            Assert.Equal(new TimeSpan(14, 30, 45), ((Literal)eqFunc.Arguments[1]).Value);
+        }
+
+        [Fact]
+        public void Parse_EqTimeSpanLiteral_OutOfRange_Throws()
+        {
+            Assert.Throws<ArgumentException>(() => _parser.Parse("eq(opens, \"25:00\")", _timeSpanFields));
+        }
+
+        [Fact]
+        public void Parse_EqTimeSpanLiteral_DurationForm_Throws()
+        {
+            Assert.Throws<ArgumentException>(() => _parser.Parse("eq(opens, \"1.14:30\")", _timeSpanFields));
+        }
+
+        [Fact]
+        public void Parse_TimeFunctionOnDateTime_ReturnsTimeFunc()
+        {
+            var result = _parser.Parse("eq(time(dateFrom), \"14:30\")", _timeSpanFields);
+            var eqFunc = (EqFunc)result.Expression!;
+            Assert.IsType<TimeFunc>(eqFunc.Arguments[0]);
+            Assert.IsType<Literal>(eqFunc.Arguments[1]);
+#if NET6_0_OR_GREATER
+            Assert.Equal(typeof(TimeOnly), eqFunc.Arguments[1].ReturnType);
+#else
+            Assert.Equal(typeof(TimeSpan), eqFunc.Arguments[1].ReturnType);
+#endif
+        }
+
 #if NET6_0_OR_GREATER
         private readonly (string, Type)[] _dateOnlyFields =
         [
@@ -89,6 +150,9 @@ namespace Expresso.Tests.Parsing
             var result = _parser.Parse("eq(time(dateFrom), \"14:30:00\")", _dateOnlyFields);
             var eqFunc = (EqFunc)result.Expression!;
             Assert.IsType<TimeFunc>(eqFunc.Arguments[0]);
+#if NET6_0_OR_GREATER
+            Assert.Equal(typeof(TimeOnly), eqFunc.Arguments[1].ReturnType);
+#endif
         }
 
         [Fact]

@@ -5,10 +5,20 @@ namespace Expresso.Parsing
 {
     public class FilterParser : IFilterParser
     {
+        private readonly ExpressionParser _expressionParser;
+
+        public FilterParser() : this(LiteralParseOptions.Default)
+        {
+        }
+
+        public FilterParser(LiteralParseOptions options)
+        {
+            _expressionParser = new ExpressionParser(options ?? LiteralParseOptions.Default);
+        }
+
         public FilterCriteria Parse(string query, (string, Type)[] validFields)
         {
-            ExpressionParser parser = ExpressionParser.GetInstance();
-            AbstractExpression? parsedExpression = parser.Parse(query, validFields);
+            AbstractExpression? parsedExpression = _expressionParser.Parse(query, validFields);
 
             if (parsedExpression is BooleanFunction fn)
             {

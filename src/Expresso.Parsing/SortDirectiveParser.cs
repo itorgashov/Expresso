@@ -5,6 +5,17 @@ namespace Expresso.Parsing
 {
     public class SortDirectiveParser : ISortDirectiveParser
     {
+        private readonly ExpressionParser _expressionParser;
+
+        public SortDirectiveParser() : this(LiteralParseOptions.Default)
+        {
+        }
+
+        public SortDirectiveParser(LiteralParseOptions options)
+        {
+            _expressionParser = new ExpressionParser(options ?? LiteralParseOptions.Default);
+        }
+
         public SortDirective Parse(string query, (string, Type)[] validFields)
         {
             List<SortDirectiveItem> items = new List<SortDirectiveItem>();
@@ -12,12 +23,11 @@ namespace Expresso.Parsing
             AbstractExpression? expr = default!;
             SortDirection dir;
 
-            ExpressionParser parser = ExpressionParser.GetInstance();
             for (int i = 0; i < unparsedExpressions.Count; i++)
             {
                 if (i % 2 == 0)
                 {
-                    expr = parser.Parse(unparsedExpressions[i], validFields);
+                    expr = _expressionParser.Parse(unparsedExpressions[i], validFields);
                     if (expr is null)
                     {
                         throw new ArgumentException($"Failed to parse directive [{i / 2 + 1}]");
@@ -51,7 +61,7 @@ namespace Expresso.Parsing
             return new SortDirective(items);
         }
 
-        private List<string> SplitToExpressionList(string input)
+        private static List<string> SplitToExpressionList(string input)
         {
             var tokens = new List<string>();
             int start = 0;

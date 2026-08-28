@@ -18,7 +18,7 @@ namespace Expresso.Core.CriteriaExpressions.Abstract
 
         private static Type[] BuildTimeTypes()
         {
-            var types = new List<Type> { typeof(DateTime) };
+            var types = new List<Type> { typeof(DateTime), typeof(TimeSpan) };
 
 #if NET6_0_OR_GREATER
             types.Add(typeof(TimeOnly));

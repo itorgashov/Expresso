@@ -25,6 +25,7 @@ public sealed class AuthorRepository : IRepository<Author>
         { "lastname", "a.last_name" },
         { "displayname", "a.display_name" },
         { "dateofbirth", "a.date_of_birth" },
+        { "createdat", "a.created_at" },
     };
 
     private const string BaseSelect =
@@ -34,7 +35,6 @@ public sealed class AuthorRepository : IRepository<Author>
         " a.last_name," +
         " a.display_name," +
         " a.date_of_birth," +
-        " a.date_of_death," +
         " a.created_at" +
         " FROM dbo.author AS a";
 
@@ -131,7 +131,6 @@ public sealed class AuthorRepository : IRepository<Author>
             LastName = reader.GetString(2),
             DisplayName = reader.GetString(3),
             DateOfBirth = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
-            DateOfDeath = reader.IsDBNull(5) ? null : reader.GetDateTime(5),
-            CreatedAt = reader.GetDateTime(6),
+            CreatedAt = reader.GetDateTime(5),
         };
 }

@@ -29,6 +29,7 @@ public sealed class BookRepository : IRepository<Book>
         { "price", "b.price" },
         { "rating", "b.rating" },
         { "createdat", "b.created_at" },
+        { "externalid", "b.external_id" },
     };
 
     private const string BaseSelect =
@@ -40,6 +41,7 @@ public sealed class BookRepository : IRepository<Book>
         " b.price," +
         " b.rating," +
         " b.created_at," +
+        " b.external_id," +
         " p.name AS publisher_name" +
         " FROM dbo.book AS b" +
         " INNER JOIN dbo.publisher AS p ON p.id = b.publisher_id";
@@ -147,7 +149,8 @@ public sealed class BookRepository : IRepository<Book>
             Price = reader.GetDecimal(4),
             Rating = reader.GetDouble(5),
             CreatedAt = reader.GetDateTime(6),
-            Publisher = reader.GetString(7),
+            ExternalId = reader.GetGuid(7),
+            Publisher = reader.GetString(8),
         };
 
     private static async Task LoadAuthorsAsync(
