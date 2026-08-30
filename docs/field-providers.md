@@ -90,6 +90,42 @@ var filterCriteria = filterParser.Parse(filterQuery, fieldsProvider.GetValidFilt
 var sortDirective = sortParser.Parse(sortQuery, fieldsProvider.GetValidSortFields("book"));
 ```
 
+## Collections: `QueryModel` and `IRequestQueryModelProvider`
+
+Scalar tuples cannot describe related sets. Apps that expose `any(authors, …)` implement `IRequestQueryModelProvider` as well. Collection item fields live on a nested `QueryModel`; they are **not** extra tuples on the outer field list.
+
+```csharp
+public interface IRequestQueryModelProvider
+{
+    QueryModel GetFilterModel(string context);
+    QueryModel GetSortModel(string context);
+}
+```
+
+Source: [src/Expresso.Core/Filtering/IRequestQueryModelProvider.cs](../src/Expresso.Core/Filtering/IRequestQueryModelProvider.cs).
+
+```text
+QueryModel                  // one per API context, e.g. "book"
+  Fields                    // scalars at THIS scope only
+  Collections[]
+    CollectionModel
+      Name                  // "authors" — used in any(authors, ...)
+      Items : QueryModel    // fields + nested collections of ONE item
+```
+
+A name cannot be both a field and a collection on the same `QueryModel` (constructor throws). Parse with `filterParser.Parse(filter, model)`. The existing `Parse(filter, tuples)` overload is `QueryModel.FromFields(tuples)` (no collections).
+
+**One-level (sample books):** reuse author fields under `authors` on the book model. `displayname` is illegal at book root. `GET /api/authors?filter=eq(displayname,"…")` still uses the flat `"author"` model.
+
+**Nested collections:** put another `CollectionModel` on the **item** model (`authors.Items`), not on the book. The sample database has no `awards` table; nested shape is required in unit tests only.
+
+The SQL renderer is a **parallel tree** (`SqlQueryMapping` / `CollectionSqlMapping`) using the same names (`authors`, `displayname`). The provider never contains `FROM` / `JOIN`.
+
+The sample hosts implement both interfaces on the same class:
+
+- [samples/Expresso.Sample.WebApi/Filtering/RequestFieldsInfoProvider.cs](../samples/Expresso.Sample.WebApi/Filtering/RequestFieldsInfoProvider.cs)
+- [samples/Expresso.Sample.WebApi.NetFx/Filtering/RequestFieldsInfoProvider.cs](../samples/Expresso.Sample.WebApi.NetFx/Filtering/RequestFieldsInfoProvider.cs)
+
 ## Field name exposed vs. database column name
 
-The field name declared here (e.g. `"createdat"`) is **not** necessarily the database column name (e.g. `b.created_at`). That mapping is a separate concern, supplied to the SQL renderer as a `fieldToColumnMap` — see step 5 in [docs/getting-started.md](getting-started.md). Keeping these separate means the query-string vocabulary (what clients type) can stay stable even if you rename columns or change joins/aliases in the underlying SQL.
+The field name declared here (e.g. `"createdat"`) is **not** necessarily the database column name (e.g. `b.created_at`). That mapping is a separate concern, supplied to the SQL renderer as a `fieldToColumnMap` or `SqlQueryMapping` — see step 5 in [docs/getting-started.md](getting-started.md). Keeping these separate means the query-string vocabulary (what clients type) can stay stable even if you rename columns or change joins/aliases in the underlying SQL.

@@ -26,7 +26,9 @@ public static class QueryParametersParser
         {
             try
             {
-                filterCriteria = filterParser.Parse(filter, fieldsProvider.GetValidFilterFields(context));
+                filterCriteria = fieldsProvider is IRequestQueryModelProvider modelProvider
+                    ? filterParser.Parse(filter, modelProvider.GetFilterModel(context))
+                    : filterParser.Parse(filter, fieldsProvider.GetValidFilterFields(context));
             }
             catch
             {
@@ -39,8 +41,9 @@ public static class QueryParametersParser
         {
             try
             {
-                var validFields = fieldsProvider.GetValidSortFields(context);
-                var rawSortDirective = sortDirectiveParser.Parse(sort, validFields);
+                var rawSortDirective = fieldsProvider is IRequestQueryModelProvider modelProvider
+                    ? sortDirectiveParser.Parse(sort, modelProvider.GetSortModel(context))
+                    : sortDirectiveParser.Parse(sort, fieldsProvider.GetValidSortFields(context));
                 sortDirective = rawSortDirective.RemoveDuplicates();
                 if (sortDirective.Items.Count < rawSortDirective.Items.Count)
                 {

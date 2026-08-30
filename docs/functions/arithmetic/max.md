@@ -40,3 +40,4 @@ Example: `eq(max(price,floorPrice),floorPrice)` renders as `((CASE WHEN [price] 
 - Each argument is rendered **once per occurrence** in the `CASE` expression — a parameterized literal argument therefore produces one SQL parameter per occurrence (e.g. `max(age,65)` binds `65` to two separate parameters), not a single shared one.
 - `ReturnType` is copied from `argument1` only.
 - See [`min`](min.md) for the counterpart.
+- Collection overload: when the first argument is a collection name, `max` is [`CollectionMaxFunc`](../collection/max.md), not this scalar form.

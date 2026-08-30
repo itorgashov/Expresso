@@ -16,8 +16,6 @@ namespace Expresso.Parsing
                 "sign" => CreateSign(arguments),
                 "power" or "pow" => CreatePower(arguments),
                 "sqrt" => CreateSqrt(arguments),
-                "min" => CreateMin(arguments),
-                "max" => CreateMax(arguments),
                 _ => null!
             };
 
@@ -58,18 +56,6 @@ namespace Expresso.Parsing
         {
             RequireCount(arguments, 2, "Power() function should have 2 arguments.");
             return CreateNumericArithFunction<PowerFunc>(arguments);
-        }
-
-        private AbstractExpression CreateMin(List<AbstractExpression> arguments)
-        {
-            RequireCount(arguments, 2, "Min() function should have 2 arguments.");
-            return CreateNumericArithFunction<MinFunc>(arguments);
-        }
-
-        private AbstractExpression CreateMax(List<AbstractExpression> arguments)
-        {
-            RequireCount(arguments, 2, "Max() function should have 2 arguments.");
-            return CreateNumericArithFunction<MaxFunc>(arguments);
         }
 
         private AbstractExpression CreateRound(List<AbstractExpression> arguments)

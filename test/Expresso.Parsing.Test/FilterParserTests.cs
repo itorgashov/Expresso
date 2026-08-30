@@ -356,7 +356,7 @@ namespace Expresso.Tests.Parsing
         {
             var query = "eq(name, \"John\")";
 
-            Assert.Throws<ArgumentNullException>(() => _parser.Parse(query, null));
+            Assert.Throws<ArgumentNullException>(() => _parser.Parse(query, ((string, Type)[])null!));
         }
 
         [Fact]

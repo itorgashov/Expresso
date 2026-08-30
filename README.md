@@ -49,7 +49,7 @@ Full grammar, literal/quoting rules, and supported types: [docs/query-syntax.md]
 - [docs/packages.md](docs/packages.md) — purpose of each of the 3 NuGet packages
 - [docs/getting-started.md](docs/getting-started.md) — step-by-step: install, register, implement a field provider, parse, render, execute
 - [docs/query-syntax.md](docs/query-syntax.md) — filter/sort grammar, literals, supported types
-- [docs/field-providers.md](docs/field-providers.md) — `IRequestFieldsInfoProvider` explained
+- [docs/field-providers.md](docs/field-providers.md) — `IRequestFieldsInfoProvider` / `QueryModel` explained
 - [docs/error-handling.md](docs/error-handling.md) — exceptions thrown by parsing and rendering
 - [docs/functions/README.md](docs/functions/README.md) — full function reference, one page per function, grouped by category
 - [docs/sample-app.md](docs/sample-app.md) — walkthrough of the sample Web API
@@ -59,7 +59,7 @@ Full grammar, literal/quoting rules, and supported types: [docs/query-syntax.md]
 - [samples/Expresso.Sample.WebApi](samples/Expresso.Sample.WebApi) — .NET 10 ASP.NET Core host with Swagger
 - [samples/Expresso.Sample.WebApi.NetFx](samples/Expresso.Sample.WebApi.NetFx) — .NET Framework 4.8 OWIN + Web API 2 host
 
-Both share [samples/Expresso.Sample.Shared](samples/Expresso.Sample.Shared) (models, ADO.NET repositories, field catalogs). See [docs/sample-app.md](docs/sample-app.md) for a guided walkthrough.
+Both share [samples/Expresso.Sample.Shared](samples/Expresso.Sample.Shared) (models, ADO.NET repositories). Each host has its own field/`QueryModel` catalog. See [docs/sample-app.md](docs/sample-app.md) for a guided walkthrough.
 
 ## Build
 

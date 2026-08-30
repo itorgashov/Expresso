@@ -364,7 +364,7 @@ namespace Expresso.Tests.SqlServer
                     Expression = new DummyFunction()
                 };
 
-                var exception = Assert.Throws<ArgumentNullException>(() => _transformer.RenderWhereClause(filterCriteria, null!, _paramPrefix));
+                var exception = Assert.Throws<ArgumentNullException>(() => _transformer.RenderWhereClause(filterCriteria, (Dictionary<string, string>)null!, _paramPrefix));
                 Assert.Equal("fieldToColumnMap", exception.ParamName);
             }
 
@@ -555,7 +555,7 @@ namespace Expresso.Tests.SqlServer
                     }
                 );
 
-                var exception = Assert.Throws<ArgumentNullException>(() => transformer.RenderOrderByClause(sortDirective, null!, _paramPrefix));
+                var exception = Assert.Throws<ArgumentNullException>(() => transformer.RenderOrderByClause(sortDirective, (Dictionary<string, string>)null!, _paramPrefix));
                 Assert.Equal("fieldToColumnMap", exception.ParamName);
             }
 

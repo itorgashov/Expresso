@@ -20,32 +20,12 @@ namespace Expresso.SqlServer
         /// <returns>A tuple containing the expression for SQL WHERE clause and a dictionary of parameters that maps parameter names to values.</returns>
         public (string whereClause, Dictionary<string, object> parameters) RenderWhereClause(FilterCriteria filterCriteria, Dictionary<string, string> fieldToColumnMap, string paramNamePrefix)
         {
-            StringBuilder sqlBuilder = new StringBuilder();
-            Dictionary<string, object> parameters = new Dictionary<string, object>();
-
-            if (filterCriteria is null)
-            {
-                throw new ArgumentNullException(nameof(filterCriteria));
-            }
-            if (filterCriteria.Expression is null)
-            {
-                throw new ArgumentException("The expression of the filter criteria is null.", nameof(filterCriteria));
-            }
             if (fieldToColumnMap is null)
             {
                 throw new ArgumentNullException(nameof(fieldToColumnMap));
             }
-            if (paramNamePrefix is null)
-            {
-                throw new ArgumentNullException(nameof(paramNamePrefix));
-            }
-            if (!new Regex(_prefixPattern).IsMatch(paramNamePrefix))
-            {
-                throw new ArgumentException("Incorrect prefix for sql parameter names.", nameof(paramNamePrefix));
-            }
 
-            GenerateClause(filterCriteria.Expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
-            return (sqlBuilder.ToString(), parameters);
+            return RenderWhereClause(filterCriteria, new SqlQueryMapping(fieldToColumnMap), paramNamePrefix);
         }
 
         /// <summary>
@@ -57,107 +37,71 @@ namespace Expresso.SqlServer
         /// <returns>A tuple containing the expression for SQL ORDER BY clause and a dictionary of parameters that maps parameter names to values.</returns>
         public (string orderByClause, Dictionary<string, object> parameters) RenderOrderByClause(SortDirective sortDirective, Dictionary<string, string> fieldToColumnMap, string paramNamePrefix)
         {
-            if (sortDirective == null)
-            {
-                throw new ArgumentNullException(nameof(sortDirective));
-            }
-            if (sortDirective.Items == null || sortDirective.Items.Count == 0)
-            {
-                throw new ArgumentException("Sort directive must contain at least one item", nameof(sortDirective));
-            }
-            if (fieldToColumnMap == null)
+            if (fieldToColumnMap is null)
             {
                 throw new ArgumentNullException(nameof(fieldToColumnMap));
             }
-            if (paramNamePrefix is null)
-            {
-                throw new ArgumentNullException(nameof(paramNamePrefix));
-            }
-            if (!new Regex(_prefixPattern).IsMatch(paramNamePrefix))
-            {
-                throw new ArgumentException("Incorrect prefix for sql parameter names.", nameof(paramNamePrefix));
-            }
 
-            StringBuilder sqlBuilder = new StringBuilder();
-            Dictionary<string, object> parameters = new Dictionary<string, object>();
-
-            for (int i = 0; i < sortDirective.Items.Count; i++)
-            {
-                var item = sortDirective.Items[i];
-
-                if (i > 0)
-                {
-                    sqlBuilder.Append(", ");
-                }
-
-                if (item.Expression is BooleanFunction booleanExpression)
-                {
-                    sqlBuilder.Append("(CASE WHEN ");
-                    GenerateClause(booleanExpression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
-                    sqlBuilder.Append(" THEN 1 ELSE 0 END)");
-                }
-                else
-                {
-                    GenerateClause(item.Expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
-                }
-
-                sqlBuilder.Append(item.Direction == SortDirection.Ascending ? " ASC" : " DESC");
-            }
-
-            return (sqlBuilder.ToString(), parameters);
+            return RenderOrderByClause(sortDirective, new SqlQueryMapping(fieldToColumnMap), paramNamePrefix);
         }
 
-        private void GenerateClause(AbstractExpression expression, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
+        private void GenerateClause(
+            AbstractExpression expression,
+            Dictionary<string, string> fieldToColumnMap,
+            StringBuilder sqlBuilder,
+            Dictionary<string, object> parameters,
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             switch (expression)
             {
                 case AndFunc andFunc:
-                    GenerateAndClause(andFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateAndClause(andFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case OrFunc orFunc:
-                    GenerateOrClause(orFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateOrClause(orFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case NotFunc notFunc:
-                    GenerateNotClause(notFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNotClause(notFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case EqFunc eqFunc:
-                    GenerateComparisonClause(eqFunc, "=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateComparisonClause(eqFunc, "=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case NeqFunc neqFunc:
-                    GenerateComparisonClause(neqFunc, "!=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateComparisonClause(neqFunc, "!=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case GtFunc gtFunc:
-                    GenerateComparisonClause(gtFunc, ">", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateComparisonClause(gtFunc, ">", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case GteFunc gteFunc:
-                    GenerateComparisonClause(gteFunc, ">=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateComparisonClause(gteFunc, ">=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case LtFunc ltFunc:
-                    GenerateComparisonClause(ltFunc, "<", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateComparisonClause(ltFunc, "<", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case LteFunc lteFunc:
-                    GenerateComparisonClause(lteFunc, "<=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateComparisonClause(lteFunc, "<=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case AbsFunc absFunc:
-                    GenerateSingleArgFunctionClause(absFunc, "ABS", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateSingleArgFunctionClause(absFunc, "ABS", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case AddFunc addFunc:
-                    GenerateArithOperationClause(addFunc, "+", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateArithOperationClause(addFunc, "+", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case SubFunc subFunc:
-                    GenerateArithOperationClause(subFunc, "-", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateArithOperationClause(subFunc, "-", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case MultFunc multFunc:
-                    GenerateArithOperationClause(multFunc, "*", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateArithOperationClause(multFunc, "*", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case DivFunc divFunc:
-                    GenerateArithOperationClause(divFunc, "/", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateArithOperationClause(divFunc, "/", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case InFunc inFunc:
-                    GenerateInClause(inFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateInClause(inFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case IsNullFunc isNullFunc:
-                    GenerateIsNullClause(isNullFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateIsNullClause(isNullFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     break;
                 case Field field:
                     string mapKey = field.Name.ToLower();
@@ -171,9 +115,10 @@ namespace Expresso.SqlServer
                     sqlBuilder.Append(AddParameter(literal.Value, parameters, paramNamePrefix));
                     break;
                 default:
-                    if (TryGenerateStringFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix)
-                        || TryGenerateDateTimeFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix)
-                        || TryGenerateNumericFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix))
+                    if (TryGenerateCollectionFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections)
+                        || TryGenerateStringFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections)
+                        || TryGenerateDateTimeFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections)
+                        || TryGenerateNumericFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections))
                     {
                         break;
                     }
@@ -183,15 +128,12 @@ namespace Expresso.SqlServer
 
         private static string Bracketize(string input)
         {
-            //if (string.IsNullOrWhiteSpace(input))
-            //    throw new ArgumentException("Input cannot be null or empty.", nameof(input));
-
             var parts = input.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
 
             return string.Join(".", parts.Select(p => $"[{p}]"));
         }
 
-        private void GenerateAndClause(AndFunc andFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
+        private void GenerateAndClause(AndFunc andFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix, Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append('(');
             for (int i = 0; i < andFunc.Arguments.Count; i++)
@@ -200,12 +142,12 @@ namespace Expresso.SqlServer
                 {
                     sqlBuilder.Append(" AND ");
                 }
-                GenerateClause(andFunc.Arguments[i], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                GenerateClause(andFunc.Arguments[i], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             }
             sqlBuilder.Append(')');
         }
 
-        private void GenerateOrClause(OrFunc orFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
+        private void GenerateOrClause(OrFunc orFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix, Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append('(');
             for (int i = 0; i < orFunc.Arguments.Count; i++)
@@ -214,48 +156,48 @@ namespace Expresso.SqlServer
                 {
                     sqlBuilder.Append(" OR ");
                 }
-                GenerateClause(orFunc.Arguments[i], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                GenerateClause(orFunc.Arguments[i], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             }
             sqlBuilder.Append(')');
         }
 
-        private void GenerateNotClause(NotFunc notFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
+        private void GenerateNotClause(NotFunc notFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix, Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append("NOT (");
-            GenerateClause(notFunc.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(notFunc.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(')');
         }
 
-        private void GenerateComparisonClause(ComparisonFunction comparisonFunc, string operatorSymbol, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
+        private void GenerateComparisonClause(ComparisonFunction comparisonFunc, string operatorSymbol, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix, Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append('(');
-            GenerateClause(comparisonFunc.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(comparisonFunc.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append($" {operatorSymbol} ");
-            GenerateClause(comparisonFunc.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(comparisonFunc.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(')');
         }
 
-        private void GenerateSingleArgFunctionClause(NumericSingleArgFunction func, string funcSymbol, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
+        private void GenerateSingleArgFunctionClause(NumericSingleArgFunction func, string funcSymbol, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix, Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append(funcSymbol);
             sqlBuilder.Append('(');
-            GenerateClause(func.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(func.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(')');
         }
 
-        private void GenerateArithOperationClause(NumericArithFunction func, string operatorSymbol, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
+        private void GenerateArithOperationClause(NumericArithFunction func, string operatorSymbol, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix, Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append('(');
-            GenerateClause(func.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(func.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append($" {operatorSymbol} ");
-            GenerateClause(func.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(func.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(')');
         }
 
-        private void GenerateInClause(InFunc inFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
+        private void GenerateInClause(InFunc inFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix, Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append('(');
-            GenerateClause(inFunc.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(inFunc.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(" IN (");
             for (int i = 1; i < inFunc.Arguments.Count; i++)
             {
@@ -263,15 +205,15 @@ namespace Expresso.SqlServer
                 {
                     sqlBuilder.Append(", ");
                 }
-                GenerateClause(inFunc.Arguments[i], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                GenerateClause(inFunc.Arguments[i], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             }
             sqlBuilder.Append("))");
         }
 
-        private void GenerateIsNullClause(IsNullFunc isNullFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix)
+        private void GenerateIsNullClause(IsNullFunc isNullFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix, Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append('(');
-            GenerateClause(isNullFunc.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(isNullFunc.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(" IS NULL)");
         }
 
@@ -281,6 +223,18 @@ namespace Expresso.SqlServer
             var parameterName = $"@{paramNamePrefix}_{paramNum}";
             parameters[parameterName] = value;
             return parameterName;
+        }
+
+        private static void EnsureParamNamePrefix(string paramNamePrefix)
+        {
+            if (paramNamePrefix is null)
+            {
+                throw new ArgumentNullException(nameof(paramNamePrefix));
+            }
+            if (!new Regex(_prefixPattern).IsMatch(paramNamePrefix))
+            {
+                throw new ArgumentException("Incorrect prefix for sql parameter names.", nameof(paramNamePrefix));
+            }
         }
     }
 }

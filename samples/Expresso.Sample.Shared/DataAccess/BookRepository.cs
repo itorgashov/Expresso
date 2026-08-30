@@ -20,17 +20,33 @@ public sealed class BookRepository : IRepository<Book>
     private readonly ISqlConnectionFactory _connectionFactory;
     private readonly IExpressionToQueryClauseTransformer _criteriaTransformer;
 
-    private readonly Dictionary<string, string> _fieldToColumnMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-    {
-        { "title", "b.title" },
-        { "year", "b.year" },
-        { "isbn", "b.isbn" },
-        { "publisher", "p.name" },
-        { "price", "b.price" },
-        { "rating", "b.rating" },
-        { "createdat", "b.created_at" },
-        { "externalid", "b.external_id" },
-    };
+    private readonly SqlQueryMapping _queryMapping = new SqlQueryMapping(
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "title", "b.title" },
+            { "year", "b.year" },
+            { "isbn", "b.isbn" },
+            { "publisher", "p.name" },
+            { "price", "b.price" },
+            { "rating", "b.rating" },
+            { "createdat", "b.created_at" },
+            { "externalid", "b.external_id" },
+        },
+        new[]
+        {
+            new CollectionSqlMapping(
+                "authors",
+                "dbo.book_author AS ba INNER JOIN dbo.author AS a ON a.id = ba.author_id",
+                "ba.book_id = b.id",
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "firstname", "a.first_name" },
+                    { "lastname", "a.last_name" },
+                    { "displayname", "a.display_name" },
+                    { "dateofbirth", "a.date_of_birth" },
+                    { "createdat", "a.created_at" },
+                }),
+        });
 
     private const string BaseSelect =
         "SELECT" +
@@ -121,7 +137,7 @@ public sealed class BookRepository : IRepository<Book>
 
         if (filterCriteria is not null)
         {
-            var result = _criteriaTransformer.RenderWhereClause(filterCriteria, _fieldToColumnMapping, WhereParamPrefix);
+            var result = _criteriaTransformer.RenderWhereClause(filterCriteria, _queryMapping, WhereParamPrefix);
             sql.Append(" WHERE ");
             sql.Append(result.whereClause);
             parameters = new Dictionary<string, object>(result.parameters);
@@ -129,7 +145,7 @@ public sealed class BookRepository : IRepository<Book>
 
         if (sortDirective is not null)
         {
-            var result = _criteriaTransformer.RenderOrderByClause(sortDirective, _fieldToColumnMapping, OrderParamPrefix);
+            var result = _criteriaTransformer.RenderOrderByClause(sortDirective, _queryMapping, OrderParamPrefix);
             sql.Append(" ORDER BY ");
             sql.Append(result.orderByClause);
             parameters ??= new Dictionary<string, object>();

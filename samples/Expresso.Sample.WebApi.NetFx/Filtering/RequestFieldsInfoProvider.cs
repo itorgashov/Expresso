@@ -3,7 +3,7 @@ using Expresso.Core.Filtering;
 
 namespace Expresso.Sample.WebApi.NetFx.Filtering;
 
-public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider
+public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IRequestQueryModelProvider
 {
     private static readonly (string, Type)[] BookFilterFields =
     {
@@ -46,6 +46,11 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider
         ("closes", typeof(TimeSpan)),
     };
 
+    private static readonly CollectionModel[] BookAuthorCollections =
+    {
+        new CollectionModel("authors", new QueryModel(AuthorFields)),
+    };
+
     public (string, Type)[] GetValidFilterFields(string context) =>
         context.ToLowerInvariant() switch
         {
@@ -62,5 +67,23 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider
             "author" => AuthorFields,
             "publisher" => PublisherFields,
             _ => Array.Empty<(string, Type)>(),
+        };
+
+    public QueryModel GetFilterModel(string context) =>
+        context.ToLowerInvariant() switch
+        {
+            "book" => new QueryModel(BookFilterFields, BookAuthorCollections),
+            "author" => new QueryModel(AuthorFields),
+            "publisher" => new QueryModel(PublisherFields),
+            _ => QueryModel.Empty,
+        };
+
+    public QueryModel GetSortModel(string context) =>
+        context.ToLowerInvariant() switch
+        {
+            "book" => new QueryModel(BookSortFields, BookAuthorCollections),
+            "author" => new QueryModel(AuthorFields),
+            "publisher" => new QueryModel(PublisherFields),
+            _ => QueryModel.Empty,
         };
 }

@@ -15,6 +15,23 @@ functionName(arg1, arg2, ...)
 
 Full function reference (every supported function, grouped by category): [docs/functions/README.md](functions/README.md).
 
+## Collections
+
+Collections are quantified predicates over a related set, not extra scalar fields on the outer entity. Pass a `QueryModel` (with nested `CollectionModel`s) to `IFilterParser.Parse`. Inside `any(authors, …)`, identifiers resolve against the **authors** item catalog.
+
+```text
+any(authors, eq(displayname, "Leo Tolstoy"))
+eq(count(authors), 2)
+and(gt(year, 2020), any(authors, eq(displayname, "Leo Tolstoy")))
+any(authors, any(awards, eq(name, "Nobel Prize")))
+```
+
+- `year` in the `and(…)` example stays on the outer `WHERE`; it is not pushed into the subquery.
+- `min`/`max` are overloaded: `min(price, rating)` is scalar `MinFunc`; `min(authors, dateofbirth)` is `CollectionMinFunc`. `sum`/`avg`/`count` are collection-only.
+- `any`/`all`/`none` are not valid sort keys. Collection aggregates (`count`, `min`, …) may be used in `sort=`.
+
+See [docs/field-providers.md](field-providers.md) and [docs/functions/collection/any.md](functions/collection/any.md).
+
 ## Sort grammar
 
 A sort directive is a flat, comma-separated list of alternating field and direction tokens:
@@ -80,11 +97,12 @@ First matching format wins when multiple patterns are listed.
 
 `DateTime`, `DateOnly`, `TimeOnly`, and `TimeSpan` are **not interchangeable** in comparisons — use [`date()`](functions/datetime-getter/date.md) / [`time()`](functions/datetime-getter/time.md) to convert in SQL when needed. `TimeOnly` and `TimeSpan` are also not interchangeable with each other.
 
-## Field and literal "operands"
+## Field, collection, and literal operands
 
-Two non-function node types can appear as arguments anywhere a function expects an expression:
+Three non-function node types can appear as arguments:
 
-- **Field** — a reference to a catalog field, e.g. `name`, `createdAt`. Resolved against the `(string, Type)[]` you pass to the parser (or that your `IRequestFieldsInfoProvider` returns).
+- **Field** — a reference to a catalog field, e.g. `name`, `createdAt`. Resolved against the current `QueryModel` (or the `(string, Type)[]` you pass to the parser).
+- **CollectionRef** — a reference to a nested collection, e.g. `authors` in `any(authors, …)`. Only valid as the first argument of collection functions.
 - **Literal** — a constant value parsed from the query string as described above.
 
-Both are part of `Expresso.Core.CriteriaExpressions` but are not "functions" in the reference sense, so they don't have their own page under [docs/functions/](functions/README.md).
+They are part of `Expresso.Core.CriteriaExpressions` but are not "functions" in the reference sense, so they don't have their own page under [docs/functions/](functions/README.md).

@@ -40,8 +40,7 @@ Every node of the tree validates its own argument types when it is constructed (
 Expresso is intentionally narrow. It is not a replacement for:
 
 - **OData** or similar full query protocols — no `$expand`, `$select`, pagination envelope, or standardized wire format. If you need a broad, standards-based query protocol with a large existing client ecosystem, prefer OData.
-- **An ORM** — Expresso only renders `WHERE`/`ORDER BY` fragments; you still write (or generate) the base `SELECT`/joins yourself.
-- **Arbitrary nested-collection queries** (e.g. `any(authors, eq(displayName,"Tolstoy"))`) — not supported in v1. See [docs/query-syntax.md](query-syntax.md) for what the grammar does support.
+- **An ORM** — Expresso only renders `WHERE`/`ORDER BY` fragments; you still write (or generate) the base `SELECT`/joins yourself. Collection filters add correlated `EXISTS`/aggregate subqueries from your `CollectionSqlMapping`; they do not hydrate related rows for you.
 
 If your API surface is small, fixed, and known ahead of time, plain parameters might be simpler than a query language at all. Expresso is aimed at the middle ground: more filters/sort combinations than you want to hand-code, but not so open-ended that you need a full query protocol.
 

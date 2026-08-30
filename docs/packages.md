@@ -4,7 +4,7 @@ Expresso ships as three independent NuGet packages. There is no metapackage in v
 
 | Package | Contains | Depends on |
 |---|---|---|
-| `Expresso.Core` | Expression tree (IR), `FilterCriteria`, `SortDirective`, `IRequestFieldsInfoProvider` | — |
+| `Expresso.Core` | Expression tree (IR), `FilterCriteria`, `SortDirective`, `IRequestFieldsInfoProvider`, `QueryModel` | — |
 | `Expresso.Parsing` | `IFilterParser`, `ISortDirectiveParser`, DI registration | `Expresso.Core` |
 | `Expresso.Rendering.SqlServer` | `IExpressionToQueryClauseTransformer`, DI registration | `Expresso.Core` |
 
@@ -17,7 +17,7 @@ Namespace: `Expresso.Core.CriteriaExpressions` (and `.Abstract`), `Expresso.Core
 - The expression tree base types: `AbstractExpression`, `AbstractFunction`, and the function base classes (`BooleanFunction`, `StringFunction`, `ComparisonFunction`, etc.) — see [docs/functions/README.md](functions/README.md) for every concrete function.
 - `FilterCriteria` — wraps the parsed boolean root expression.
 - `SortDirective` / `SortDirectiveItem` / `SortDirection` — the parsed sort list.
-- `IRequestFieldsInfoProvider` — the contract your application implements to declare which fields are filterable/sortable. See [docs/field-providers.md](field-providers.md).
+- `IRequestFieldsInfoProvider` — scalar field allow-list. `IRequestQueryModelProvider` / `QueryModel` — the same allow-list plus nested collections. See [docs/field-providers.md](field-providers.md).
 
 Has no dependencies of its own. Reference this package alone if you only need the tree types (for example, a layer that receives an already-parsed `FilterCriteria` and just needs the type).
 
@@ -25,7 +25,7 @@ Has no dependencies of its own. Reference this package alone if you only need th
 
 Namespace: `Expresso.Parsing`.
 
-- `IFilterParser` / `FilterParser` — turns a filter query string into a `FilterCriteria` (throws if the parsed root is not a boolean expression).
+- `IFilterParser` / `FilterParser` — turns a filter query string into a `FilterCriteria` (throws if the parsed root is not a boolean expression). Additive overload `Parse(string, QueryModel)`.
 - `ISortDirectiveParser` / `SortDirectiveParser` — turns a sort query string into a `SortDirective`.
 - `LiteralParseOptions` — optional culture and date/time format patterns for quoted literals (defaults preserve ISO dates and invariant time-of-day rules).
 - DI registration: `services.AddRequestParametersParsers()` (defaults), `AddRequestParametersParsers(Action<LiteralParseOptions>)`, or `AddRequestParametersParsers(LiteralParseOptions)`.
@@ -37,7 +37,7 @@ Typically referenced by whichever layer reads incoming query parameters (usually
 
 Namespace: `Expresso.SqlServer` (note: differs from the package/folder name).
 
-- `IExpressionToQueryClauseTransformer` / `ExpressionToSqlServerQueryClauseTransformer` — renders a `FilterCriteria` to a parameterized `WHERE` fragment and a `SortDirective` to a parameterized `ORDER BY` fragment, given a `fieldToColumnMap` and a parameter-name prefix.
+- `IExpressionToQueryClauseTransformer` / `ExpressionToSqlServerQueryClauseTransformer` — renders a `FilterCriteria` to a parameterized `WHERE` fragment and a `SortDirective` to a parameterized `ORDER BY` fragment, given a `fieldToColumnMap` (or `SqlQueryMapping` when collections are used) and a parameter-name prefix.
 - DI registration: `services.AddExpressionTransformations()` registers the transformer as a singleton.
 
 Typically referenced by the **data-access layer** (ADO.NET/Dapper repository) that builds and executes the final SQL.

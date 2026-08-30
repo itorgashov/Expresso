@@ -11,57 +11,58 @@ namespace Expresso.SqlServer
             Dictionary<string, string> fieldToColumnMap,
             StringBuilder sqlBuilder,
             Dictionary<string, object> parameters,
-            string paramNamePrefix)
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             switch (expression)
             {
                 case YearFunc year:
-                    GenerateNamedFunction("YEAR", year.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("YEAR", year.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case MonthFunc month:
-                    GenerateNamedFunction("MONTH", month.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("MONTH", month.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case DayFunc day:
-                    GenerateNamedFunction("DAY", day.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("DAY", day.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case DayOfYearFunc dayOfYear:
-                    GenerateDatePartClause("dayofyear", dayOfYear.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDatePartClause("dayofyear", dayOfYear.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case HourFunc hour:
-                    GenerateDatePartClause("hour", hour.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDatePartClause("hour", hour.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case MinuteFunc minute:
-                    GenerateDatePartClause("minute", minute.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDatePartClause("minute", minute.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case SecondFunc second:
-                    GenerateDatePartClause("second", second.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDatePartClause("second", second.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case DayOfWeekFunc dayOfWeek:
-                    GenerateDayOfWeekClause(dayOfWeek.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDayOfWeekClause(dayOfWeek.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case DateFunc date:
-                    GenerateDateClause(date.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDateClause(date.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case TimeFunc time:
-                    GenerateTimeClause(time.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateTimeClause(time.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case AddYearsFunc addYears:
-                    GenerateDateAddClause("year", addYears, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDateAddClause("year", addYears, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case AddMonthsFunc addMonths:
-                    GenerateDateAddClause("month", addMonths, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDateAddClause("month", addMonths, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case AddDaysFunc addDays:
-                    GenerateDateAddClause("day", addDays, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDateAddClause("day", addDays, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case AddHoursFunc addHours:
-                    GenerateDateAddClause("hour", addHours, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDateAddClause("hour", addHours, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case AddMinutesFunc addMinutes:
-                    GenerateDateAddClause("minute", addMinutes, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDateAddClause("minute", addMinutes, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case AddSecondsFunc addSeconds:
-                    GenerateDateAddClause("second", addSeconds, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateDateAddClause("second", addSeconds, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 default:
                     return false;
@@ -74,12 +75,13 @@ namespace Expresso.SqlServer
             Dictionary<string, string> fieldToColumnMap,
             StringBuilder sqlBuilder,
             Dictionary<string, object> parameters,
-            string paramNamePrefix)
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append("DATEPART(");
             sqlBuilder.Append(part);
             sqlBuilder.Append(", ");
-            GenerateClause(argument, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(argument, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(')');
         }
 
@@ -89,10 +91,11 @@ namespace Expresso.SqlServer
             Dictionary<string, string> fieldToColumnMap,
             StringBuilder sqlBuilder,
             Dictionary<string, object> parameters,
-            string paramNamePrefix)
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append("((DATEPART(weekday, ");
-            GenerateClause(argument, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(argument, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(") + @@DATEFIRST - 1) % 7)");
         }
 
@@ -101,10 +104,11 @@ namespace Expresso.SqlServer
             Dictionary<string, string> fieldToColumnMap,
             StringBuilder sqlBuilder,
             Dictionary<string, object> parameters,
-            string paramNamePrefix)
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append("CAST(");
-            GenerateClause(argument, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(argument, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(" AS date)");
         }
 
@@ -113,10 +117,11 @@ namespace Expresso.SqlServer
             Dictionary<string, string> fieldToColumnMap,
             StringBuilder sqlBuilder,
             Dictionary<string, object> parameters,
-            string paramNamePrefix)
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append("CAST(");
-            GenerateClause(argument, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(argument, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(" AS time)");
         }
 
@@ -126,14 +131,15 @@ namespace Expresso.SqlServer
             Dictionary<string, string> fieldToColumnMap,
             StringBuilder sqlBuilder,
             Dictionary<string, object> parameters,
-            string paramNamePrefix)
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append("DATEADD(");
             sqlBuilder.Append(datePart);
             sqlBuilder.Append(", ");
-            GenerateClause(addFunction.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(addFunction.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(", ");
-            GenerateClause(addFunction.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(addFunction.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(')');
         }
     }

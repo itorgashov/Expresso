@@ -1,3 +1,4 @@
+using Expresso.Core.CriteriaExpressions;
 using Expresso.Core.CriteriaExpressions.Abstract;
 using Expresso.Core.Filtering;
 
@@ -18,7 +19,17 @@ namespace Expresso.Parsing
 
         public FilterCriteria Parse(string query, (string, Type)[] validFields)
         {
-            AbstractExpression? parsedExpression = _expressionParser.Parse(query, validFields);
+            if (validFields is null)
+            {
+                throw new ArgumentNullException(nameof(validFields));
+            }
+
+            return Parse(query, QueryModel.FromFields(validFields));
+        }
+
+        public FilterCriteria Parse(string query, QueryModel queryModel)
+        {
+            AbstractExpression? parsedExpression = _expressionParser.Parse(query, queryModel);
 
             if (parsedExpression is BooleanFunction fn)
             {

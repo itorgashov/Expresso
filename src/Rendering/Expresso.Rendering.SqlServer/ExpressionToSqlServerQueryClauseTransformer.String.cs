@@ -18,54 +18,55 @@ namespace Expresso.SqlServer
             Dictionary<string, string> fieldToColumnMap,
             StringBuilder sqlBuilder,
             Dictionary<string, object> parameters,
-            string paramNamePrefix)
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             switch (expression)
             {
                 case StrStartswithFunc startsWith:
-                    GenerateLikeClause(startsWith.Arguments[0], startsWith.Arguments[1], LikePatternKind.Prefix, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateLikeClause(startsWith.Arguments[0], startsWith.Arguments[1], LikePatternKind.Prefix, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case StrEndswithFunc endsWith:
-                    GenerateLikeClause(endsWith.Arguments[0], endsWith.Arguments[1], LikePatternKind.Suffix, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateLikeClause(endsWith.Arguments[0], endsWith.Arguments[1], LikePatternKind.Suffix, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case StrContainsFunc contains:
-                    GenerateLikeClause(contains.Arguments[0], contains.Arguments[1], LikePatternKind.Contains, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateLikeClause(contains.Arguments[0], contains.Arguments[1], LikePatternKind.Contains, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case SubStringFunc substring:
-                    GenerateNamedFunction("SUBSTRING", substring.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("SUBSTRING", substring.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case LeftFunc left:
-                    GenerateNamedFunction("LEFT", left.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("LEFT", left.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case RightFunc right:
-                    GenerateNamedFunction("RIGHT", right.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("RIGHT", right.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case ConcatFunc concat:
-                    GenerateNamedFunction("CONCAT", concat.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("CONCAT", concat.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case LowerFunc lower:
-                    GenerateNamedFunction("LOWER", lower.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("LOWER", lower.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case UpperFunc upper:
-                    GenerateNamedFunction("UPPER", upper.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("UPPER", upper.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case TrimFunc trim:
-                    GenerateNamedFunction("TRIM", trim.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("TRIM", trim.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case LTrimFunc ltrim:
-                    GenerateNamedFunction("LTRIM", ltrim.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("LTRIM", ltrim.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case RTrimFunc rtrim:
-                    GenerateNamedFunction("RTRIM", rtrim.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("RTRIM", rtrim.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case LenFunc len:
-                    GenerateNamedFunction("LEN", len.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("LEN", len.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case ReplaceFunc replace:
-                    GenerateNamedFunction("REPLACE", replace.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateNamedFunction("REPLACE", replace.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 case IndexOfFunc indexOf:
-                    GenerateIndexOfClause(indexOf, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                    GenerateIndexOfClause(indexOf, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                     return true;
                 default:
                     return false;
@@ -79,10 +80,11 @@ namespace Expresso.SqlServer
             Dictionary<string, string> fieldToColumnMap,
             StringBuilder sqlBuilder,
             Dictionary<string, object> parameters,
-            string paramNamePrefix)
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append('(');
-            GenerateClause(source, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(source, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(" LIKE ");
 
             if (patternExpr is Literal { Value: string raw })
@@ -98,7 +100,7 @@ namespace Expresso.SqlServer
                 }
 
                 sqlBuilder.Append("REPLACE(REPLACE(REPLACE(");
-                GenerateClause(patternExpr, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                GenerateClause(patternExpr, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
                 sqlBuilder.Append(", '\\', '\\\\'), '%', '\\%'), '_', '\\_')");
 
                 if (kind is LikePatternKind.Prefix or LikePatternKind.Contains)
@@ -130,7 +132,8 @@ namespace Expresso.SqlServer
             Dictionary<string, string> fieldToColumnMap,
             StringBuilder sqlBuilder,
             Dictionary<string, object> parameters,
-            string paramNamePrefix)
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append(sqlName);
             sqlBuilder.Append('(');
@@ -140,7 +143,7 @@ namespace Expresso.SqlServer
                 {
                     sqlBuilder.Append(", ");
                 }
-                GenerateClause(arguments[i], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+                GenerateClause(arguments[i], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             }
             sqlBuilder.Append(')');
         }
@@ -150,12 +153,13 @@ namespace Expresso.SqlServer
             Dictionary<string, string> fieldToColumnMap,
             StringBuilder sqlBuilder,
             Dictionary<string, object> parameters,
-            string paramNamePrefix)
+            string paramNamePrefix,
+            Dictionary<string, CollectionSqlMapping> collections)
         {
             sqlBuilder.Append("(ISNULL(NULLIF(CHARINDEX(");
-            GenerateClause(indexOf.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(indexOf.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(", ");
-            GenerateClause(indexOf.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix);
+            GenerateClause(indexOf.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append("), 0), 0) - 1)");
         }
     }

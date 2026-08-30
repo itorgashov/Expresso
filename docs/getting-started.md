@@ -123,6 +123,8 @@ if (sortDirective is not null)
 
 Use a **case-insensitive** `fieldToColumnMap` (`StringComparer.OrdinalIgnoreCase`) so lookups by field name are robust regardless of casing used when the field catalog was declared.
 
+For collection filters, pass `SqlQueryMapping` instead of the dictionary: outer `FieldToColumn` plus recursive `CollectionSqlMapping` (`FromClause`, `CorrelateSql`, `ItemFieldToColumn`, `Nested`). See [docs/field-providers.md](field-providers.md) and the sample [BookRepository](../samples/Expresso.Sample.Shared/DataAccess/BookRepository.cs).
+
 ## 6. Execute the SQL + parameters
 
 Bind `parameters` as `SqlParameter`s (ADO.NET) or pass the dictionary directly (Dapper's `DynamicParameters`) and execute `sql.ToString()` as usual. Expresso only produces the fragment and the parameter values — it does not open a connection or execute anything itself.

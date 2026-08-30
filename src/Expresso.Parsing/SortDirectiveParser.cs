@@ -1,4 +1,6 @@
+using Expresso.Core.CriteriaExpressions;
 using Expresso.Core.CriteriaExpressions.Abstract;
+using Expresso.Core.Filtering;
 using Expresso.Core.Sorting;
 
 namespace Expresso.Parsing
@@ -18,6 +20,16 @@ namespace Expresso.Parsing
 
         public SortDirective Parse(string query, (string, Type)[] validFields)
         {
+            if (validFields is null)
+            {
+                throw new ArgumentNullException(nameof(validFields));
+            }
+
+            return Parse(query, QueryModel.FromFields(validFields));
+        }
+
+        public SortDirective Parse(string query, QueryModel queryModel)
+        {
             List<SortDirectiveItem> items = new List<SortDirectiveItem>();
             var unparsedExpressions = SplitToExpressionList(query);
             AbstractExpression? expr = default!;
@@ -27,10 +39,15 @@ namespace Expresso.Parsing
             {
                 if (i % 2 == 0)
                 {
-                    expr = _expressionParser.Parse(unparsedExpressions[i], validFields);
+                    expr = _expressionParser.Parse(unparsedExpressions[i], queryModel);
                     if (expr is null)
                     {
                         throw new ArgumentException($"Failed to parse directive [{i / 2 + 1}]");
+                    }
+
+                    if (expr is CollectionQuantifierFunction or CollectionRef)
+                    {
+                        throw new ArgumentException("Collections and collection quantifiers cannot be used as sort keys.");
                     }
                 }
                 else

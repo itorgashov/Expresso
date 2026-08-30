@@ -61,11 +61,11 @@ flowchart TD
 
 - **Shared layer** ([Expresso.Sample.Shared](../samples/Expresso.Sample.Shared)): domain models, view models, repositories, and query-parameter parsing. Each host supplies `ISqlConnectionFactory`, thin controllers, and its own field catalog.
 - **Presentation (per host):** controllers parse `filter`/`sort` via `QueryParametersParser`, guarded by that host's `IRequestFieldsInfoProvider`. Parse failures → `400 Bad Request`.
-- **Data access (shared):** repositories implement `IRepository<T>` and use `IExpressionToQueryClauseTransformer` with per-entity `fieldToColumnMap` dictionaries. Query field names (`opens`, `closes`) must match the catalog; they map to `opens_at` / `closes_at`.
+- **Data access (shared):** repositories implement `IRepository<T>` and use `IExpressionToQueryClauseTransformer` with per-entity `fieldToColumnMap` dictionaries (books use `SqlQueryMapping` for the `authors` collection). Query field names (`opens`, `closes`) must match the catalog; they map to `opens_at` / `closes_at`.
 
 ## Field catalog
 
-Each host implements `IRequestFieldsInfoProvider` (same query field names, different CLR types). See [docs/field-providers.md](field-providers.md).
+Each host implements `IRequestFieldsInfoProvider` and `IRequestQueryModelProvider` (same query field names, different CLR types). Book context includes nested collection `authors`. See [docs/field-providers.md](field-providers.md).
 
 | Host | Implementation |
 |---|---|
@@ -79,6 +79,7 @@ Each host implements `IRequestFieldsInfoProvider` (same query field names, diffe
 | `"book"` | `price`, `rating` | `double` | `double` |
 | `"book"` | `createdat` | `DateTime` | `DateTime` |
 | `"book"` | `externalid` (**filter only**) | `Guid` | `Guid` |
+| `"book"` | collection `authors` (item fields = author catalog) | — | — |
 | `"author"` | `firstname`, `lastname`, `displayname` | `string` | `string` |
 | `"author"` | `dateofbirth` | `DateOnly` | `DateTime` |
 | `"author"` | `createdat` | `DateTime` | `DateTime` |
@@ -101,6 +102,9 @@ GET /api/books?filter=startswith(publisher,"North")
 GET /api/books?filter=contains(title,"War")
 GET /api/books?filter=gte(createdat,"2020-01-01")
 GET /api/publishers?filter=eq(opens,"09:00")
+GET /api/books?filter=any(authors,eq(displayname,"Leo Tolstoy"))
+GET /api/books?filter=eq(count(authors),2)
+GET /api/books?filter=and(gt(year,2020),any(authors,eq(displayname,"Leo Tolstoy")))
 GET /api/authors?filter=eq(firstname,"George")&sort=lastname,asc
 ```
 

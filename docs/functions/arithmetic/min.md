@@ -40,3 +40,4 @@ Example: `eq(min(price,cap),cap)` renders as `((CASE WHEN [price] < [cap] THEN [
 - Each argument is rendered **once per occurrence** in the `CASE` expression — a parameterized literal argument therefore produces one SQL parameter per occurrence (e.g. `min(age,18)` binds `18` to two separate parameters), not a single shared one.
 - `ReturnType` is copied from `argument1` only.
 - See [`max`](max.md) for the counterpart.
+- Collection overload: when the first argument is a collection name, `min` is [`CollectionMinFunc`](../collection/min.md), not this scalar form.

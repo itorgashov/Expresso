@@ -4,15 +4,26 @@ namespace Expresso.Core.CriteriaExpressions
 {
     public sealed class Field : AbstractExpression
     {
-        public Field(string name, Type type)
+        public Field(string name, Type type) : this(name, type, null)
+        {
+        }
+
+        public Field(string name, Type type, string? scope)
         {
             AssertNotNull(name, nameof(name));
             AssertNotNull(type, nameof(type));
 
             Name = name;
+            Scope = scope;
             ReturnType = type;
         }
         public string Name
+        {
+            get;
+            private set;
+        }
+
+        public string? Scope
         {
             get;
             private set;
@@ -24,7 +35,7 @@ namespace Expresso.Core.CriteriaExpressions
                 return false;
 
             var other = (Field)obj;
-            return Name == other.Name;
+            return Name == other.Name && Scope == other.Scope;
         }
 
         public override int GetHashCode()
@@ -33,6 +44,7 @@ namespace Expresso.Core.CriteriaExpressions
             {
                 int hash = base.GetHashCode();
                 hash = hash * 31 + (Name?.GetHashCode() ?? 0);
+                hash = hash * 31 + (Scope?.GetHashCode() ?? 0);
                 return hash;
             }
         }

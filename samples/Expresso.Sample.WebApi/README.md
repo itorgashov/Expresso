@@ -43,6 +43,8 @@ Open Swagger UI at `/swagger`.
 - `GET /api/books?filter=startswith(publisher,"North")`
 - `GET /api/books?filter=contains(title,"War")`
 - `GET /api/books?filter=gte(createdat,"2020-01-01")`
+- `GET /api/books?filter=any(authors,eq(displayname,"Leo Tolstoy"))`
+- `GET /api/books?filter=eq(count(authors),2)`
 
 **Authors**
 
@@ -55,4 +57,4 @@ Open Swagger UI at `/swagger`.
 ## Architecture
 
 - **This project:** ASP.NET Core host, Swagger, `SqlConnectionFactory`, and thin controllers.
-- **Expresso.Sample.Shared:** ADO.NET repositories, field catalogs, view models, and query-parameter parsing.
+- **Expresso.Sample.Shared:** ADO.NET repositories, view models, and query-parameter parsing.

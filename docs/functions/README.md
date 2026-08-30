@@ -44,8 +44,28 @@ Every filter/sort function Expresso supports, grouped by semantic category. Func
 | [`sign`](arithmetic/sign.md) | `-1`, `0`, or `1` depending on the argument's sign |
 | [`power`](arithmetic/power.md) | Raises to a power (alias: `pow`) |
 | [`sqrt`](arithmetic/sqrt.md) | Square root |
-| [`min`](arithmetic/min.md) | Smaller of two arguments |
-| [`max`](arithmetic/max.md) | Larger of two arguments |
+| [`min`](arithmetic/min.md) | Smaller of two arguments (scalar; collection overload: [`min`](collection/min.md)) |
+| [`max`](arithmetic/max.md) | Larger of two arguments (scalar; collection overload: [`max`](collection/max.md)) |
+
+## Collection quantifiers
+
+Item predicates are parsed against the nested `QueryModel` of the collection, not the outer entity. See [docs/field-providers.md](../field-providers.md).
+
+| Function | Description |
+|---|---|
+| [`any`](collection/any.md) | True if at least one related item matches |
+| [`all`](collection/all.md) | True if every related item matches (vacuous if empty) |
+| [`none`](collection/none.md) | True if no related item matches |
+
+## Collection aggregates
+
+| Function | Description |
+|---|---|
+| [`count`](collection/count.md) | Number of related items (`int`) |
+| [`min`](collection/min.md) | Minimum of an item-scope selector |
+| [`max`](collection/max.md) | Maximum of an item-scope selector |
+| [`sum`](collection/sum.md) | Sum of a numeric item-scope selector |
+| [`avg`](collection/avg.md) | Average of a numeric item-scope selector (`double`) |
 
 ## String predicates (return `bool`)
 

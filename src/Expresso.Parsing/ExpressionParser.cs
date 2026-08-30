@@ -1,6 +1,7 @@
 using Expresso.Core.CriteriaExpressions;
 using System.Globalization;
 using Expresso.Core.CriteriaExpressions.Abstract;
+using Expresso.Core.Filtering;
 using System.Text.RegularExpressions;
 
 namespace Expresso.Parsing
@@ -18,26 +19,24 @@ namespace Expresso.Parsing
 
         public AbstractExpression? Parse(string query, (string, Type)[] validFieldsArray)
         {
-            if (query is null)
-            {
-                throw new ArgumentNullException(nameof(query));
-            }
-
             if (validFieldsArray is null)
             {
                 throw new ArgumentNullException(nameof(validFieldsArray));
             }
 
-            Dictionary<string, Type> validFields = new();
-            foreach (var tuple in validFieldsArray)
+            return Parse(query, QueryModel.FromFields(validFieldsArray));
+        }
+
+        public AbstractExpression? Parse(string query, QueryModel queryModel)
+        {
+            if (query is null)
             {
-                if (tuple.Item1 is null || tuple.Item2 is null
-                    || string.IsNullOrWhiteSpace(tuple.Item1)
-                    || validFields.ContainsKey(tuple.Item1))
-                {
-                    continue;
-                }
-                validFields[tuple.Item1.ToLower()] = tuple.Item2;
+                throw new ArgumentNullException(nameof(query));
+            }
+
+            if (queryModel is null)
+            {
+                throw new ArgumentNullException(nameof(queryModel));
             }
 
             var tokens = Tokenize(query);
@@ -46,7 +45,7 @@ namespace Expresso.Parsing
                 return null;
             }
             tokens.ResetIterator();
-            var expression = ParseExpression(validFields, tokens);
+            var expression = ParseExpression(queryModel, null, tokens);
             var token = tokens.GetNextToken();
             if (token != null)
             {
@@ -96,7 +95,7 @@ namespace Expresso.Parsing
             return tokens;
         }
 
-        private AbstractExpression ParseExpression(Dictionary<string, Type> validFields, TokenContainer tokens)
+        private AbstractExpression ParseExpression(QueryModel queryModel, string? scopePath, TokenContainer tokens)
         {
             var token = tokens.GetNextToken();
             if (token == null)
@@ -110,18 +109,22 @@ namespace Expresso.Parsing
             }
             if (IsFunction(token, tokens))
             {
-                return ParseFunction(token, validFields, tokens);
+                return ParseFunction(token, queryModel, scopePath, tokens);
             }
             else if (IsFieldNameCandidate(token))
             {
-                if (validFields.ContainsKey(token.ToLower()))
+                var key = token.ToLowerInvariant();
+                if (queryModel.TryGetCollection(key, out var collection))
                 {
-                    return new Field(token.ToLower(), validFields[token.ToLower()]);
+                    return new CollectionRef(collection.Name, scopePath);
                 }
-                else
+
+                if (queryModel.TryGetField(key, out var fieldType))
                 {
-                    throw new ArgumentException($"Illegal field name: '{token}'.");
+                    return new Field(key, fieldType, scopePath);
                 }
+
+                throw new ArgumentException($"Illegal field name: '{token}'.");
             }
             else
             {
@@ -156,10 +159,15 @@ namespace Expresso.Parsing
             return _nameRegex.IsMatch(token);
         }
 
-        private AbstractExpression ParseFunction(string token, Dictionary<string, Type> validFields, TokenContainer tokens)
+        private AbstractExpression ParseFunction(string token, QueryModel queryModel, string? scopePath, TokenContainer tokens)
         {
             var functionName = token;
             tokens.GetNextToken();
+
+            if (IsCollectionAwareFunction(functionName))
+            {
+                return ParseCollectionAwareFunction(functionName, queryModel, scopePath, tokens);
+            }
 
             var arguments = new List<AbstractExpression>();
             string? currentToken;
@@ -200,7 +208,7 @@ namespace Expresso.Parsing
                     else throw new ArgumentException($"Unexpected token: '{currentToken}'.");
                 }
                 tokens.StepBack();
-                arguments.Add(ParseExpression(validFields, tokens));
+                arguments.Add(ParseExpression(queryModel, scopePath, tokens));
                 expressionExpected = false;
             } while (true);
 

@@ -78,5 +78,16 @@ namespace Expresso.Tests.Core.CriteriaExpressions
 
             Assert.NotEqual(field1.GetHashCode(), field2.GetHashCode());
         }
+
+        [Fact]
+        public void Equals_ReturnsFalse_ForDifferentScope()
+        {
+            Field field1 = new("Name", typeof(string), "authors");
+            Field field2 = new("Name", typeof(string));
+
+            Assert.False(field1.Equals(field2));
+            Assert.Equal("authors", field1.Scope);
+            Assert.Null(field2.Scope);
+        }
     }
 }
