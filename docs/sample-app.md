@@ -21,6 +21,7 @@ The sample database (`database/schema.sql` under the WebApi project) models a sm
 | `dbo.author` | Authors (`first_name`, `last_name`, `display_name`, `date_of_birth`, `created_at`) |
 | `dbo.book` | Books (`title`, `year`, `isbn`, `publisher_id`, `rating`, `price`, `created_at`, `external_id` UNIQUEIDENTIFIER) |
 | `dbo.book_author` | Many-to-many join between `book` and `author` |
+| `dbo.award` | Author awards (`title`, `year`; FK to `author`) |
 
 ## Architecture
 
@@ -61,11 +62,11 @@ flowchart TD
 
 - **Shared layer** ([Expresso.Sample.Shared](../samples/Expresso.Sample.Shared)): domain models, view models, repositories, and query-parameter parsing. Each host supplies `ISqlConnectionFactory`, thin controllers, and its own field catalog.
 - **Presentation (per host):** controllers parse `filter`/`sort` via `QueryParametersParser`, guarded by that host's `IRequestFieldsInfoProvider`. Parse failures → `400 Bad Request`.
-- **Data access (shared):** repositories implement `IRepository<T>` and use `IExpressionToQueryClauseTransformer` with per-entity `fieldToColumnMap` dictionaries (books use `SqlQueryMapping` for the `authors` collection). Query field names (`opens`, `closes`) must match the catalog; they map to `opens_at` / `closes_at`.
+- **Data access (shared):** repositories implement `IRepository<T>` and use `IExpressionToQueryClauseTransformer` with per-entity mappings. Books use `SqlQueryMapping` with nested `authors` and `authors.awards`. Parent `ORDER BY` runs only when `SortDirective.Items` is non-empty; child lists use `SortDirective.Nested` via `sortfor`.
 
 ## Field catalog
 
-Each host implements `IRequestFieldsInfoProvider` and `IRequestQueryModelProvider` (same query field names, different CLR types). Book context includes nested collection `authors`. See [docs/field-providers.md](field-providers.md).
+Each host implements `IRequestFieldsInfoProvider` and `IRequestQueryModelProvider` (same query field names, different CLR types). Book context includes nested `authors` (with nested `awards` on author items). Author context includes collection `awards`. See [docs/field-providers.md](field-providers.md).
 
 | Host | Implementation |
 |---|---|
@@ -79,8 +80,9 @@ Each host implements `IRequestFieldsInfoProvider` and `IRequestQueryModelProvide
 | `"book"` | `price`, `rating` | `double` | `double` |
 | `"book"` | `createdat` | `DateTime` | `DateTime` |
 | `"book"` | `externalid` (**filter only**) | `Guid` | `Guid` |
-| `"book"` | collection `authors` (item fields = author catalog) | — | — |
+| `"book"` | collection `authors` → `awards` (item fields = author / award catalogs) | — | — |
 | `"author"` | `firstname`, `lastname`, `displayname` | `string` | `string` |
+| `"author"` | collection `awards` (`title`, `year`) | — | — |
 | `"author"` | `dateofbirth` | `DateOnly` | `DateTime` |
 | `"author"` | `createdat` | `DateTime` | `DateTime` |
 | `"publisher"` | `name`, `country`, `location` | `string` | `string` |
@@ -105,6 +107,9 @@ GET /api/publishers?filter=eq(opens,"09:00")
 GET /api/books?filter=any(authors,eq(displayname,"Leo Tolstoy"))
 GET /api/books?filter=eq(count(authors),2)
 GET /api/books?filter=and(gt(year,2020),any(authors,eq(displayname,"Leo Tolstoy")))
+GET /api/books?filter=any(authors, any(awards, eq(title, "Nobel Prize")))
+GET /api/books?sort=year,desc,sortfor(authors, lastname),asc,sortfor(authors/awards, year),desc
+GET /api/authors?sort=lastname,asc,sortfor(awards, title),asc
 GET /api/authors?filter=eq(firstname,"George")&sort=lastname,asc
 ```
 

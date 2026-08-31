@@ -32,21 +32,7 @@ public sealed class BookRepository : IRepository<Book>
             { "createdat", "b.created_at" },
             { "externalid", "b.external_id" },
         },
-        new[]
-        {
-            new CollectionSqlMapping(
-                "authors",
-                "dbo.book_author AS ba INNER JOIN dbo.author AS a ON a.id = ba.author_id",
-                "ba.book_id = b.id",
-                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "firstname", "a.first_name" },
-                    { "lastname", "a.last_name" },
-                    { "displayname", "a.display_name" },
-                    { "dateofbirth", "a.date_of_birth" },
-                    { "createdat", "a.created_at" },
-                }),
-        });
+        new[] { SampleSqlMappings.BookAuthors });
 
     private const string BaseSelect =
         "SELECT" +
@@ -93,7 +79,12 @@ public sealed class BookRepository : IRepository<Book>
                 }
             }
 
-            await LoadAuthorsAsync(connection, books, cancellationToken);
+            await BookChildLoader.LoadAuthorsAndAwardsAsync(
+                connection,
+                books,
+                sortDirective,
+                _criteriaTransformer,
+                cancellationToken);
             return books;
         }
     }
@@ -123,7 +114,12 @@ public sealed class BookRepository : IRepository<Book>
                 return null;
             }
 
-            await LoadAuthorsAsync(connection, new List<Book> { book }, cancellationToken);
+            await BookChildLoader.LoadAuthorsAndAwardsAsync(
+                connection,
+                new List<Book> { book },
+                sortDirective: null,
+                _criteriaTransformer,
+                cancellationToken);
             return book;
         }
     }
@@ -143,7 +139,7 @@ public sealed class BookRepository : IRepository<Book>
             parameters = new Dictionary<string, object>(result.parameters);
         }
 
-        if (sortDirective is not null)
+        if (sortDirective is not null && sortDirective.Items.Count > 0)
         {
             var result = _criteriaTransformer.RenderOrderByClause(sortDirective, _queryMapping, OrderParamPrefix);
             sql.Append(" ORDER BY ");
@@ -168,49 +164,4 @@ public sealed class BookRepository : IRepository<Book>
             ExternalId = reader.GetGuid(7),
             Publisher = reader.GetString(8),
         };
-
-    private static async Task LoadAuthorsAsync(
-        SqlConnection connection,
-        IReadOnlyList<Book> books,
-        CancellationToken cancellationToken)
-    {
-        if (books.Count == 0)
-        {
-            return;
-        }
-
-        var bookIds = books.Select(b => b.Id).Distinct().ToList();
-        var authorsByBookId = books.ToDictionary(b => b.Id, _ => new List<string>());
-
-        var idParameters = string.Join(", ", bookIds.Select((_, i) => $"@bookId{i}"));
-        var sql =
-            "SELECT ba.book_id, a.display_name" +
-            " FROM dbo.book_author AS ba" +
-            " INNER JOIN dbo.author AS a ON a.id = ba.author_id" +
-            $" WHERE ba.book_id IN ({idParameters})" +
-            " ORDER BY ba.book_id, a.display_name";
-
-        using (var command = new SqlCommand(sql, connection))
-        {
-            for (var i = 0; i < bookIds.Count; i++)
-            {
-                command.Parameters.AddWithValue($"@bookId{i}", bookIds[i]);
-            }
-
-            using (var reader = await command.ExecuteReaderAsync(cancellationToken))
-            {
-                while (await reader.ReadAsync(cancellationToken))
-                {
-                    var bookId = reader.GetInt32(0);
-                    var displayName = reader.GetString(1);
-                    authorsByBookId[bookId].Add(displayName);
-                }
-            }
-        }
-
-        foreach (var book in books)
-        {
-            book.Authors.AddRange(authorsByBookId[book.Id]);
-        }
-    }
 }

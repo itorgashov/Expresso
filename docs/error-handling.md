@@ -30,6 +30,8 @@ A broad catch is deliberately recommended here because, as detailed below, arity
 | `IFilterParser.Parse` succeeds but the parsed root is not a boolean expression | `ArgumentException("A boolean expression is expected.")` |
 | `ISortDirectiveParser.Parse`: odd token count / empty directive | `ArgumentException` |
 | `ISortDirectiveParser.Parse`: `any`/`all`/`none` or a bare collection name used as a sort key | `ArgumentException` |
+| `ISortDirectiveParser.Parse`: invalid `sortfor` path or arity | `ArgumentException` |
+| `IFilterParser.Parse`: `sortfor(...)` in `filter=` | `ArgumentException`: `'sortfor' is only valid in a sort directive, not in a filter.'` |
 | `ISortDirectiveParser.Parse`: direction token is not `asc`/`desc` | `NotSupportedException` |
 
 **Note on arity errors:** these are intentionally documented as plain `System.Exception` because that is what the current implementation throws — this is a known inconsistency (most other validation uses `ArgumentException`/`ArgumentNullException`) rather than a documentation oversight. Catch `Exception`, not just `ArgumentException`, if you want to handle all parse failures uniformly.

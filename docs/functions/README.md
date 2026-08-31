@@ -67,6 +67,12 @@ Item predicates are parsed against the nested `QueryModel` of the collection, no
 | [`sum`](collection/sum.md) | Sum of a numeric item-scope selector |
 | [`avg`](collection/avg.md) | Average of a numeric item-scope selector (`double`) |
 
+## Collection sort (sort-only)
+
+| Construct | Description |
+|---|---|
+| [`sortfor`](collection/sortfor.md) | Order related rows by an item-scope expression (`sort=` only; not a filter function) |
+
 ## String predicates (return `bool`)
 
 | Function | Description |

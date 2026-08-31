@@ -23,7 +23,7 @@ Collections are quantified predicates over a related set, not extra scalar field
 any(authors, eq(displayname, "Leo Tolstoy"))
 eq(count(authors), 2)
 and(gt(year, 2020), any(authors, eq(displayname, "Leo Tolstoy")))
-any(authors, any(awards, eq(name, "Nobel Prize")))
+any(authors, any(awards, eq(title, "Nobel Prize")))
 ```
 
 - `year` in the `and(…)` example stays on the outer `WHERE`; it is not pushed into the subquery.
@@ -49,6 +49,18 @@ createdAt,desc,name,asc
 - `dir` is `asc` or `desc`, case-insensitive. Anything else throws `NotSupportedException`.
 - An odd number of tokens, or an empty string, throws `ArgumentException`.
 - `ISortDirectiveParser.Parse(...)` returns a `SortDirective`; call `.RemoveDuplicates()` to drop repeated sort keys (first occurrence wins) before rendering — see [docs/getting-started.md](getting-started.md).
+
+### Nested collection sort (`sortfor`)
+
+Use `sortfor(collectionPath, expression),dir` to sort related rows without adding parent sort keys. Path segments are collection names only (`authors`, `authors/awards`); no leading `/`.
+
+```text
+year,desc,sortfor(authors, lastname),asc,sortfor(authors/awards, year),desc
+```
+
+- Parsed keys land in `SortDirective.Nested`; parent `Items` hold only outer-entity keys.
+- `sortfor` is rejected in `filter=` with a dedicated error. See [docs/functions/collection/sortfor.md](functions/collection/sortfor.md).
+- Boolean nested keys: `asc` puts `false` first; use `desc` for matches-first ordering.
 
 ## Literal syntax
 

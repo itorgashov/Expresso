@@ -5,7 +5,7 @@ using Expresso.Core.Sorting;
 
 namespace Expresso.Parsing
 {
-    public class SortDirectiveParser : ISortDirectiveParser
+    public partial class SortDirectiveParser : ISortDirectiveParser
     {
         private readonly ExpressionParser _expressionParser;
 
@@ -31,14 +31,33 @@ namespace Expresso.Parsing
         public SortDirective Parse(string query, QueryModel queryModel)
         {
             List<SortDirectiveItem> items = new List<SortDirectiveItem>();
+            var nestedBuilder = new NestedSortBuilder();
             var unparsedExpressions = SplitToExpressionList(query);
             AbstractExpression? expr = default!;
-            SortDirection dir;
 
             for (int i = 0; i < unparsedExpressions.Count; i++)
             {
                 if (i % 2 == 0)
                 {
+                    var chunk = unparsedExpressions[i];
+                    if (TryParseSortForChunk(chunk, queryModel, out var collectionPath, out var sortForExpr))
+                    {
+                        expr = sortForExpr;
+                        i++;
+                        if (i >= unparsedExpressions.Count)
+                        {
+                            throw new ArgumentException("Unexpected end of sort directive");
+                        }
+
+                        var direction = ParseDirection(unparsedExpressions[i]);
+                        AddNestedSort(nestedBuilder, collectionPath, new SortDirectiveItem
+                        {
+                            Expression = expr,
+                            Direction = direction,
+                        });
+                        continue;
+                    }
+
                     expr = _expressionParser.Parse(unparsedExpressions[i], queryModel);
                     if (expr is null)
                     {
@@ -52,21 +71,10 @@ namespace Expresso.Parsing
                 }
                 else
                 {
-                    switch (unparsedExpressions[i].ToLower())
-                    {
-                        case "asc":
-                            dir = SortDirection.Ascending;
-                            break;
-                        case "desc":
-                            dir = SortDirection.Descending;
-                            break;
-                        default:
-                            throw new NotSupportedException($"Unrecodnized sorting direction marker: {unparsedExpressions[i]}.");
-                    }
                     items.Add(new SortDirectiveItem()
                     {
                         Expression = expr,
-                        Direction = dir
+                        Direction = ParseDirection(unparsedExpressions[i]),
                     });
                 }
             }
@@ -75,7 +83,23 @@ namespace Expresso.Parsing
                 throw new ArgumentException($"Unexpected end of sort directive");
             }
 
-            return new SortDirective(items);
+            var nested = nestedBuilder.Children
+                .Select(kv => new CollectionSort(kv.Key, kv.Value.Build()))
+                .ToList();
+            return new SortDirective(items, nested);
+        }
+
+        private static SortDirection ParseDirection(string token)
+        {
+            switch (token.ToLower())
+            {
+                case "asc":
+                    return SortDirection.Ascending;
+                case "desc":
+                    return SortDirection.Descending;
+                default:
+                    throw new NotSupportedException($"Unrecodnized sorting direction marker: {token}.");
+            }
         }
 
         private static List<string> SplitToExpressionList(string input)

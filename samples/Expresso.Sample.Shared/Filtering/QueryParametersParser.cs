@@ -45,7 +45,7 @@ public static class QueryParametersParser
                     ? sortDirectiveParser.Parse(sort, modelProvider.GetSortModel(context))
                     : sortDirectiveParser.Parse(sort, fieldsProvider.GetValidSortFields(context));
                 sortDirective = rawSortDirective.RemoveDuplicates();
-                if (sortDirective.Items.Count < rawSortDirective.Items.Count)
+                if (sortDirective.TotalSortKeyCount() < rawSortDirective.TotalSortKeyCount())
                 {
                     return new ParseResult { IsBadRequest = true };
                 }

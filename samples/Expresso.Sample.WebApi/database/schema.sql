@@ -83,3 +83,18 @@ GO
 
 CREATE INDEX IX_book_author_author_id ON dbo.book_author (author_id);
 GO
+
+CREATE TABLE dbo.award
+(
+    id         INT            IDENTITY(1, 1) NOT NULL,
+    author_id  INT            NOT NULL,
+    title      NVARCHAR(300)  NOT NULL,
+    year       SMALLINT       NOT NULL,
+    CONSTRAINT PK_award PRIMARY KEY CLUSTERED (id),
+    CONSTRAINT FK_award_author
+        FOREIGN KEY (author_id) REFERENCES dbo.author (id)
+);
+GO
+
+CREATE INDEX IX_award_author_id ON dbo.award (author_id);
+GO

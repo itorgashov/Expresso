@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Expresso.Sample.Shared.Models;
@@ -18,7 +19,7 @@ public static class ViewModelMapper
             CreatedAt = book.CreatedAt,
             ExternalId = book.ExternalId,
             Publisher = book.Publisher,
-            Authors = book.Authors.ToList(),
+            Authors = book.Authors.Select(ToViewModel).ToList(),
         };
 
     public static AuthorViewModel ToViewModel(Author author) =>
@@ -30,6 +31,14 @@ public static class ViewModelMapper
             DisplayName = author.DisplayName,
             DateOfBirth = author.DateOfBirth,
             CreatedAt = author.CreatedAt,
+            Awards = author.Awards.Select(ToViewModel).ToList(),
+        };
+
+    public static AwardViewModel ToViewModel(Award award) =>
+        new AwardViewModel
+        {
+            Title = award.Title,
+            Year = award.Year,
         };
 
     public static PublisherViewModel ToViewModel(Publisher publisher) =>

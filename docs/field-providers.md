@@ -117,7 +117,7 @@ A name cannot be both a field and a collection on the same `QueryModel` (constru
 
 **One-level (sample books):** reuse author fields under `authors` on the book model. `displayname` is illegal at book root. `GET /api/authors?filter=eq(displayname,"…")` still uses the flat `"author"` model.
 
-**Nested collections:** put another `CollectionModel` on the **item** model (`authors.Items`), not on the book. The sample database has no `awards` table; nested shape is required in unit tests only.
+**Nested collections:** put another `CollectionModel` on the **item** model (`authors.Items` includes `awards`). Use `sortfor(authors/awards, …)` in `sort=` for child ordering; the sample wires `dbo.award` and nested `ORDER BY` in repositories. See [docs/functions/collection/sortfor.md](functions/collection/sortfor.md).
 
 The SQL renderer is a **parallel tree** (`SqlQueryMapping` / `CollectionSqlMapping`) using the same names (`authors`, `displayname`). The provider never contains `FROM` / `JOIN`.
 

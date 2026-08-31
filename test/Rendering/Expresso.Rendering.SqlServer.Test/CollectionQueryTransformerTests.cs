@@ -167,6 +167,75 @@ namespace Expresso.Tests.SqlServer
             Assert.Contains("sort keys", ex.Message);
         }
 
+        [Fact]
+        public void RenderOrderByClause_AuthorLastname_RendersColumn()
+        {
+            var authorMapping = new SqlQueryMapping(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["lastname"] = "a.last_name",
+            });
+            var sort = new SortDirective(new List<SortDirectiveItem>
+            {
+                new()
+                {
+                    Expression = new Field("lastname", typeof(string), "authors"),
+                    Direction = SortDirection.Ascending,
+                },
+            });
+
+            var result = _transformer.RenderOrderByClause(sort, authorMapping, ParamPrefix);
+
+            Assert.Equal("[a].[last_name] ASC", result.orderByClause);
+        }
+
+        [Fact]
+        public void RenderOrderByClause_AwardTitle_RendersColumn()
+        {
+            var awardMapping = new SqlQueryMapping(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["title"] = "aw.title",
+            });
+            var sort = new SortDirective(new List<SortDirectiveItem>
+            {
+                new()
+                {
+                    Expression = new Field("title", typeof(string), "authors.awards"),
+                    Direction = SortDirection.Descending,
+                },
+            });
+
+            var result = _transformer.RenderOrderByClause(sort, awardMapping, ParamPrefix);
+
+            Assert.Equal("[aw].[title] DESC", result.orderByClause);
+        }
+
+        [Fact]
+        public void RenderOrderByClause_ParentIgnoresNested()
+        {
+            var sort = new SortDirective(
+                new List<SortDirectiveItem>
+                {
+                    new() { Expression = new Field("year", typeof(int)), Direction = SortDirection.Descending },
+                },
+                new[]
+                {
+                    new CollectionSort(
+                        "authors",
+                        new SortDirective(new List<SortDirectiveItem>
+                        {
+                            new()
+                            {
+                                Expression = new Field("lastname", typeof(string), "authors"),
+                                Direction = SortDirection.Ascending,
+                            },
+                        })),
+                });
+
+            var result = _transformer.RenderOrderByClause(sort, _mapping, ParamPrefix);
+
+            Assert.Equal("[b].[year] DESC", result.orderByClause);
+        }
+
         private static CollectionRef Authors() => new("authors");
 
         private static FilterCriteria Filter(BooleanFunction expression) =>

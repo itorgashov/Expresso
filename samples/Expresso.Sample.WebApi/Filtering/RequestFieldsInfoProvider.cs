@@ -36,6 +36,12 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         ("createdat", typeof(DateTime)),
     };
 
+    private static readonly (string, Type)[] AwardFields =
+    {
+        ("title", typeof(string)),
+        ("year", typeof(int)),
+    };
+
     private static readonly (string, Type)[] PublisherFields =
     {
         ("name", typeof(string)),
@@ -45,9 +51,17 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         ("closes", typeof(TimeOnly)),
     };
 
+    private static readonly CollectionModel[] AuthorAwardCollections =
+    {
+        new CollectionModel("awards", new QueryModel(AwardFields)),
+    };
+
+    private static readonly QueryModel AuthorItemsModel =
+        new QueryModel(AuthorFields, AuthorAwardCollections);
+
     private static readonly CollectionModel[] BookAuthorCollections =
     {
-        new CollectionModel("authors", new QueryModel(AuthorFields)),
+        new CollectionModel("authors", AuthorItemsModel),
     };
 
     public (string, Type)[] GetValidFilterFields(string context) =>
@@ -72,7 +86,7 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         context.ToLowerInvariant() switch
         {
             "book" => new QueryModel(BookFilterFields, BookAuthorCollections),
-            "author" => new QueryModel(AuthorFields),
+            "author" => new QueryModel(AuthorFields, AuthorAwardCollections),
             "publisher" => new QueryModel(PublisherFields),
             _ => QueryModel.Empty,
         };
@@ -81,7 +95,7 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         context.ToLowerInvariant() switch
         {
             "book" => new QueryModel(BookSortFields, BookAuthorCollections),
-            "author" => new QueryModel(AuthorFields),
+            "author" => new QueryModel(AuthorFields, AuthorAwardCollections),
             "publisher" => new QueryModel(PublisherFields),
             _ => QueryModel.Empty,
         };

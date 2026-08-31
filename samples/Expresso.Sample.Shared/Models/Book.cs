@@ -14,5 +14,5 @@ public sealed class Book
     public DateTime CreatedAt { get; init; }
     public Guid ExternalId { get; init; }
     public string Publisher { get; init; } = string.Empty;
-    public List<string> Authors { get; init; } = new List<string>();
+    public List<Author> Authors { get; init; } = new List<Author>();
 }

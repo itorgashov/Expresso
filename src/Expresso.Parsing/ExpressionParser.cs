@@ -29,6 +29,11 @@ namespace Expresso.Parsing
 
         public AbstractExpression? Parse(string query, QueryModel queryModel)
         {
+            return Parse(query, queryModel, null);
+        }
+
+        public AbstractExpression? Parse(string query, QueryModel queryModel, string? scopePath)
+        {
             if (query is null)
             {
                 throw new ArgumentNullException(nameof(query));
@@ -45,7 +50,7 @@ namespace Expresso.Parsing
                 return null;
             }
             tokens.ResetIterator();
-            var expression = ParseExpression(queryModel, null, tokens);
+            var expression = ParseExpression(queryModel, scopePath, tokens);
             var token = tokens.GetNextToken();
             if (token != null)
             {
@@ -61,7 +66,7 @@ namespace Expresso.Parsing
         private static TokenContainer Tokenize(string query)
         {
             var tokens = new TokenContainer();
-            var regex = new Regex(@"(?<string>""[^""]*"")|(?<number>-?\d+(\.\d+)?([eE][+-]?\d+)?)|(?<alphanumeric>[a-zA-Z_][a-zA-Z0-9_]*)|(?<special>[(),])|(?<suspicious>[^\sa-zA-Z0-9_\-(),""][^\s(),""]*)");
+            var regex = new Regex(@"(?<string>""[^""]*"")|(?<number>-?\d+(\.\d+)?([eE][+-]?\d+)?)|(?<alphanumeric>[a-zA-Z_][a-zA-Z0-9_]*)|(?<special>[(),/])|(?<suspicious>[^\sa-zA-Z0-9_\-(),""/][^\s(),""]*)");
             var matches = regex.Matches(query);
 
             foreach (Match match in matches)
@@ -163,6 +168,11 @@ namespace Expresso.Parsing
         {
             var functionName = token;
             tokens.GetNextToken();
+
+            if (functionName.Equals("sortfor", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("'sortfor' is only valid in a sort directive, not in a filter.");
+            }
 
             if (IsCollectionAwareFunction(functionName))
             {
@@ -316,6 +326,10 @@ namespace Expresso.Parsing
                     }
                     return new IsNullFunc(arguments[0]);
                 default:
+                    if (functionName.Equals("sortfor", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new ArgumentException("'sortfor' is only valid in a sort directive, not in a filter.");
+                    }
                     if (TryCreateStringFunction(functionName, arguments, out var stringFunction))
                     {
                         return stringFunction;
