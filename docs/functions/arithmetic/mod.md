@@ -26,13 +26,23 @@ Exactly 2 arguments.
 - **Parser coercion:** each literal argument's type is inferred independently.
 - **IR construction** (`ModFunc`, built via reflection): `ArgumentNullException` for a `null` argument; `ArgumentException("Illegal argument type", "argument1"|"argument2")` for a non-numeric `ReturnType`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### SQL Server, PostgreSQL, SQLite, MySQL / MariaDB
 
 ```sql
 (argument1 % argument2)
 ```
 
-Example: `eq(mod(status,2),0)` renders as `(([status] % @wparam_0) = @wparam_1)`.
+Example: `eq(mod(status,2),0)` renders as `(([status] % @wparam_0) = @wparam_1)` on SQL Server.
+
+### Oracle, DB2
+
+```sql
+MOD(argument1, argument2)
+```
 
 ## Notes
 

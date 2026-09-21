@@ -26,13 +26,17 @@ Exactly 2 arguments. Alias: `pow` (identical behavior, same arity).
 - **Parser coercion:** each literal argument's type is inferred independently.
 - **IR construction** (`PowerFunc`, built via reflection): base `NumericArithFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", "argument1"|"argument2")` if either `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 POWER(argument1, argument2)
 ```
 
-Example: `eq(power(base,2),25)` renders as `(POWER([base], @wparam_0) = @wparam_1)`.
+Example: `eq(power(base,2),25)` renders as `(POWER([base], @wparam_0) = @wparam_1)` on SQL Server.
 
 ## Notes
 

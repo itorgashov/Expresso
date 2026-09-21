@@ -27,13 +27,35 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not `DateTime` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### SQL Server, MySQL / MariaDB, DB2
 
 ```sql
 YEAR(datetime)
 ```
 
-Example: `eq(year(createdat),2020)` renders as `(YEAR([created_at]) = @wparam_0)`.
+Example: `eq(year(createdat),2020)` renders as `(YEAR([created_at]) = @wparam_0)` on SQL Server.
+
+### PostgreSQL
+
+```sql
+CAST(EXTRACT(YEAR FROM datetime) AS integer)
+```
+
+### SQLite
+
+```sql
+CAST(strftime('%Y', datetime) AS integer)
+```
+
+### Oracle
+
+```sql
+EXTRACT(YEAR FROM datetime)
+```
 
 ## Notes
 

@@ -29,7 +29,12 @@ Exactly 2 arguments.
   - `dateTime.ReturnType` is not `DateTime` → `ArgumentException`
   - `amount.ReturnType` is not `int` → `ArgumentException` (a `byte` or `double` amount, e.g. a fractional literal, is rejected — only whole `int` amounts are supported)
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+`amount` is the bound `int` (zero and negative allowed).
+
+### SQL Server
 
 ```sql
 DATEADD(year, amount, datetime)
@@ -37,8 +42,38 @@ DATEADD(year, amount, datetime)
 
 Example: `gt(addyears(createdat,1), dateTo)` renders as `(DATEADD(year, @wparam_0, [created_at]) > [date_to])`.
 
+### PostgreSQL
+
+```sql
+(datetime + ((amount) * INTERVAL '1 year'))
+```
+
+### SQLite
+
+```sql
+datetime(datetime, ((amount) || ' years'))
+```
+
+### MySQL / MariaDB
+
+```sql
+DATE_ADD(datetime, INTERVAL amount YEAR)
+```
+
+### Oracle
+
+```sql
+(datetime + NUMTOYMINTERVAL(amount, 'YEAR'))
+```
+
+### DB2
+
+```sql
+(datetime + amount YEARS)
+```
+
 ## Notes
 
-- **Negative and zero amounts are supported**: `addyears(createdat,-1)` subtracts a year; `addyears(createdat,0)` is a no-op equivalent to `createdat` itself. SQL Server's `DATEADD` accepts negative offsets natively — no special rendering is needed.
+- **Negative and zero amounts are supported**: `addyears(createdat,-1)` subtracts a year; `addyears(createdat,0)` is a no-op equivalent to `createdat` itself. Negative offsets are passed through; no special rendering is needed.
 - Only whole years via `int`; there is no fractional/partial-year variant in v1.
 - See [`addmonths`](addmonths.md), [`adddays`](adddays.md), [`addhours`](addhours.md), [`addminutes`](addminutes.md), [`addseconds`](addseconds.md) for the other date-arithmetic functions.

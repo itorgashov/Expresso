@@ -34,11 +34,15 @@ sortfor(authors/awards, title),desc
 - **Sort parser:** `CollectionRef` / `any`/`all`/`none` as the sort key → `ArgumentException` (collections cannot be sort keys)
 - **Filter parser:** `sortfor(...)` anywhere in `filter=` → `ArgumentException`: `'sortfor' is only valid in a sort directive, not in a filter.`
 
-## SQL Server rendering
+## SQL rendering
 
-Parent `RenderOrderByClause` uses **only** `SortDirective.Items`. Nested order is rendered by the host against the collection's `ItemFieldToColumn` map (same renderer, narrower mapping).
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
 
-Boolean expressions in nested sort keys use `CASE WHEN … THEN 1 ELSE 0 END`. With `asc`, non-matches sort first; use `desc` for “matches first” (e.g. `gt(len(lastname),10),desc`).
+### All dialects
+
+`sortfor` does not emit parent SQL. `RenderOrderByClause` uses only `SortDirective.Items`. Nested order is rendered by the host against the collection's `ItemFieldToColumn` map (same renderer, narrower mapping).
+
+Boolean expressions in nested sort keys use `CASE WHEN ... THEN 1 ELSE 0 END` on every dialect. With `asc`, non-matches sort first; use `desc` for "matches first" (e.g. `gt(len(lastname),10),desc`).
 
 ## Notes
 

@@ -27,13 +27,17 @@ Exactly 1 argument.
   - `argument` is `null` → `ArgumentNullException`
   - `argument.ReturnType` is not one of the allowed types → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 (expr IS NULL)
 ```
 
-Example: `isnull(isbn)` renders as `([isbn] IS NULL)`.
+Example: `isnull(isbn)` renders as `([isbn] IS NULL)` on SQL Server.
 
 ## Notes
 

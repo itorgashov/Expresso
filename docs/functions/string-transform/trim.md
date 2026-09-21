@@ -27,13 +27,17 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not `string` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 TRIM(text)
 ```
 
-Example: `eq(trim(name),"Jo")` renders as `(TRIM([name]) = @wparam_0)`.
+Example: `eq(trim(name),"Ada")` renders as `(TRIM([name]) = @wparam_0)` on SQL Server.
 
 ## Notes
 

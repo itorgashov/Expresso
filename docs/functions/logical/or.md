@@ -28,13 +28,17 @@ At least 2 arguments; no upper bound.
   - Any argument is `null` → `ArgumentException`
   - Any argument's `ReturnType` is not `bool` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 (expr1 OR expr2 OR ...)
 ```
 
-Example: `or(startswith(name,"Jo"),eq(status,1))` renders as `([name] LIKE @wparam_0 ESCAPE '\' OR [status] = @wparam_1)`.
+Example: `or(eq(status,1),eq(status,2))` renders as `([status] = @wparam_0 OR [status] = @wparam_1)` on SQL Server.
 
 ## Notes
 

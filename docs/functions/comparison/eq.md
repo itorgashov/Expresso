@@ -41,13 +41,17 @@ Any other pairing → `ArgumentException("Incompatible argument types")`.
 - **Parser coercion:** if the first argument is a quoted/unquoted literal token, its type is inferred (`GetLiteralType`); the second literal argument is then coerced to that same type. `Incompatible argument types: expected {type}, got {type}.` (`ArgumentException`) if a non-literal second argument's `ReturnType` still mismatches after coercion.
 - **IR construction** (`EqFunc`, built via reflection by the parser): `ArgumentNullException` for a `null` operand; `ArgumentException` for incompatible/disallowed types. Because the parser constructs comparison functions via `Activator.CreateInstance`, these surface as `System.Reflection.TargetInvocationException` with the real exception in `.InnerException` — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 (left = right)
 ```
 
-Example: `eq(status,1)` renders as `([status] = @wparam_0)`.
+Example: `eq(status,1)` renders as `([status] = @wparam_0)` on SQL Server.
 
 ## Notes
 

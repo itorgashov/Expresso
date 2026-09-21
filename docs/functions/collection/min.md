@@ -26,13 +26,20 @@ Exactly 2 arguments.
 - **Parser (scalar overload):** first argument is not a collection; same arity error as arithmetic `min`.
 - **IR construction** (`CollectionMinFunc`): illegal selector type → `ArgumentException("Illegal argument type", "selector")`. Constructed directly by the parser.
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+`{FromClause}` and `{CorrelateSql}` come from `CollectionSqlMapping` (application-authored, so they may already be dialect-specific).
+
+### All dialects
 
 ```sql
 (SELECT MIN(selector) FROM {FromClause} WHERE {CorrelateSql})
 ```
 
 Example: `gt(min(authors, dateofbirth), "1828-01-01")`.
+
+**DB2 / `ORDER BY`:** DB2 rejects correlated references in `ORDER BY` scalar subqueries (`SQL0206N`). This fragment is valid in `WHERE` and in a `SELECT` list. For a sort key, select it in a derived table (or extra SELECT column) and order by that alias. See [docs/rendering.md](../../rendering.md).
 
 ## Notes
 

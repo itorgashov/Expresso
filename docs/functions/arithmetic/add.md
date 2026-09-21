@@ -26,13 +26,17 @@ Exactly 2 arguments.
 - **Parser coercion:** each literal argument's type is inferred independently (`GetLiteralType`).
 - **IR construction** (`AddFunc`, built via reflection): base `NumericArithFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", "argument1"|"argument2")` if either `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 (argument1 + argument2)
 ```
 
-Example: `gt(add(price,tax),100)` renders as `(([price] + [tax]) > @wparam_0)`.
+Example: `gt(add(price,tax),100)` renders as `(([price] + [tax]) > @wparam_0)` on SQL Server.
 
 ## Notes
 

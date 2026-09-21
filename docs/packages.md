@@ -1,52 +1,61 @@
 # Packages
 
-Expresso ships as three independent NuGet packages. There is no metapackage in v1 — reference only what a given project needs.
+Expresso ships as independent NuGet packages. There is no rendering metapackage — reference only the dialect you execute against.
 
 | Package | Contains | Depends on |
 |---|---|---|
-| `Expresso.Core` | Expression tree (IR), `FilterCriteria`, `SortDirective`, `IRequestFieldsInfoProvider`, `QueryModel` | — |
-| `Expresso.Parsing` | `IFilterParser`, `ISortDirectiveParser`, DI registration | `Expresso.Core` |
-| `Expresso.Rendering.SqlServer` | `IExpressionToQueryClauseTransformer`, DI registration | `Expresso.Core` |
+| `Expresso.Core` | Expression tree (IR), `FilterCriteria`, `SortDirective`, field catalogs | — |
+| `Expresso.Parsing` | `IFilterParser`, `ISortDirectiveParser`, DI | `Expresso.Core` |
+| `Expresso.Rendering.Common` | `IExpressionToQueryClauseTransformer`, `SqlQueryMapping`, walker base | `Expresso.Core` |
+| `Expresso.Rendering.SqlServer` | SQL Server transformer + `AddSqlServerExpressionTransformations()` | Common |
+| `Expresso.Rendering.PostgreSql` | PostgreSQL transformer + `AddPostgreSqlExpressionTransformations()` | Common |
+| `Expresso.Rendering.Sqlite` | SQLite transformer + `AddSqliteExpressionTransformations()` | Common |
+| `Expresso.Rendering.MySql` | MySQL / MariaDB transformer + `AddMySqlExpressionTransformations()` | Common |
+| `Expresso.Rendering.Oracle` | Oracle transformer + `AddOracleExpressionTransformations()` | Common |
+| `Expresso.Rendering.Db2` | IBM DB2 transformer + `AddDb2ExpressionTransformations()` | Common |
 
-`Expresso.Core` is published on its own — separate from both parsing and rendering — so that parsers and renderers always share one type identity for the expression tree, and so an application can depend on the tree types (e.g. to pass `FilterCriteria` between layers) without pulling in a SQL renderer it doesn't need.
+`Expresso.Core` is published on its own so parsers and renderers share one type identity for the expression tree.
+
+Public rendering types live in namespace `Expresso.Rendering` (breaking in **0.9.0**; previously `Expresso.SqlServer`).
 
 ## `Expresso.Core`
 
 Namespace: `Expresso.Core.CriteriaExpressions` (and `.Abstract`), `Expresso.Core.Filtering`, `Expresso.Core.Sorting`.
 
-- The expression tree base types: `AbstractExpression`, `AbstractFunction`, and the function base classes (`BooleanFunction`, `StringFunction`, `ComparisonFunction`, etc.) — see [docs/functions/README.md](functions/README.md) for every concrete function.
-- `FilterCriteria` — wraps the parsed boolean root expression.
-- `SortDirective` / `SortDirectiveItem` / `SortDirection` — the parsed sort list.
-- `IRequestFieldsInfoProvider` — scalar field allow-list. `IRequestQueryModelProvider` / `QueryModel` — the same allow-list plus nested collections. See [docs/field-providers.md](field-providers.md).
-
-Has no dependencies of its own. Reference this package alone if you only need the tree types (for example, a layer that receives an already-parsed `FilterCriteria` and just needs the type).
+- Expression tree types — see [docs/functions/README.md](functions/README.md).
+- `FilterCriteria`, `SortDirective` / `CollectionSort`.
+- `IRequestFieldsInfoProvider` / `IRequestQueryModelProvider` — [docs/field-providers.md](field-providers.md).
 
 ## `Expresso.Parsing`
 
 Namespace: `Expresso.Parsing`.
 
-- `IFilterParser` / `FilterParser` — turns a filter query string into a `FilterCriteria` (throws if the parsed root is not a boolean expression). Additive overload `Parse(string, QueryModel)`.
-- `ISortDirectiveParser` / `SortDirectiveParser` — turns a sort query string into a `SortDirective`.
-- `LiteralParseOptions` — optional culture and date/time format patterns for quoted literals (defaults preserve ISO dates and invariant time-of-day rules).
-- DI registration: `services.AddRequestParametersParsers()` (defaults), `AddRequestParametersParsers(Action<LiteralParseOptions>)`, or `AddRequestParametersParsers(LiteralParseOptions)`.
-- The tokenizer/recursive-descent parser (`ExpressionParser`) is internal — not part of the public API.
+- `IFilterParser` / `FilterParser`, `ISortDirectiveParser` / `SortDirectiveParser`.
+- `LiteralParseOptions`; DI: `AddRequestParametersParsers()`.
 
-Typically referenced by whichever layer reads incoming query parameters (usually the **presentation/API layer** — a controller, minimal API handler, or an application-service method that accepts raw query strings).
+## Rendering
 
-## `Expresso.Rendering.SqlServer`
+Each dialect package registers **one** `IExpressionToQueryClauseTransformer` implementation. Mapping types (`SqlQueryMapping`, `CollectionSqlMapping`) are in Common.
 
-Namespace: `Expresso.SqlServer` (note: differs from the package/folder name).
+Typically referenced by the data-access layer. Identifier quotes and bind names: [docs/rendering.md](rendering.md). Per-function SQL (all dialects): [docs/functions/](functions/README.md).
 
-- `IExpressionToQueryClauseTransformer` / `ExpressionToSqlServerQueryClauseTransformer` — renders a `FilterCriteria` to a parameterized `WHERE` fragment and a `SortDirective` to a parameterized `ORDER BY` fragment, given a `fieldToColumnMap` (or `SqlQueryMapping` when collections are used) and a parameter-name prefix.
-- DI registration: `services.AddExpressionTransformations()` registers the transformer as a singleton.
+Install example (SQL Server):
 
-Typically referenced by the **data-access layer** (ADO.NET/Dapper repository) that builds and executes the final SQL.
+```powershell
+dotnet add MyApp.DataAccess package Expresso.Rendering.SqlServer
+```
+
+```csharp
+using Expresso.Rendering;
+builder.Services.AddSqlServerExpressionTransformations();
+```
+
+Use `AddPostgreSqlExpressionTransformations`, `AddSqliteExpressionTransformations`, `AddMySqlExpressionTransformations`, `AddOracleExpressionTransformations`, or `AddDb2ExpressionTransformations` for other engines. MariaDB uses the **MySql** package.
 
 ## Target framework and supported types
 
-- **Target frameworks:** `netstandard2.0` and `net6.0`. NuGet packages contain both assemblies under `lib/netstandard2.0` and `lib/net6.0`.
-- **Typical consumers:** .NET Framework 4.6.1+ (via `netstandard2.0`), .NET Standard 2.0 libraries, and .NET 6+ (prefer `net6.0` when your app targets .NET 6 or later).
-- **Supported CLR types:** `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`, `TimeSpan` (time-of-day) on all TFMs; `DateOnly` and `TimeOnly` when referencing the **net6.0** assembly.
+- **Target frameworks:** `netstandard2.0` and `net6.0`.
+- **Supported CLR types:** `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`, `TimeSpan` (time-of-day) on all TFMs; `DateOnly` and `TimeOnly` on **net6.0**.
 - **Not supported:** `float`, `decimal`.
 
-See [docs/query-syntax.md](query-syntax.md) for literal syntax and quoting rules for each type.
+See [docs/query-syntax.md](query-syntax.md).

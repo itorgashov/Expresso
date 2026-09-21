@@ -29,13 +29,29 @@ Exactly 2 arguments.
   - `sourceString.ReturnType` is not `string` → `ArgumentException`
   - `length.ReturnType` is not `int` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### SQL Server, PostgreSQL, MySQL / MariaDB, DB2
 
 ```sql
 RIGHT(text, length)
 ```
 
-Example: `eq(right(isbn,1),"3")` renders as `(RIGHT([isbn], @wparam_0) = @wparam_1)`.
+Example: `eq(right(isbn,1),"3")` renders as `(RIGHT([isbn], @wparam_0) = @wparam_1)` on SQL Server.
+
+### SQLite
+
+```sql
+substr(text, -(length))
+```
+
+### Oracle
+
+```sql
+SUBSTR(text, -(length))
+```
 
 ## Notes
 

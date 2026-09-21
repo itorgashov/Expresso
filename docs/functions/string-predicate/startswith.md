@@ -28,24 +28,43 @@ Exactly 2 arguments.
   - Either argument is `null` → `ArgumentNullException`
   - Either argument's `ReturnType` is not `string` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
 
-Renders as a `LIKE ... ESCAPE '\'` predicate, always with a trailing `ESCAPE '\'` clause:
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+Wildcard escaping of a **string literal** pattern (`\` then `%` then `_`, in that order) is done in C# before binding on **all** dialects.
+
+### SQL Server, PostgreSQL, SQLite, Oracle, DB2
+
+Literal prefix (parameter value has `%` appended, e.g. `startswith(name,"Jo")` binds `"Jo%"`; `startswith(name,"a_b")` binds `"a\_b%"`):
 
 ```sql
-(text LIKE 'prefix%' ESCAPE '\')
+(text LIKE @p ESCAPE '\')
 ```
 
-**If the prefix is a string literal** (the common case — a quoted value in the query string), Expresso escapes SQL `LIKE` wildcard characters in the literal **before** binding it as a parameter, so they're matched literally rather than as wildcards:
-
-- `\` → `\\`, then `%` → `\%`, then `_` → `\_` (in that order)
-- The escaped value has `%` appended: `startswith(name,"Jo")` → parameter value `"Jo%"`
-- `startswith(name,"a_b")` → parameter value `"a\_b%"` (the literal `_` is escaped so it doesn't act as a single-character wildcard)
-
-**If the prefix is not a string literal** (e.g. a field or another function's result), the escaping is done in SQL itself:
+Non-literal prefix. SQL Server concatenates with `+`; PostgreSQL, SQLite, Oracle, and DB2 use `||`:
 
 ```sql
+-- SQL Server
 (text LIKE (REPLACE(REPLACE(REPLACE(prefix, '\', '\\'), '%', '\%'), '_', '\_') + '%') ESCAPE '\')
+
+-- PostgreSQL, SQLite, Oracle, DB2
+(text LIKE (REPLACE(REPLACE(REPLACE(prefix, '\', '\\'), '%', '\%'), '_', '\_') || '%') ESCAPE '\')
+```
+
+### MySQL / MariaDB
+
+MySQL treats `\` as a string escape, so the ESCAPE clause is `ESCAPE '\\'`. Non-literal patterns use `CONCAT` and doubled backslashes in the `REPLACE` literals.
+
+Literal prefix:
+
+```sql
+(text LIKE @p ESCAPE '\\')
+```
+
+Non-literal prefix:
+
+```sql
+(text LIKE CONCAT(REPLACE(REPLACE(REPLACE(prefix, '\\', '\\\\'), '%', '\\%'), '_', '\\_'), '%') ESCAPE '\\')
 ```
 
 ## Notes

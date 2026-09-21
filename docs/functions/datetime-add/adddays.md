@@ -29,13 +29,48 @@ Exactly 2 arguments.
   - `dateTime.ReturnType` is not `DateTime` → `ArgumentException`
   - `amount.ReturnType` is not `int` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+`amount` is the bound `int` (zero and negative allowed).
+
+### SQL Server
 
 ```sql
 DATEADD(day, amount, datetime)
 ```
 
-Example: `gt(adddays(createdat,-7), dateTo)` renders as `(DATEADD(day, @wparam_0, [created_at]) > [date_to])`, with `-7` bound as the parameter — a common "created within the last 7 days" pattern.
+Example: `gt(adddays(createdat,-7), dateTo)` renders as `(DATEADD(day, @wparam_0, [created_at]) > [date_to])`.
+
+### PostgreSQL
+
+```sql
+(datetime + ((amount) * INTERVAL '1 day'))
+```
+
+### SQLite
+
+```sql
+datetime(datetime, ((amount) || ' days'))
+```
+
+### MySQL / MariaDB
+
+```sql
+DATE_ADD(datetime, INTERVAL amount DAY)
+```
+
+### Oracle
+
+```sql
+(datetime + NUMTODSINTERVAL(amount, 'DAY'))
+```
+
+### DB2
+
+```sql
+(datetime + amount DAYS)
+```
 
 ## Notes
 

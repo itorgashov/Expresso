@@ -1,12 +1,11 @@
-using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Expresso.Core.Sorting;
 using Expresso.Sample.Shared.Models;
-using Expresso.SqlServer;
-using Microsoft.Data.SqlClient;
+using Expresso.Rendering;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
@@ -16,7 +15,8 @@ internal static class BookChildLoader
     private const string AwardOrderParamPrefix = "awardOrder";
 
     public static async Task LoadAuthorsAndAwardsAsync(
-        SqlConnection connection,
+        DbConnection connection,
+        ISampleDb db,
         IReadOnlyList<Book> books,
         SortDirective? sortDirective,
         IExpressionToQueryClauseTransformer transformer,
@@ -30,44 +30,53 @@ internal static class BookChildLoader
         var bookIds = books.Select(b => b.Id).Distinct().ToList();
         var authorsByBookId = books.ToDictionary(b => b.Id, _ => new List<Author>());
 
+        var sql = db.Sql;
+        var mappings = new SampleSqlMappings(sql);
+        var authorParams = new Dictionary<string, object>();
+        var awardParams = new Dictionary<string, object>();
         var authorSort = NestedSortHelper.ResolveNested(sortDirective, "authors");
         var awardSort = NestedSortHelper.ResolveNested(sortDirective, "authors", "awards");
         var authorOrderBy = NestedSortHelper.RenderOrderByOrDefault(
             authorSort,
-            "a.display_name",
-            SampleSqlMappings.AuthorItemFields,
+            sql.Col("a", "display_name"),
+            mappings.AuthorItemFields,
             transformer,
             AuthorOrderParamPrefix,
-            parameters: null);
+            authorParams);
         var awardOrderBy = NestedSortHelper.RenderOrderByOrDefault(
             awardSort,
-            "aw.year, aw.title",
-            SampleSqlMappings.AwardItemFields,
+            sql.Col("aw", "year") + ", " + sql.Col("aw", "title"),
+            mappings.AwardItemFields,
             transformer,
             AwardOrderParamPrefix,
-            parameters: null);
+            awardParams);
 
-        var idParameters = string.Join(", ", bookIds.Select((_, i) => $"@bookId{i}"));
+        var idParameters = string.Join(", ", bookIds.Select((_, i) => sql.Param("bookId" + i)));
         var authorSql =
-            "SELECT ba.book_id, a.id, a.first_name, a.last_name, a.display_name, a.date_of_birth, a.created_at" +
-            " FROM dbo.book_author AS ba" +
-            " INNER JOIN dbo.author AS a ON a.id = ba.author_id" +
-            $" WHERE ba.book_id IN ({idParameters})" +
-            $" ORDER BY ba.book_id, {authorOrderBy}";
+            "SELECT " + sql.Col("ba", "book_id") + ", " + sql.Col("a", "id") + ", " + sql.Col("a", "first_name") + ", " +
+            sql.Col("a", "last_name") + ", " + sql.Col("a", "display_name") + ", " + sql.Col("a", "date_of_birth") + ", " +
+            sql.Col("a", "created_at") +
+            " FROM " + sql.TableAs("book_author", "ba") +
+            " INNER JOIN " + sql.TableAs("author", "a") + " ON " + sql.Col("a", "id") + " = " + sql.Col("ba", "author_id") +
+            " WHERE " + sql.Col("ba", "book_id") + " IN (" + idParameters + ")" +
+            " ORDER BY " + sql.Col("ba", "book_id") + ", " + authorOrderBy;
 
         var authorIds = new HashSet<int>();
-        using (var command = new SqlCommand(authorSql, connection))
+        using (var command = connection.CreateCommand())
         {
+            command.CommandText = authorSql;
             for (var i = 0; i < bookIds.Count; i++)
             {
-                command.Parameters.AddWithValue($"@bookId{i}", bookIds[i]);
+                db.Bind(command, db.Sql.Param("bookId" + i), bookIds[i]);
             }
+
+            db.BindAll(command, authorParams);
 
             using (var reader = await command.ExecuteReaderAsync(cancellationToken))
             {
                 while (await reader.ReadAsync(cancellationToken))
                 {
-                    var bookId = reader.GetInt32(0);
+                    var bookId = SampleDbValues.GetInt32(reader, 0);
                     var author = ReadAuthor(reader, startIndex: 1);
                     authorsByBookId[bookId].Add(author);
                     authorIds.Add(author.Id);
@@ -77,8 +86,10 @@ internal static class BookChildLoader
 
         var awardsByAuthorId = await LoadAwardsAsync(
             connection,
+            db,
             authorIds,
             awardOrderBy,
+            awardParams,
             cancellationToken);
 
         foreach (var book in books)
@@ -96,9 +107,11 @@ internal static class BookChildLoader
     }
 
     private static async Task<Dictionary<int, List<Award>>> LoadAwardsAsync(
-        SqlConnection connection,
+        DbConnection connection,
+        ISampleDb db,
         IReadOnlyCollection<int> authorIds,
         string orderBy,
+        Dictionary<string, object> awardParams,
         CancellationToken cancellationToken)
     {
         var awardsByAuthorId = new Dictionary<int, List<Award>>();
@@ -108,25 +121,29 @@ internal static class BookChildLoader
         }
 
         var idList = authorIds.ToList();
-        var idParameters = string.Join(", ", idList.Select((_, i) => $"@authorId{i}"));
+        var idParameters = string.Join(", ", idList.Select((_, i) => db.Sql.Param("authorId" + i)));
+        var sqlCatalog = db.Sql;
         var sql =
-            "SELECT aw.author_id, aw.title, aw.year" +
-            " FROM dbo.award AS aw" +
-            $" WHERE aw.author_id IN ({idParameters})" +
-            $" ORDER BY aw.author_id, {orderBy}";
+            "SELECT " + sqlCatalog.Col("aw", "author_id") + ", " + sqlCatalog.Col("aw", "title") + ", " + sqlCatalog.Col("aw", "year") +
+            " FROM " + sqlCatalog.TableAs("award", "aw") +
+            " WHERE " + sqlCatalog.Col("aw", "author_id") + " IN (" + idParameters + ")" +
+            " ORDER BY " + sqlCatalog.Col("aw", "author_id") + ", " + orderBy;
 
-        using (var command = new SqlCommand(sql, connection))
+        using (var command = connection.CreateCommand())
         {
+            command.CommandText = sql;
             for (var i = 0; i < idList.Count; i++)
             {
-                command.Parameters.AddWithValue($"@authorId{i}", idList[i]);
+                db.Bind(command, db.Sql.Param("authorId" + i), idList[i]);
             }
+
+            db.BindAll(command, awardParams);
 
             using (var reader = await command.ExecuteReaderAsync(cancellationToken))
             {
                 while (await reader.ReadAsync(cancellationToken))
                 {
-                    var authorId = reader.GetInt32(0);
+                    var authorId = SampleDbValues.GetInt32(reader, 0);
                     if (!awardsByAuthorId.TryGetValue(authorId, out var awards))
                     {
                         awards = new List<Award>();
@@ -136,7 +153,7 @@ internal static class BookChildLoader
                     awards.Add(new Award
                     {
                         Title = reader.GetString(1),
-                        Year = reader.GetInt16(2),
+                        Year = SampleDbValues.GetInt16(reader, 2),
                     });
                 }
             }
@@ -145,14 +162,14 @@ internal static class BookChildLoader
         return awardsByAuthorId;
     }
 
-    private static Author ReadAuthor(SqlDataReader reader, int startIndex) =>
+    private static Author ReadAuthor(DbDataReader reader, int startIndex) =>
         new Author
         {
-            Id = reader.GetInt32(startIndex),
+            Id = SampleDbValues.GetInt32(reader, startIndex),
             FirstName = reader.GetString(startIndex + 1),
             LastName = reader.GetString(startIndex + 2),
             DisplayName = reader.GetString(startIndex + 3),
-            DateOfBirth = reader.IsDBNull(startIndex + 4) ? null : reader.GetDateTime(startIndex + 4),
-            CreatedAt = reader.GetDateTime(startIndex + 5),
+            DateOfBirth = reader.IsDBNull(startIndex + 4) ? null : SampleDbValues.GetDateTime(reader, startIndex + 4),
+            CreatedAt = SampleDbValues.GetDateTime(reader, startIndex + 5),
         };
 }

@@ -27,13 +27,41 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not `DateTime` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### SQL Server
 
 ```sql
 DATEPART(second, datetime)
 ```
 
 Example: `eq(second(createdat),0)` renders as `(DATEPART(second, [created_at]) = @wparam_0)`.
+
+### PostgreSQL
+
+```sql
+CAST(EXTRACT(SECOND FROM datetime) AS integer)
+```
+
+### SQLite
+
+```sql
+CAST(strftime('%S', datetime) AS integer)
+```
+
+### MySQL / MariaDB, DB2
+
+```sql
+SECOND(datetime)
+```
+
+### Oracle
+
+```sql
+EXTRACT(SECOND FROM datetime)
+```
 
 ## Notes
 

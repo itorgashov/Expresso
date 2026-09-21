@@ -2,7 +2,7 @@
 
 ## What Expresso is
 
-Expresso turns a **function-call query string** — the kind of thing a client might send as `?filter=...&sort=...` — into a **validated expression tree**, then renders that tree into **parameterized SQL** for SQL Server.
+Expresso turns a **function-call query string** — the kind of thing a client might send as `?filter=...&sort=...` — into a **validated expression tree**, then renders that tree into **parameterized SQL** for the dialect you choose (SQL Server, PostgreSQL, SQLite, MySQL/MariaDB, Oracle, or DB2).
 
 ```text
 gt(createdAt,"2021-01-01")
@@ -22,8 +22,13 @@ It exists to replace the usual ad-hoc approach to "list" endpoints, where every 
 flowchart LR
     Q["Query string\nfilter / sort"] --> P["Expresso.Parsing\nIFilterParser / ISortDirectiveParser"]
     P --> T["Expression tree\nExpresso.Core"]
-    T --> R["Expresso.Rendering.SqlServer\nIExpressionToQueryClauseTransformer"]
+    T --> R["Expresso.Rendering.*\nIExpressionToQueryClauseTransformer"]
     R --> S["SQL + parameters\nWHERE / ORDER BY"]
+    style Q fill:#dbeafe,stroke:#1e3a5f,color:#1e3a5f
+    style P fill:#fef3c7,stroke:#78350f,color:#78350f
+    style T fill:#dcfce7,stroke:#14532d,color:#14532d
+    style R fill:#fef3c7,stroke:#78350f,color:#78350f
+    style S fill:#e5e7eb,stroke:#111827,color:#111827
 ```
 
 Every node of the tree validates its own argument types when it is constructed (see [docs/error-handling.md](error-handling.md)), and every field name is checked against an allow-list you provide (see [docs/field-providers.md](field-providers.md)) — so a caller can never filter or sort on a column you did not explicitly expose.
@@ -46,7 +51,7 @@ If your API surface is small, fixed, and known ahead of time, plain parameters m
 
 ## Next steps
 
-- [docs/packages.md](packages.md) — what each of the 3 NuGet packages contains
+- [docs/packages.md](packages.md) — NuGet packages and layers
 - [docs/getting-started.md](getting-started.md) — step-by-step integration guide
 - [docs/functions/README.md](functions/README.md) — full function reference
 - [docs/sample-app.md](sample-app.md) — a complete worked example

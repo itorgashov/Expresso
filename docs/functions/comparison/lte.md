@@ -26,13 +26,17 @@ Exactly 2 arguments.
 - **Parser coercion:** literal type inferred from the first operand, applied to the second.
 - **IR construction** (`LteFunc`, built via reflection): `ArgumentNullException` / `ArgumentException` for `null`/incompatible/`bool`/`string` operands; wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 (left <= right)
 ```
 
-Example: `lte(price,19.99)` renders as `([price] <= @wparam_0)`.
+Example: `lte(price,19.99)` renders as `([price] <= @wparam_0)` on SQL Server.
 
 ## Notes
 

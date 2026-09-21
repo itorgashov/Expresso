@@ -27,13 +27,41 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not an allowed time type → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### SQL Server
 
 ```sql
 DATEPART(hour, datetime)
 ```
 
 Example: `gte(hour(createdat),9)` renders as `(DATEPART(hour, [created_at]) >= @wparam_0)`.
+
+### PostgreSQL
+
+```sql
+CAST(EXTRACT(HOUR FROM datetime) AS integer)
+```
+
+### SQLite
+
+```sql
+CAST(strftime('%H', datetime) AS integer)
+```
+
+### MySQL / MariaDB, DB2
+
+```sql
+HOUR(datetime)
+```
+
+### Oracle
+
+```sql
+EXTRACT(HOUR FROM datetime)
+```
 
 ## Notes
 

@@ -27,13 +27,17 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not `string` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 UPPER(text)
 ```
 
-Example: `eq(upper(countryCode),"US")` renders as `(UPPER([countryCode]) = @wparam_0)`.
+Example: `eq(upper(code),"ABC")` renders as `(UPPER([code]) = @wparam_0)` on SQL Server.
 
 ## Notes
 

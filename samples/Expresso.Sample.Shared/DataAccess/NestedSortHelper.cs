@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Expresso.Core.Sorting;
-using Expresso.SqlServer;
+using Expresso.Rendering;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
@@ -45,7 +45,7 @@ internal static class NestedSortHelper
             var result = transformer.RenderOrderByClause(nestedDirective, mapping, paramPrefix);
             if (parameters is not null)
             {
-                SqlParameterExtensions.MergeParameters(parameters, result.parameters);
+                ParameterMerge.Merge(parameters, result.parameters);
             }
 
             return result.orderByClause;

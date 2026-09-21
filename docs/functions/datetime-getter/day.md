@@ -27,13 +27,35 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not `DateTime` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### SQL Server, MySQL / MariaDB, DB2
 
 ```sql
 DAY(datetime)
 ```
 
-Example: `eq(day(createdat),15)` renders as `(DAY([created_at]) = @wparam_0)`.
+Example: `eq(day(createdat),15)` renders as `(DAY([created_at]) = @wparam_0)` on SQL Server.
+
+### PostgreSQL
+
+```sql
+CAST(EXTRACT(DAY FROM datetime) AS integer)
+```
+
+### SQLite
+
+```sql
+CAST(strftime('%d', datetime) AS integer)
+```
+
+### Oracle
+
+```sql
+EXTRACT(DAY FROM datetime)
+```
 
 ## Notes
 

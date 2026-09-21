@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
+    <PackageId>Expresso.Rendering.Common</PackageId>
+    <Title>Expresso.Rendering.Common</Title>
+    <Description>Shared Expresso rendering contract, SQL mapping types, and dialect walker base for parameterized WHERE and ORDER BY clauses.</Description>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <Compile Include="..\..\Compatibility\IsExternalInit.cs" Link="Compatibility\IsExternalInit.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Expresso.Core\Expresso.Core.csproj" />
+  </ItemGroup>
+
+</Project>

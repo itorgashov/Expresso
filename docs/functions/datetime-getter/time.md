@@ -1,6 +1,6 @@
 # `time`
 
-Converts a value to a SQL Server `time` (time-of-day only). Conversion happens in SQL via `CAST`; no C# conversion is performed in the function itself.
+Converts a value to a time-of-day. Conversion happens in SQL; no C# conversion is performed in the function itself.
 
 **Availability:** all package TFMs (`netstandard2.0` and `net6.0`).
 
@@ -29,15 +29,30 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not allowed → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+Conversion happens in SQL; the function itself does not convert in C#.
+
+### SQL Server, PostgreSQL, MySQL / MariaDB, DB2
 
 ```sql
 CAST(value AS time)
 ```
 
-Example (netstandard2.0): `eq(time(createdat),"14:30")` renders as `(CAST([created_at] AS time) = @wparam_0)` with a `TimeSpan` parameter.
+Example: `eq(time(createdat),"14:30")` renders as `(CAST([created_at] AS time) = @wparam_0)` on SQL Server (`TimeSpan` on netstandard2.0, `TimeOnly` on net6.0).
 
-Example (net6.0): `eq(time(createdat),"14:30:00")` renders similarly with a `TimeOnly` parameter.
+### SQLite
+
+```sql
+time(value)
+```
+
+### Oracle
+
+```sql
+(value - TRUNC(value))
+```
 
 ## Notes
 

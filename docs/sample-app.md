@@ -7,13 +7,13 @@ Expresso ships two runnable API hosts that share the same data and filtering log
 | [samples/Expresso.Sample.WebApi](../samples/Expresso.Sample.WebApi) | ASP.NET Core + Swagger | `net10` |
 | [samples/Expresso.Sample.WebApi.NetFx](../samples/Expresso.Sample.WebApi.NetFx) | OWIN self-host + Web API 2 + Swagger | `net48` |
 
-Shared code lives in [samples/Expresso.Sample.Shared](../samples/Expresso.Sample.Shared) (`netstandard2.0`): models, ADO.NET repositories, and `QueryParametersParser`. Each host has its own `IRequestFieldsInfoProvider` so the catalog CLR types match the Expresso TFM that host loads.
+Shared code lives in [samples/Expresso.Sample.Shared](../samples/Expresso.Sample.Shared) (`netstandard2.0`): models, ADO.NET repositories, `ISampleSql` dialect catalog, and `QueryParametersParser`. Each host has its own `IRequestFieldsInfoProvider` so the catalog CLR types match the Expresso TFM that host loads. Schema and seed scripts for every engine are under [samples/database](../samples/database). Hosts pick the engine with `ExpressoSample:Engine` in appsettings (default SQL Server) and load `ConnectionStrings:{Engine}` from user secrets. The net48 host does not register Db2.
 
 For setup/run instructions, see each sample's README. This page focuses on *why* it's structured the way it is.
 
 ## Domain: books, authors, publishers
 
-The sample database (`database/schema.sql` under the WebApi project) models a small library catalog:
+The sample database (`samples/database/*/schema.sql`, seed from `seed.json`) models a small library catalog:
 
 | Table | Purpose |
 |---|---|
@@ -45,8 +45,10 @@ flowchart TD
     NetFxFields --> Parsers
     ControllersLogic --> Parsers
     Parsers --> Repositories
-    Repositories --> Transformer["Expresso.Rendering.SqlServer"]
-    Transformer --> DB[("SQL Server")]
+    Repositories --> Catalog["ISampleSql plus ISampleDb"]
+    Repositories --> Transformer["IExpressionToQueryClauseTransformer"]
+    Catalog --> Db[(Expresso_Sample)]
+    Transformer --> Db
     style hosts fill:#dbeafe,stroke:#1e3a5f,color:#1e3a5f
     style shared fill:#dcfce7,stroke:#14532d,color:#14532d
     style CoreHost fill:#bfdbfe,stroke:#1e3a5f,color:#1e3a5f
@@ -57,12 +59,14 @@ flowchart TD
     style Repositories fill:#bbf7d0,stroke:#14532d,color:#14532d
     style Parsers fill:#fef3c7,stroke:#78350f,color:#78350f
     style Transformer fill:#fef3c7,stroke:#78350f,color:#78350f
-    style DB fill:#e5e7eb,stroke:#111827,color:#111827
+    style Catalog fill:#fef3c7,stroke:#78350f,color:#78350f
+    style Db fill:#e5e7eb,stroke:#111827,color:#111827
 ```
 
-- **Shared layer** ([Expresso.Sample.Shared](../samples/Expresso.Sample.Shared)): domain models, view models, repositories, and query-parameter parsing. Each host supplies `ISqlConnectionFactory`, thin controllers, and its own field catalog.
+- **Shared layer** ([Expresso.Sample.Shared](../samples/Expresso.Sample.Shared)): domain models, view models, repositories, and query-parameter parsing. Dialect table names and bind markers are in `ISampleSql`; hosts supply `ISampleDb`, thin controllers, and a field catalog.
 - **Presentation (per host):** controllers parse `filter`/`sort` via `QueryParametersParser`, guarded by that host's `IRequestFieldsInfoProvider`. Parse failures → `400 Bad Request`.
 - **Data access (shared):** repositories implement `IRepository<T>` and use `IExpressionToQueryClauseTransformer` with per-entity mappings. Books use `SqlQueryMapping` with nested `authors` and `authors.awards`. Parent `ORDER BY` runs only when `SortDirective.Items` is non-empty; child lists use `SortDirective.Nested` via `sortfor`.
+- **Engine switch:** `SampleEngineSetup` registers the dialect transformer and ADO.NET provider from `ExpressoSample:Engine`, and opens `ConnectionStrings:{Engine}` from user secrets. Db2 cannot `ORDER BY` a correlated collection aggregate (`count(authors)`).
 
 ## Field catalog
 

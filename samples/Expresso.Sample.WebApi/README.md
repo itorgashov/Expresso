@@ -1,23 +1,30 @@
 # Expresso.Sample.WebApi
 
-Sample ASP.NET Core Web API demonstrating [Expresso](https://github.com/itorgashov/Expresso) filter/sort query strings rendered to parameterized SQL Server queries.
+Sample ASP.NET Core Web API demonstrating [Expresso](https://github.com/itorgashov/Expresso) filter/sort query strings rendered to parameterized SQL for SQL Server, PostgreSQL, MySQL/MariaDB, SQLite, Oracle, or Db2.
 
-Shared models, repositories, and filtering live in [Expresso.Sample.Shared](../Expresso.Sample.Shared). A .NET Framework 4.8 counterpart is [Expresso.Sample.WebApi.NetFx](../Expresso.Sample.WebApi.NetFx).
+Shared models, repositories, and filtering live in [Expresso.Sample.Shared](../Expresso.Sample.Shared). A .NET Framework 4.8 counterpart is [Expresso.Sample.WebApi.NetFx](../Expresso.Sample.WebApi.NetFx) (no Db2).
 
-For a guided walkthrough, see [docs/sample-app.md](../../docs/sample-app.md).
+For a guided walkthrough, see [docs/sample-app.md](../../docs/sample-app.md). Schema/seed: [samples/database](../database). Plan: [SAMPLESEEDPLAN.md](../../SAMPLESEEDPLAN.md).
 
 ## Prerequisites
 
 - .NET 10 SDK
-- SQL Server with database **Expresso_Sample** (see [database/schema.sql](database/schema.sql))
+- A database created from [samples/database](../database) (`schema.sql` then `seed.sql` for the engine you choose)
 
-## Connection string
+## Engine and connection strings
 
-The key is defined in `appsettings.json`; the value comes from **user secrets**:
+Switch engine only in `appsettings.json` (`ExpressoSample:Engine`, default `SqlServer`). Store **all** connection strings in **user secrets** (never commit them). The host loads `ConnectionStrings:{Engine}` for the selected engine (`MariaDb` uses `MySql`). Both sample hosts share the same `UserSecretsId`, so one secrets file serves net10 and net48.
 
 ```powershell
-dotnet user-secrets set "ConnectionStrings:ExpressoSample" "Server=YOUR_SERVER;Database=Expresso_Sample;Trusted_Connection=True;TrustServerCertificate=True" --project samples/Expresso.Sample.WebApi
+dotnet user-secrets set "ConnectionStrings:SqlServer" "Server=YOUR_SERVER;Database=Expresso_Sample;Trusted_Connection=True;TrustServerCertificate=True" --project samples/Expresso.Sample.WebApi
+dotnet user-secrets set "ConnectionStrings:PostgreSql" "Host=localhost;Database=Expresso_Sample;Username=...;Password=..." --project samples/Expresso.Sample.WebApi
+dotnet user-secrets set "ConnectionStrings:MySql" "Server=localhost;Database=Expresso_Sample;User ID=...;Password=..." --project samples/Expresso.Sample.WebApi
+dotnet user-secrets set "ConnectionStrings:Sqlite" "Data Source=C:\temp\expresso-sample.db" --project samples/Expresso.Sample.WebApi
+dotnet user-secrets set "ConnectionStrings:Oracle" "User Id=...;Password=...;Data Source=localhost:1521/XEPDB1" --project samples/Expresso.Sample.WebApi
+dotnet user-secrets set "ConnectionStrings:Db2" "Server=localhost:50000;Database=SAMPLE;UserID=...;Password=..." --project samples/Expresso.Sample.WebApi
 ```
+
+Allowed engines: `SqlServer`, `PostgreSql`, `MySql` (also `MariaDb`), `Sqlite`, `Oracle`, `Db2`. Oracle uses `:` binds; Db2 needs the IBM clidriver on PATH (same as IT). The net48 host does not use `Db2`.
 
 ## Run
 
@@ -54,7 +61,9 @@ Open Swagger UI at `/swagger`.
 
 - `GET /api/publishers?filter=eq(opens,"09:00")` — time-of-day field (`TimeOnly` on this host / SQL `TIME`)
 
+Db2 cannot `ORDER BY` a correlated collection aggregate such as `count(authors)`. Nested `sortfor` and collection filters still work.
+
 ## Architecture
 
-- **This project:** ASP.NET Core host, Swagger, `SqlConnectionFactory`, and thin controllers.
-- **Expresso.Sample.Shared:** ADO.NET repositories, view models, and query-parameter parsing.
+- **This project:** ASP.NET Core host, Swagger, `SampleEngineSetup` (transformer + `ISampleDb`), thin controllers.
+- **Expresso.Sample.Shared:** ADO.NET repositories, `ISampleSql` dialect catalog, view models, and query-parameter parsing.

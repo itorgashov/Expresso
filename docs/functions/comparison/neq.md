@@ -30,15 +30,18 @@ Same as [`eq`](eq.md): both `bool`, both `string`, both `DateTime`, or both nume
 - **Parser coercion:** same literal-type inference as `eq` — first argument's type drives coercion of the second.
 - **IR construction** (`NeqFunc`, built via reflection): `ArgumentNullException` / `ArgumentException` as above; surfaces wrapped in `TargetInvocationException` — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 (left != right)
 ```
 
-Example: `neq(status,1)` renders as `([status] != @wparam_0)`.
+Example: `neq(status,1)` renders as `([status] != @wparam_0)` on SQL Server. Renders as SQL `!=`, not `<>`, on every dialect.
 
 ## Notes
 
-- Renders as SQL `!=`, **not** `<>`.
 - See [`eq`](eq.md) for the positive form.

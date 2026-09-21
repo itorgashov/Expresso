@@ -9,7 +9,7 @@ Expresso has no metapackage — install only what a project needs:
 | Project / layer | Packages |
 |---|---|
 | Presentation / API layer (reads `filter`/`sort` query params) | `Expresso.Core`, `Expresso.Parsing` |
-| Data-access layer (builds/executes SQL) | `Expresso.Core`, `Expresso.Rendering.SqlServer` |
+| Data-access layer (builds/executes SQL) | `Expresso.Core` + one of `Expresso.Rendering.SqlServer` / `PostgreSql` / `Sqlite` / `MySql` / `Oracle` / `Db2` |
 
 ```powershell
 dotnet add MyApp.Api package Expresso.Core
@@ -25,10 +25,10 @@ If a single project does both jobs (as in the sample), install `Expresso.Parsing
 
 ```csharp
 using Expresso.Parsing;
-using Expresso.SqlServer;
+using Expresso.Rendering;
 
-builder.Services.AddRequestParametersParsers();     // IFilterParser, ISortDirectiveParser (default literal rules)
-builder.Services.AddExpressionTransformations();    // IExpressionToQueryClauseTransformer
+builder.Services.AddRequestParametersParsers();
+builder.Services.AddSqlServerExpressionTransformations();
 ```
 
 Optional: configure date/time literal parsing (culture and format patterns):

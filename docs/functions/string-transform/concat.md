@@ -28,15 +28,25 @@ At least 2 arguments; no upper bound.
   - Fewer than 2 arguments → `ArgumentException`
   - Any argument's `ReturnType` is not `string` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### SQL Server, PostgreSQL, MySQL / MariaDB
 
 ```sql
 CONCAT(text1, text2, ...)
 ```
 
-Example: `eq(concat(firstname,lastname),"GeorgeOrwell")` renders as `(CONCAT([firstname], [lastname]) = @wparam_0)`.
+Example: `eq(concat(firstname,lastname),"GeorgeOrwell")` renders as `(CONCAT([firstname], [lastname]) = @wparam_0)` on SQL Server.
+SQL Server `CONCAT` requires SQL Server 2012+ and treats `NULL` arguments as empty strings.
+
+### SQLite, Oracle, DB2
+
+```sql
+(text1 || text2 || ...)
+```
 
 ## Notes
 
-- **Requires SQL Server 2012 or later** (the `CONCAT` function was introduced there).
-- SQL Server's `CONCAT` treats `NULL` arguments as empty strings rather than propagating `NULL` — unlike ordinary `+` string concatenation in T-SQL.
+- On SQLite, Oracle, and DB2, `||` typically propagates `NULL` if any operand is `NULL`. SQL Server `CONCAT` (2012+) treats `NULL` as empty string.

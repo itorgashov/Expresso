@@ -26,13 +26,17 @@ Exactly 2 arguments.
 - **Parser coercion:** literal type inferred from the first operand, applied to the second.
 - **IR construction** (`GteFunc`, built via reflection): `ArgumentNullException` / `ArgumentException` for `null`/incompatible/`bool`/`string` operands; wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 (left >= right)
 ```
 
-Example: `gte(createdat,"2020-01-01")` renders as `([created_at] >= @wparam_0)`.
+Example: `gte(createdat,"2020-01-01")` renders as `([created_at] >= @wparam_0)` on SQL Server.
 
 ## Notes
 

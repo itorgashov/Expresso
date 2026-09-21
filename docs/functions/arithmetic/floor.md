@@ -25,13 +25,17 @@ Exactly 1 argument.
 - **Parser coercion:** a literal argument's type is inferred (`GetLiteralType`).
 - **IR construction** (`FloorFunc`, built via reflection): base `NumericSingleArgDoubleFunction`/`NumericSingleArgFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", nameof(argument))` if the `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 FLOOR(argument)
 ```
 
-Example: `eq(floor(price),19)` renders as `(FLOOR([price]) = @wparam_0)`.
+Example: `eq(floor(price),19)` renders as `(FLOOR([price]) = @wparam_0)` on SQL Server.
 
 ## Notes
 

@@ -28,13 +28,17 @@ At least 2 arguments; no upper bound.
   - Any argument is `null` → `ArgumentException`
   - Any argument's `ReturnType` is not `bool` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 (expr1 AND expr2 AND ...)
 ```
 
-Example: `and(gt(age,25),eq(status,1))` renders as `([age] > @wparam_0 AND [status] = @wparam_1)`.
+Example: `and(gt(age,25),eq(status,1))` renders as `([age] > @wparam_0 AND [status] = @wparam_1)` on SQL Server.
 
 ## Notes
 

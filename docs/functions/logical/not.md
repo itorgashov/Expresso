@@ -26,13 +26,17 @@ Exactly 1 argument.
   - `argument` is `null` → `ArgumentNullException`
   - `argument.ReturnType` is not `bool` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 NOT (expr)
 ```
 
-Example: `not(eq(status,1))` renders as `NOT ([status] = @wparam_0)`.
+Example: `not(eq(status,1))` renders as `NOT ([status] = @wparam_0)` on SQL Server.
 
 ## Notes
 

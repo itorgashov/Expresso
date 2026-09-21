@@ -30,13 +30,30 @@ Exactly 3 arguments. Alias: `substr` (identical behavior, same arity).
   - `sourceString.ReturnType` is not `string` → `ArgumentException`
   - `startIndex.ReturnType` or `length.ReturnType` is not `int` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+`start` is SQL 1-based on every dialect (passed through, not converted to 0-based).
+
+### SQL Server, MySQL / MariaDB
 
 ```sql
 SUBSTRING(text, start, length)
 ```
 
-Example: `eq(substring(name,1,3),"Mar")` renders as `(SUBSTRING([name], @wparam_0, @wparam_1) = @wparam_2)`.
+Example: `eq(substring(name,1,3),"Mar")` renders as `(SUBSTRING([name], @wparam_0, @wparam_1) = @wparam_2)` on SQL Server.
+
+### PostgreSQL, Oracle, DB2
+
+```sql
+SUBSTR(text, start, length)
+```
+
+### SQLite
+
+```sql
+substr(text, start, length)
+```
 
 ## Notes
 

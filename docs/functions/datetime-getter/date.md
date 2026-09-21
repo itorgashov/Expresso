@@ -1,6 +1,6 @@
 # `date`
 
-Converts a value to a SQL Server `date` (calendar day only). Conversion happens in SQL via `CAST`; no C# conversion is performed in the function itself.
+Converts a value to a calendar date (day only). Conversion happens in SQL; no C# conversion is performed in the function itself.
 
 ## Syntax
 
@@ -29,13 +29,30 @@ On **netstandard2.0**, only `DateTime` is accepted.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not allowed → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+Conversion happens in SQL; the function itself does not convert in C#.
+
+### SQL Server, PostgreSQL, MySQL / MariaDB, DB2
 
 ```sql
 CAST(value AS date)
 ```
 
-Example: `eq(date(createdat),"2020-01-01")` renders as `(CAST([created_at] AS date) = @wparam_0)` where the parameter is a `DateOnly` literal on net6.0.
+Example: `eq(date(createdat),"2020-01-01")` renders as `(CAST([created_at] AS date) = @wparam_0)` on SQL Server (parameter is a `DateOnly` literal on net6.0).
+
+### SQLite
+
+```sql
+date(value)
+```
+
+### Oracle
+
+```sql
+TRUNC(value)
+```
 
 ## Notes
 

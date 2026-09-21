@@ -27,13 +27,48 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not `DateTime` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+Every dialect is normalized to C# `DayOfWeek` (`Sunday = 0` ... `Saturday = 6`).
+
+### SQL Server
+
+Session-independent via `@@DATEFIRST`:
 
 ```sql
 ((DATEPART(weekday, datetime) + @@DATEFIRST - 1) % 7)
 ```
 
-Example: `eq(dayofweek(createdat),0)` renders as `(((DATEPART(weekday, [created_at]) + @@DATEFIRST - 1) % 7) = @wparam_0)`, testing for Sunday.
+Example: `eq(dayofweek(createdat),0)` renders as `(((DATEPART(weekday, [created_at]) + @@DATEFIRST - 1) % 7) = @wparam_0)`.
+
+### PostgreSQL
+
+```sql
+CAST(EXTRACT(DOW FROM datetime) AS integer)
+```
+
+### SQLite
+
+```sql
+CAST(strftime('%w', datetime) AS integer)
+```
+
+### MySQL / MariaDB, DB2
+
+Native `DAYOFWEEK` is 1-7 with Sunday = 1:
+
+```sql
+(DAYOFWEEK(datetime) - 1)
+```
+
+### Oracle
+
+Assumes `NLS_TERRITORY` where `TO_CHAR(..., 'D')` uses Sunday = 1 (e.g. America):
+
+```sql
+(TO_NUMBER(TO_CHAR(datetime, 'D')) - 1)
+```
 
 ## Notes
 

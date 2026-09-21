@@ -29,13 +29,18 @@ any(collection, predicate)
 
 Not valid as a sort key (`ISortDirectiveParser` throws `ArgumentException`).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+`{FromClause}` and `{CorrelateSql}` come from `CollectionSqlMapping` (application-authored, so they may already be dialect-specific).
+
+### All dialects
 
 ```sql
 EXISTS (SELECT 1 FROM {FromClause} WHERE {CorrelateSql} [AND predicate])
 ```
 
-`FromClause` and `CorrelateSql` come from `CollectionSqlMapping` (app-authored). Example: `any(authors, eq(displayname, "Leo Tolstoy"))` with the sample book mapping:
+Example: `any(authors, eq(displayname, "Leo Tolstoy"))` with the sample book mapping:
 
 ```sql
 EXISTS (SELECT 1 FROM dbo.book_author AS ba INNER JOIN dbo.author AS a ON a.id = ba.author_id WHERE ba.book_id = b.id AND ([a].[display_name] = @wparam_0))

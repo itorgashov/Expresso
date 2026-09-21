@@ -32,13 +32,17 @@ At least 2 arguments total (a probe plus at least one candidate).
 
 Unlike [`eq`](../comparison/eq.md), `in` requires an **exact** `ReturnType` match — mixed numeric types (e.g. `byte` probe against an `int` candidate) are rejected.
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 (probe IN (candidate1, candidate2, ...))
 ```
 
-Example: `in(status,1,2,3)` renders as `([status] IN (@wparam_0, @wparam_1, @wparam_2))`.
+Example: `in(status,1,2,3)` renders as `([status] IN (@wparam_0, @wparam_1, @wparam_2))` on SQL Server.
 
 ## Notes
 

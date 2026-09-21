@@ -27,13 +27,35 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not `DateTime` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### SQL Server, MySQL / MariaDB, DB2
 
 ```sql
 MONTH(datetime)
 ```
 
-Example: `eq(month(createdat),1)` renders as `(MONTH([created_at]) = @wparam_0)`.
+Example: `eq(month(createdat),1)` renders as `(MONTH([created_at]) = @wparam_0)` on SQL Server.
+
+### PostgreSQL
+
+```sql
+CAST(EXTRACT(MONTH FROM datetime) AS integer)
+```
+
+### SQLite
+
+```sql
+CAST(strftime('%m', datetime) AS integer)
+```
+
+### Oracle
+
+```sql
+EXTRACT(MONTH FROM datetime)
+```
 
 ## Notes
 

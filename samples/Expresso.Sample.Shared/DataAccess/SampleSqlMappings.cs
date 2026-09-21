@@ -1,38 +1,48 @@
 using System;
 using System.Collections.Generic;
-using Expresso.SqlServer;
+using Expresso.Rendering;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
-internal static class SampleSqlMappings
+internal sealed class SampleSqlMappings
 {
-    public static Dictionary<string, string> AuthorItemFields { get; } =
-        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    public SampleSqlMappings(ISampleSql sql)
+    {
+        AuthorItemFields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "firstname", "a.first_name" },
-            { "lastname", "a.last_name" },
-            { "displayname", "a.display_name" },
-            { "dateofbirth", "a.date_of_birth" },
-            { "createdat", "a.created_at" },
+            { "firstname", sql.Col("a", "first_name") },
+            { "lastname", sql.Col("a", "last_name") },
+            { "displayname", sql.Col("a", "display_name") },
+            { "dateofbirth", sql.Col("a", "date_of_birth") },
+            { "createdat", sql.Col("a", "created_at") },
         };
 
-    public static Dictionary<string, string> AwardItemFields { get; } =
-        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        AwardItemFields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "title", "aw.title" },
-            { "year", "aw.year" },
+            { "title", sql.Col("aw", "title") },
+            { "year", sql.Col("aw", "year") },
         };
 
-    public static CollectionSqlMapping AwardsOnAuthor { get; } = new CollectionSqlMapping(
-        "awards",
-        "dbo.award AS aw",
-        "aw.author_id = a.id",
-        AwardItemFields);
+        AwardsOnAuthor = new CollectionSqlMapping(
+            "awards",
+            sql.TableAs("award", "aw"),
+            sql.Col("aw", "author_id") + " = " + sql.Col("a", "id"),
+            AwardItemFields);
 
-    public static CollectionSqlMapping BookAuthors { get; } = new CollectionSqlMapping(
-        "authors",
-        "dbo.book_author AS ba INNER JOIN dbo.author AS a ON a.id = ba.author_id",
-        "ba.book_id = b.id",
-        AuthorItemFields,
-        new[] { AwardsOnAuthor });
+        BookAuthors = new CollectionSqlMapping(
+            "authors",
+            sql.TableAs("book_author", "ba") + " INNER JOIN " + sql.TableAs("author", "a") +
+            " ON " + sql.Col("a", "id") + " = " + sql.Col("ba", "author_id"),
+            sql.Col("ba", "book_id") + " = " + sql.Col("b", "id"),
+            AuthorItemFields,
+            new[] { AwardsOnAuthor });
+    }
+
+    public CollectionSqlMapping AwardsOnAuthor { get; }
+
+    public CollectionSqlMapping BookAuthors { get; }
+
+    public Dictionary<string, string> AuthorItemFields { get; }
+
+    public Dictionary<string, string> AwardItemFields { get; }
 }

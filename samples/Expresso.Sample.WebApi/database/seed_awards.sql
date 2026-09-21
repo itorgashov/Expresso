@@ -1,4 +1,5 @@
 -- Seed sample awards for Expresso_Sample (run manually after add_awards_table.sql).
+-- Prefer samples/database/sqlserver/seed.sql, which includes award rows from the full dump.
 -- Matches authors by display_name; some authors intentionally have no awards.
 
 USE Expresso_Sample;

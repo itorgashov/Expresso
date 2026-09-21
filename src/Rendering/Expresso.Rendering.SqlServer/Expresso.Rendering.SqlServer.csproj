@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Expresso.Core\Expresso.Core.csproj" />
+    <ProjectReference Include="..\Expresso.Rendering.Common\Expresso.Rendering.Common.csproj" />
   </ItemGroup>
 
 </Project>

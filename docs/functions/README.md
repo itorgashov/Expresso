@@ -1,6 +1,6 @@
 # Function reference
 
-Every filter/sort function Expresso supports, grouped by semantic category. Function and field names are **case-insensitive** in query strings. See [docs/query-syntax.md](../query-syntax.md) for the overall grammar and literal rules, and [docs/error-handling.md](../error-handling.md) for the general exception model referenced from each page below.
+Every filter/sort function Expresso supports, grouped by semantic category. Function and field names are **case-insensitive** in query strings. See [docs/query-syntax.md](../query-syntax.md) for the overall grammar and literal rules, [docs/error-handling.md](../error-handling.md) for exceptions, and [docs/rendering.md](../rendering.md) for identifier quotes and bind names. Each function page documents SQL for every dialect, grouping engines that emit the same fragment. MariaDB uses the MySQL package and the same SQL as MySQL.
 
 ## Logical
 

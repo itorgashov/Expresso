@@ -29,13 +29,17 @@ Exactly 3 arguments.
   - Any argument is `null` → `ArgumentNullException`
   - Any argument's `ReturnType` is not `string` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 REPLACE(text, oldValue, newValue)
 ```
 
-Example: `eq(replace(isbn,"-",""),"9780000000000")` renders as `(REPLACE([isbn], @wparam_0, @wparam_1) = @wparam_2)`.
+Example: `eq(replace(isbn,"-",""),"9780000000000")` renders as `(REPLACE([isbn], @wparam_0, @wparam_1) = @wparam_2)` on SQL Server. Replaces every occurrence.
 
 ## Notes
 

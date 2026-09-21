@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <!-- ODP.NET DedicatedThreadFunc restarts itself on ThreadAbortException.
+         VSTest AppDomain unload on net48 aborts that thread and prints
+         AppDomainUnloadedException after all tests have already passed. -->
+    <DisableAppDomain>true</DisableAppDomain>
+  </RunConfiguration>
+</RunSettings>

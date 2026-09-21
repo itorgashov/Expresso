@@ -28,18 +28,40 @@ Exactly 2 arguments.
   - Either argument is `null` → `ArgumentNullException`
   - Either argument's `ReturnType` is not `string` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+Wildcard escaping of a **string literal** pattern (`\` then `%` then `_`, in that order) is done in C# before binding on **all** dialects.
+`%` is added on **both** sides for a literal substring: `contains(title,"ar")` binds `"%ar%"`; `contains(title,"100%")` binds `"%100\%%"`.
+
+### SQL Server, PostgreSQL, SQLite, Oracle, DB2
+
+Literal substring:
 
 ```sql
-(text LIKE '%substring%' ESCAPE '\')
+(text LIKE @p ESCAPE '\')
 ```
 
-**If the substring is a string literal:** wildcard characters (`\`, `%`, `_`) are escaped in C# before parameterization (same order and rules as [`startswith`](startswith.md)), and `%` is added on **both** sides: `contains(title,"ar")` → parameter value `"%ar%"`. Example: `contains(title,"100%")` → parameter value `"%100\%%"` (the literal `%` is escaped so it isn't treated as a wildcard).
-
-**If the substring is not a string literal:**
+Non-literal substring:
 
 ```sql
+-- SQL Server
 (text LIKE ('%' + REPLACE(REPLACE(REPLACE(substring, '\', '\\'), '%', '\%'), '_', '\_') + '%') ESCAPE '\')
+
+-- PostgreSQL, SQLite, Oracle, DB2
+(text LIKE ('%' || REPLACE(REPLACE(REPLACE(substring, '\', '\\'), '%', '\%'), '_', '\_') || '%') ESCAPE '\')
+```
+
+### MySQL / MariaDB
+
+```sql
+(text LIKE @p ESCAPE '\\')
+```
+
+Non-literal substring:
+
+```sql
+(text LIKE CONCAT('%', REPLACE(REPLACE(REPLACE(substring, '\\', '\\\\'), '%', '\\%'), '_', '\\_'), '%') ESCAPE '\\')
 ```
 
 ## Notes

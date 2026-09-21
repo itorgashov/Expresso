@@ -29,13 +29,48 @@ Exactly 2 arguments.
   - `dateTime.ReturnType` is not `DateTime` → `ArgumentException`
   - `amount.ReturnType` is not `int` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+`amount` is the bound `int` (zero and negative allowed).
+
+### SQL Server
 
 ```sql
 DATEADD(month, amount, datetime)
 ```
 
 Example: `eq(addmonths(createdat,0), createdat)` renders as `(DATEADD(month, @wparam_0, [created_at]) = [created_at])`.
+
+### PostgreSQL
+
+```sql
+(datetime + ((amount) * INTERVAL '1 month'))
+```
+
+### SQLite
+
+```sql
+datetime(datetime, ((amount) || ' months'))
+```
+
+### MySQL / MariaDB
+
+```sql
+DATE_ADD(datetime, INTERVAL amount MONTH)
+```
+
+### Oracle
+
+```sql
+(datetime + NUMTOYMINTERVAL(amount, 'MONTH'))
+```
+
+### DB2
+
+```sql
+(datetime + amount MONTHS)
+```
 
 ## Notes
 

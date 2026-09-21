@@ -9,7 +9,11 @@
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <RootNamespace>Expresso.Sample.WebApi.NetFx</RootNamespace>
-    <UserSecretsId>fdada218-846b-43eb-968a-af6afc193059</UserSecretsId>
+    <UserSecretsId>expresso-sample-webapi-7f3a9c2e-4b1d-4e8a-9f6c-2d5e8a1b4c7f</UserSecretsId>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,12 +27,22 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.1" />
     <PackageReference Include="Microsoft.Owin.Host.HttpListener" Version="4.2.2" />
     <PackageReference Include="Swashbuckle.Core" Version="5.6.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Npgsql" Version="6.0.11" />
+    <PackageReference Include="MySqlConnector" Version="2.3.7" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.8" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="21.15.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Expresso.Sample.Shared\Expresso.Sample.Shared.csproj" />
     <ProjectReference Include="..\..\src\Expresso.Parsing\Expresso.Parsing.csproj" />
     <ProjectReference Include="..\..\src\Rendering\Expresso.Rendering.SqlServer\Expresso.Rendering.SqlServer.csproj" />
+    <ProjectReference Include="..\..\src\Rendering\Expresso.Rendering.PostgreSql\Expresso.Rendering.PostgreSql.csproj" />
+    <ProjectReference Include="..\..\src\Rendering\Expresso.Rendering.Sqlite\Expresso.Rendering.Sqlite.csproj" />
+    <ProjectReference Include="..\..\src\Rendering\Expresso.Rendering.MySql\Expresso.Rendering.MySql.csproj" />
+    <ProjectReference Include="..\..\src\Rendering\Expresso.Rendering.Oracle\Expresso.Rendering.Oracle.csproj" />
   </ItemGroup>
 
   <ItemGroup>

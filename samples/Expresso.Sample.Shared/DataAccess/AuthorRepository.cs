@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -7,8 +8,7 @@ using System.Threading.Tasks;
 using Expresso.Core.Filtering;
 using Expresso.Core.Sorting;
 using Expresso.Sample.Shared.Models;
-using Expresso.SqlServer;
-using Microsoft.Data.SqlClient;
+using Expresso.Rendering;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
@@ -18,29 +18,32 @@ public sealed class AuthorRepository : IRepository<Author>
     private const string OrderParamPrefix = "oparam";
     private const string AwardOrderParamPrefix = "awardOrder";
 
-    private readonly ISqlConnectionFactory _connectionFactory;
+    private readonly ISampleDb _db;
     private readonly IExpressionToQueryClauseTransformer _criteriaTransformer;
-
-    private readonly SqlQueryMapping _queryMapping = new SqlQueryMapping(
-        SampleSqlMappings.AuthorItemFields,
-        new[] { SampleSqlMappings.AwardsOnAuthor });
-
-    private const string BaseSelect =
-        "SELECT" +
-        " a.id," +
-        " a.first_name," +
-        " a.last_name," +
-        " a.display_name," +
-        " a.date_of_birth," +
-        " a.created_at" +
-        " FROM dbo.author AS a";
+    private readonly SampleSqlMappings _mappings;
+    private readonly SqlQueryMapping _queryMapping;
+    private readonly string _baseSelect;
 
     public AuthorRepository(
-        ISqlConnectionFactory connectionFactory,
+        ISampleDb db,
         IExpressionToQueryClauseTransformer criteriaTransformer)
     {
-        _connectionFactory = connectionFactory;
+        _db = db;
         _criteriaTransformer = criteriaTransformer;
+        var sql = db.Sql;
+        _mappings = new SampleSqlMappings(sql);
+        _queryMapping = new SqlQueryMapping(
+            _mappings.AuthorItemFields,
+            new[] { _mappings.AwardsOnAuthor });
+        _baseSelect =
+            "SELECT" +
+            " " + sql.Col("a", "id") + "," +
+            " " + sql.Col("a", "first_name") + "," +
+            " " + sql.Col("a", "last_name") + "," +
+            " " + sql.Col("a", "display_name") + "," +
+            " " + sql.Col("a", "date_of_birth") + "," +
+            " " + sql.Col("a", "created_at") +
+            " FROM " + sql.TableAs("author", "a");
     }
 
     public async Task<IReadOnlyList<Author>> GetAllAsync(
@@ -48,15 +51,16 @@ public sealed class AuthorRepository : IRepository<Author>
         SortDirective? sortDirective,
         CancellationToken cancellationToken = default)
     {
-        var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        var connection = await _db.OpenAsync(cancellationToken);
         using (connection)
         {
             var (sql, parameters) = BuildSelectQuery(filterCriteria, sortDirective);
 
             var authors = new List<Author>();
-            using (var command = new SqlCommand(sql, connection))
+            using (var command = connection.CreateCommand())
             {
-                command.AddParameters(parameters);
+                command.CommandText = sql;
+                _db.BindAll(command, parameters);
                 using (var reader = await command.ExecuteReaderAsync(cancellationToken))
                 {
                     while (await reader.ReadAsync(cancellationToken))
@@ -73,15 +77,16 @@ public sealed class AuthorRepository : IRepository<Author>
 
     public async Task<Author?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        var connection = await _db.OpenAsync(cancellationToken);
         using (connection)
         {
-            var sql = BaseSelect + " WHERE a.id = @id";
+            var sql = _baseSelect + " WHERE " + _db.Sql.Col("a", "id") + " = " + _db.Sql.Param("id");
 
             Author? author = null;
-            using (var command = new SqlCommand(sql, connection))
+            using (var command = connection.CreateCommand())
             {
-                command.Parameters.AddWithValue("@id", id);
+                command.CommandText = sql;
+                _db.Bind(command, _db.Sql.Param("id"), id);
                 using (var reader = await command.ExecuteReaderAsync(cancellationToken))
                 {
                     if (await reader.ReadAsync(cancellationToken))
@@ -105,7 +110,7 @@ public sealed class AuthorRepository : IRepository<Author>
         FilterCriteria? filterCriteria,
         SortDirective? sortDirective)
     {
-        var sql = new StringBuilder(BaseSelect);
+        var sql = new StringBuilder(_baseSelect);
         Dictionary<string, object>? parameters = null;
 
         if (filterCriteria is not null)
@@ -122,14 +127,14 @@ public sealed class AuthorRepository : IRepository<Author>
             sql.Append(" ORDER BY ");
             sql.Append(result.orderByClause);
             parameters ??= new Dictionary<string, object>();
-            SqlParameterExtensions.MergeParameters(parameters, result.parameters);
+            ParameterMerge.Merge(parameters, result.parameters);
         }
 
         return (sql.ToString(), parameters);
     }
 
     private async Task LoadAwardsAsync(
-        SqlConnection connection,
+        DbConnection connection,
         IReadOnlyList<Author> authors,
         SortDirective? sortDirective,
         CancellationToken cancellationToken)
@@ -140,35 +145,39 @@ public sealed class AuthorRepository : IRepository<Author>
         }
 
         var authorIds = authors.Select(a => a.Id).Distinct().ToList();
+        var awardParams = new Dictionary<string, object>();
         var awardSort = NestedSortHelper.ResolveNested(sortDirective, "awards");
         var awardOrderBy = NestedSortHelper.RenderOrderByOrDefault(
             awardSort,
-            "aw.year, aw.title",
-            SampleSqlMappings.AwardItemFields,
+            _db.Sql.Col("aw", "year") + ", " + _db.Sql.Col("aw", "title"),
+            _mappings.AwardItemFields,
             _criteriaTransformer,
             AwardOrderParamPrefix,
-            parameters: null);
+            awardParams);
 
-        var idParameters = string.Join(", ", authorIds.Select((_, i) => $"@authorId{i}"));
+        var idParameters = string.Join(", ", authorIds.Select((_, i) => _db.Sql.Param("authorId" + i)));
         var sql =
-            "SELECT aw.author_id, aw.title, aw.year" +
-            " FROM dbo.award AS aw" +
-            $" WHERE aw.author_id IN ({idParameters})" +
-            $" ORDER BY aw.author_id, {awardOrderBy}";
+            "SELECT " + _db.Sql.Col("aw", "author_id") + ", " + _db.Sql.Col("aw", "title") + ", " + _db.Sql.Col("aw", "year") +
+            " FROM " + _db.Sql.TableAs("award", "aw") +
+            " WHERE " + _db.Sql.Col("aw", "author_id") + " IN (" + idParameters + ")" +
+            " ORDER BY " + _db.Sql.Col("aw", "author_id") + ", " + awardOrderBy;
 
         var awardsByAuthorId = new Dictionary<int, List<Award>>();
-        using (var command = new SqlCommand(sql, connection))
+        using (var command = connection.CreateCommand())
         {
+            command.CommandText = sql;
             for (var i = 0; i < authorIds.Count; i++)
             {
-                command.Parameters.AddWithValue($"@authorId{i}", authorIds[i]);
+                _db.Bind(command, _db.Sql.Param("authorId" + i), authorIds[i]);
             }
+
+            _db.BindAll(command, awardParams);
 
             using (var reader = await command.ExecuteReaderAsync(cancellationToken))
             {
                 while (await reader.ReadAsync(cancellationToken))
                 {
-                    var authorId = reader.GetInt32(0);
+                    var authorId = SampleDbValues.GetInt32(reader, 0);
                     if (!awardsByAuthorId.TryGetValue(authorId, out var awards))
                     {
                         awards = new List<Award>();
@@ -178,7 +187,7 @@ public sealed class AuthorRepository : IRepository<Author>
                     awards.Add(new Award
                     {
                         Title = reader.GetString(1),
-                        Year = reader.GetInt16(2),
+                        Year = SampleDbValues.GetInt16(reader, 2),
                     });
                 }
             }
@@ -193,14 +202,14 @@ public sealed class AuthorRepository : IRepository<Author>
         }
     }
 
-    private static Author ReadAuthor(SqlDataReader reader) =>
+    private static Author ReadAuthor(DbDataReader reader) =>
         new Author
         {
-            Id = reader.GetInt32(0),
+            Id = SampleDbValues.GetInt32(reader, 0),
             FirstName = reader.GetString(1),
             LastName = reader.GetString(2),
             DisplayName = reader.GetString(3),
-            DateOfBirth = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
-            CreatedAt = reader.GetDateTime(5),
+            DateOfBirth = reader.IsDBNull(4) ? null : SampleDbValues.GetDateTime(reader, 4),
+            CreatedAt = SampleDbValues.GetDateTime(reader, 5),
         };
 }

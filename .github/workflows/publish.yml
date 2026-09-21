@@ -9,12 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,47 +24,106 @@ jobs:
             exit 1
           fi
 
-      - name: Set version from tag
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
-
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 6.0.x
 
       - name: Test
-        run: dotnet test Expresso.slnx -c Release -f net6.0 --nologo
+        run: dotnet test Expresso.slnx -c Release -f net6.0 --nologo --filter "Category!=Integration"
 
+  publish-core-first:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
       - name: Rewrite README links for NuGet
         run: |
           TAG="${{ github.ref_name }}"
           BLOB="https://github.com/itorgashov/Expresso/blob/${TAG}/"
           TREE="https://github.com/itorgashov/Expresso/tree/${TAG}/"
-          # nuget.org resolves relative README hrefs against nuget.org, not GitHub.
-          # Rewrite only in this working copy (repo README stays relative for GitHub).
           sed -i "s|](docs/|](${BLOB}docs/|g" README.md
           sed -i "s|](samples/Expresso.Sample.WebApi/README.md)|](${BLOB}samples/Expresso.Sample.WebApi/README.md)|g" README.md
           sed -i "s|](samples/Expresso.Sample.WebApi)|](${TREE}samples/Expresso.Sample.WebApi)|g" README.md
-
-      - name: Pack
+      - name: Pack Core, Parsing, Common
         run: |
-          dotnet pack Expresso.slnx -c Release -o artifacts \
-            /p:Version=${{ env.VERSION }} \
-            /p:PackageProjectUrl=https://github.com/itorgashov/Expresso/tree/${{ github.ref_name }}/docs \
-            --nologo
-
+          pack() {
+            local file="$1"
+            local project
+            project=$(python3 -c "import pathlib; t=pathlib.Path('$file').read_text(); print([l.split(':',1)[1].strip() for l in t.splitlines() if l.startswith('project:')][0])")
+            dotnet pack "$project" -c Release -o artifacts \
+              /p:Version=${{ env.VERSION }} \
+              /p:PackageProjectUrl=https://github.com/itorgashov/Expresso/tree/${{ github.ref_name }}/docs \
+              --nologo
+          }
+          pack .github/harness/packages/Expresso.Core.yaml
+          pack .github/harness/packages/Expresso.Parsing.yaml
+          pack .github/harness/packages/Expresso.Rendering.Common.yaml
       - name: NuGet login (OIDC)
         uses: NuGet/login@v1
         id: nuget_login
         with:
           user: ${{ secrets.NUGET_USER }}
-
       - name: Publish to NuGet.org
         run: |
-          dotnet nuget push artifacts/*.nupkg \
-            --source https://api.nuget.org/v3/index.json \
-            --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" \
-            --skip-duplicate
-          dotnet nuget push artifacts/*.snupkg \
-            --source https://api.nuget.org/v3/index.json \
-            --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" \
-            --skip-duplicate
+          dotnet nuget push artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate
+          dotnet nuget push artifacts/*.snupkg --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate
+
+  publish-dialects:
+    needs: publish-core-first
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      matrix:
+        harness:
+          - Expresso.Rendering.SqlServer.yaml
+          - Expresso.Rendering.PostgreSql.yaml
+          - Expresso.Rendering.Sqlite.yaml
+          - Expresso.Rendering.MySql.yaml
+          - Expresso.Rendering.Oracle.yaml
+          - Expresso.Rendering.Db2.yaml
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 6.0.x
+      - name: Rewrite README links for NuGet
+        run: |
+          TAG="${{ github.ref_name }}"
+          BLOB="https://github.com/itorgashov/Expresso/blob/${TAG}/"
+          TREE="https://github.com/itorgashov/Expresso/tree/${TAG}/"
+          sed -i "s|](docs/|](${BLOB}docs/|g" README.md
+          sed -i "s|](samples/Expresso.Sample.WebApi/README.md)|](${BLOB}samples/Expresso.Sample.WebApi/README.md)|g" README.md
+          sed -i "s|](samples/Expresso.Sample.WebApi)|](${TREE}samples/Expresso.Sample.WebApi)|g" README.md
+      - name: Read harness
+        id: harness
+        run: |
+          FILE=".github/harness/packages/${{ matrix.harness }}"
+          echo "project=$(python3 -c "import pathlib; t=pathlib.Path('$FILE').read_text();
+print([l.split(':',1)[1].strip() for l in t.splitlines() if l.startswith('project:')][0])")" >> "$GITHUB_OUTPUT"
+      - name: Pack
+        run: |
+          dotnet pack "${{ steps.harness.outputs.project }}" -c Release -o artifacts \
+            /p:Version=${{ env.VERSION }} \
+            /p:PackageProjectUrl=https://github.com/itorgashov/Expresso/tree/${{ github.ref_name }}/docs \
+            --nologo
+      - name: NuGet login (OIDC)
+        uses: NuGet/login@v1
+        id: nuget_login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Publish to NuGet.org
+        run: |
+          dotnet nuget push artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate
+          dotnet nuget push artifacts/*.snupkg --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate

@@ -2,10 +2,10 @@
 
 [GitHub repository](https://github.com/itorgashov/Expresso)
 
-Expresso is a small .NET library for **dynamic filtering and sorting**. A function-call query string is parsed into a validated expression tree, then rendered to parameterized SQL (SQL Server in v1) — a safer alternative to hand-rolling dynamic `WHERE` / `ORDER BY` string concatenation.
+Expresso is a small .NET library for **dynamic filtering and sorting**. A function-call query string is parsed into a validated expression tree, then rendered to parameterized SQL — a safer alternative to hand-rolling dynamic `WHERE` / `ORDER BY` string concatenation.
 
 ```text
-Query string → Expresso.Parsing → expression tree (Expresso.Core) → Expresso.Rendering.SqlServer → SQL + parameters
+Query string → Expresso.Parsing → expression tree (Expresso.Core) → Expresso.Rendering.* dialect → SQL + parameters
 ```
 
 **Target frameworks:** `netstandard2.0` and `net6.0` (usable from .NET Framework 4.6.1+, .NET Standard 2.0 libraries, and .NET 6+).
@@ -17,9 +17,10 @@ Query string → Expresso.Parsing → expression tree (Expresso.Core) → Expres
 |---|---|
 | `Expresso.Core` | Expression tree, filter/sort models, field-catalog contract |
 | `Expresso.Parsing` | Query-string parsers + DI |
-| `Expresso.Rendering.SqlServer` | SQL Server `WHERE` / `ORDER BY` rendering + DI |
+| `Expresso.Rendering.Common` | Shared rendering contract and SQL walker |
+| `Expresso.Rendering.SqlServer` (and PostgreSql, Sqlite, MySql, Oracle, Db2) | Dialect `WHERE` / `ORDER BY` rendering + DI |
 
-There is no metapackage in v1 — reference the packages you need. See [docs/packages.md](docs/packages.md) for what each package contains and which application layer typically references it.
+There is no metapackage — reference the packages you need. See [docs/packages.md](docs/packages.md) and [docs/rendering.md](docs/rendering.md).
 
 ## Example
 
@@ -46,7 +47,8 @@ Full grammar, literal/quoting rules, and supported types: [docs/query-syntax.md]
 ## Documentation
 
 - [docs/overview.md](docs/overview.md) — what Expresso is for, use cases, and when not to use it
-- [docs/packages.md](docs/packages.md) — purpose of each of the 3 NuGet packages
+- [docs/packages.md](docs/packages.md) — each NuGet package
+- [docs/rendering.md](docs/rendering.md) — dialect SQL differences
 - [docs/getting-started.md](docs/getting-started.md) — step-by-step: install, register, implement a field provider, parse, render, execute
 - [docs/query-syntax.md](docs/query-syntax.md) — filter/sort grammar, literals, supported types
 - [docs/field-providers.md](docs/field-providers.md) — `IRequestFieldsInfoProvider` / `QueryModel` explained
@@ -59,12 +61,14 @@ Full grammar, literal/quoting rules, and supported types: [docs/query-syntax.md]
 - [samples/Expresso.Sample.WebApi](samples/Expresso.Sample.WebApi) — .NET 10 ASP.NET Core host with Swagger
 - [samples/Expresso.Sample.WebApi.NetFx](samples/Expresso.Sample.WebApi.NetFx) — .NET Framework 4.8 OWIN + Web API 2 host
 
-Both share [samples/Expresso.Sample.Shared](samples/Expresso.Sample.Shared) (models, ADO.NET repositories). Each host has its own field/`QueryModel` catalog. See [docs/sample-app.md](docs/sample-app.md) for a guided walkthrough.
+Both share [samples/Expresso.Sample.Shared](samples/Expresso.Sample.Shared) (models, ADO.NET repositories, dialect SQL catalog). Each host has its own field/`QueryModel` catalog. Schema/seed: [samples/database](samples/database). See [docs/sample-app.md](docs/sample-app.md).
 
 ## Build
 
 ```powershell
-dotnet test .\Expresso.slnx -c Release -f net6.0
-dotnet test .\Expresso.slnx -c Release -f net48    # Windows; validates .NET Framework consumers
+dotnet test .\Expresso.slnx -c Release -f net6.0 --filter "Category!=Integration"
+dotnet test .\Expresso.slnx -c Release -f net48 --filter "Category!=Integration"    # Windows; validates .NET Framework consumers
 dotnet pack .\Expresso.slnx -c Release -o .\artifacts
 ```
+
+Renderer integration tests skip unless `EXPRESSO_IT=1`. See [test/Rendering/Expresso.Rendering.Integration.Test/README.md](test/Rendering/Expresso.Rendering.Integration.Test/README.md).

@@ -26,13 +26,17 @@ Exactly 2 arguments.
 - **Parser coercion:** each literal argument's type is inferred independently.
 - **IR construction** (`SubFunc`, built via reflection): `ArgumentNullException` for a `null` argument; `ArgumentException("Illegal argument type", "argument1"|"argument2")` for a non-numeric `ReturnType`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 (argument1 - argument2)
 ```
 
-Example: `gt(sub(dateTo,dateFrom),0)` — subtracting dates is **not** supported (`DateTime` is not in the allowed argument types for `sub`); this example is illustrative of the argument-order convention only. Use `sub(price,discount)` for numeric fields instead.
+Example: `sub(price,discount)` renders as `([price] - [discount])` on SQL Server. Date subtraction is not supported (`DateTime` is not an allowed argument type).
 
 ## Notes
 

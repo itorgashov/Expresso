@@ -4,11 +4,9 @@ using System.Web.Http;
 using Expresso.Core.Filtering;
 using Expresso.Parsing;
 using Expresso.Sample.Shared.DataAccess;
-using Expresso.Sample.Shared.Models;
 using Expresso.Sample.WebApi.NetFx.DataAccess;
 using Expresso.Sample.WebApi.NetFx.Filtering;
 using Expresso.Sample.WebApi.NetFx.Infrastructure;
-using Expresso.SqlServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Owin;
@@ -50,12 +48,8 @@ public sealed class Startup
     {
         services.AddSingleton(configuration);
         services.AddRequestParametersParsers();
-        services.AddExpressionTransformations();
         services.AddSingleton<IRequestFieldsInfoProvider, RequestFieldsInfoProvider>();
-        services.AddSingleton<ISqlConnectionFactory, SqlConnectionFactory>();
-        services.AddTransient<IRepository<Book>, BookRepository>();
-        services.AddTransient<IRepository<Author>, AuthorRepository>();
-        services.AddTransient<IRepository<Publisher>, PublisherRepository>();
+        SampleEngineSetup.AddSampleEngine(services, configuration);
         services.AddTransient<Controllers.BooksController>();
         services.AddTransient<Controllers.AuthorsController>();
         services.AddTransient<Controllers.PublishersController>();

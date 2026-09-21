@@ -25,13 +25,17 @@ Exactly 1 argument.
 - **Parser coercion:** a literal argument's type is inferred (`GetLiteralType`).
 - **IR construction** (`SqrtFunc`, built via reflection): base `NumericSingleArgDoubleFunction`/`NumericSingleArgFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", nameof(argument))` if the `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### All dialects
 
 ```sql
 SQRT(argument)
 ```
 
-Example: `lte(sqrt(area),10)` renders as `(SQRT([area]) <= @wparam_0)`.
+Example: `lte(sqrt(area),10)` renders as `(SQRT([area]) <= @wparam_0)` on SQL Server. A negative input is not rejected at parse time; the engine raises an error at execution (SQL Server error 3623).
 
 ## Notes
 

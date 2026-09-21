@@ -4,14 +4,27 @@
     <Project Path="src/Expresso.Parsing/Expresso.Parsing.csproj" />
   </Folder>
   <Folder Name="/src/Rendering/">
+    <Project Path="src/Rendering/Expresso.Rendering.Common/Expresso.Rendering.Common.csproj" />
     <Project Path="src/Rendering/Expresso.Rendering.SqlServer/Expresso.Rendering.SqlServer.csproj" />
+    <Project Path="src/Rendering/Expresso.Rendering.PostgreSql/Expresso.Rendering.PostgreSql.csproj" />
+    <Project Path="src/Rendering/Expresso.Rendering.Sqlite/Expresso.Rendering.Sqlite.csproj" />
+    <Project Path="src/Rendering/Expresso.Rendering.MySql/Expresso.Rendering.MySql.csproj" />
+    <Project Path="src/Rendering/Expresso.Rendering.Oracle/Expresso.Rendering.Oracle.csproj" />
+    <Project Path="src/Rendering/Expresso.Rendering.Db2/Expresso.Rendering.Db2.csproj" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="test/Expresso.Core.Test/Expresso.Core.Test.csproj" />
     <Project Path="test/Expresso.Parsing.Test/Expresso.Parsing.Test.csproj" />
   </Folder>
   <Folder Name="/test/Rendering/">
+    <Project Path="test/Rendering/Expresso.Rendering.TestCases/Expresso.Rendering.TestCases.csproj" />
     <Project Path="test/Rendering/Expresso.Rendering.SqlServer.Test/Expresso.SqlServer.Test.csproj" />
+    <Project Path="test/Rendering/Expresso.Rendering.PostgreSql.Test/Expresso.Rendering.PostgreSql.Test.csproj" />
+    <Project Path="test/Rendering/Expresso.Rendering.Sqlite.Test/Expresso.Rendering.Sqlite.Test.csproj" />
+    <Project Path="test/Rendering/Expresso.Rendering.MySql.Test/Expresso.Rendering.MySql.Test.csproj" />
+    <Project Path="test/Rendering/Expresso.Rendering.Oracle.Test/Expresso.Rendering.Oracle.Test.csproj" />
+    <Project Path="test/Rendering/Expresso.Rendering.Db2.Test/Expresso.Rendering.Db2.Test.csproj" />
+    <Project Path="test/Rendering/Expresso.Rendering.Integration.Test/Expresso.Rendering.Integration.Test.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/Expresso.Sample.Shared/Expresso.Sample.Shared.csproj" />

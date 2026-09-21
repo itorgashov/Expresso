@@ -1,6 +1,7 @@
 -- Expresso sample database schema (Expresso_Sample)
 -- Run against SQL Server to create the Books demo database.
 -- Recreates the database; TIME columns are clock range only (not intervals).
+-- Seed data: samples/database/sqlserver/seed.sql (canonical dump: samples/database/seed.json).
 
 IF DB_ID(N'Expresso_Sample') IS NOT NULL
 BEGIN
@@ -17,7 +18,7 @@ GO
 
 CREATE TABLE dbo.publisher
 (
-    id        INT              IDENTITY(1, 1) NOT NULL,
+    id        INT              NOT NULL,
     name      NVARCHAR(300)    NOT NULL,
     country   NVARCHAR(50)     NOT NULL,
     location  NVARCHAR(100)    NULL,
@@ -31,7 +32,7 @@ GO
 
 CREATE TABLE dbo.author
 (
-    id             INT            IDENTITY(1, 1) NOT NULL,
+    id             INT            NOT NULL,
     first_name     NVARCHAR(100)  NOT NULL,
     last_name      NVARCHAR(100)  NOT NULL,
     display_name   NVARCHAR(100)  NOT NULL,
@@ -44,7 +45,7 @@ GO
 
 CREATE TABLE dbo.book
 (
-    id                INT              IDENTITY(1, 1) NOT NULL,
+    id                INT              NOT NULL,
     title             NVARCHAR(500)    NOT NULL,
     year              SMALLINT         NOT NULL,
     isbn              NVARCHAR(20)     NULL,
@@ -86,7 +87,7 @@ GO
 
 CREATE TABLE dbo.award
 (
-    id         INT            IDENTITY(1, 1) NOT NULL,
+    id         INT            NOT NULL,
     author_id  INT            NOT NULL,
     title      NVARCHAR(300)  NOT NULL,
     year       SMALLINT       NOT NULL,

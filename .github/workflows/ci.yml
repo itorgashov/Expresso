@@ -16,7 +16,7 @@ jobs:
             9.0.x
             10.0.x
       - name: Test (net6.0)
-        run: dotnet test Expresso.slnx -c Release -f net6.0 --nologo
+        run: dotnet test Expresso.slnx -c Release -f net6.0 --nologo --filter "Category!=Integration"
       - name: Pack
         run: dotnet pack Expresso.slnx -c Release -o artifacts --nologo
 
@@ -31,6 +31,6 @@ jobs:
             9.0.x
             10.0.x
       - name: Test (net48)
-        run: dotnet test Expresso.slnx -c Release -f net48 --nologo
+        run: dotnet test Expresso.slnx -c Release -f net48 --nologo --filter "Category!=Integration"
       - name: Build NetFx sample
         run: dotnet build samples/Expresso.Sample.WebApi.NetFx/Expresso.Sample.WebApi.NetFx.csproj -c Release --nologo

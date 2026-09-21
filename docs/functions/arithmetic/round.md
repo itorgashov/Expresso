@@ -33,16 +33,29 @@ round(argument, digits)
 
   Because `RoundFunc` is constructed directly rather than via `Activator.CreateInstance`, these exceptions are **not** wrapped in `TargetInvocationException` — see [docs/error-handling.md](../../error-handling.md).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+The 1-argument form always passes digits `0`.
+
+### SQL Server, SQLite, MySQL / MariaDB, Oracle, DB2
 
 ```sql
 ROUND(argument, 0)       -- 1-argument form
 ROUND(argument, digits)  -- 2-argument form
 ```
 
-Example: `lte(round(price),20)` renders as `(ROUND([price], 0) <= @wparam_0)`.
-
+Example: `lte(round(price),20)` renders as `(ROUND([price], 0) <= @wparam_0)` on SQL Server.
 Example: `eq(round(price,-1),20)` renders as `(ROUND([price], @wparam_0) = @wparam_1)`.
+
+### PostgreSQL
+
+PostgreSQL has `round(double precision)` and `round(numeric, int)`, but not `round(double precision, int)`. The first argument is cast to `numeric`:
+
+```sql
+ROUND(CAST(argument AS numeric), 0)
+ROUND(CAST(argument AS numeric), digits)
+```
 
 ## Notes
 

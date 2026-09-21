@@ -27,16 +27,32 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not `string` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### SQL Server
 
 ```sql
 LEN(text)
 ```
 
 Example: `gt(len(title),50)` renders as `(LEN([title]) > @wparam_0)`.
+SQL Server `LEN` does **not** count trailing spaces (`LEN('abc  ')` is `3`). `LEN(NULL)` is `NULL`.
+
+### MySQL / MariaDB
+
+```sql
+CHAR_LENGTH(text)
+```
+
+### PostgreSQL, SQLite, Oracle, DB2
+
+```sql
+LENGTH(text)
+```
 
 ## Notes
 
-- Maps directly to SQL Server's `LEN`, which **does not count trailing spaces** (`LEN('abc  ')` is `3`, not `5`). Use `DATALENGTH` in raw SQL if you need byte-exact length including trailing spaces — Expresso does not expose that as a query function in v1.
-- `LEN(NULL)` is `NULL` in SQL Server; compare against `isnull(...)` if you need to special-case missing values.
+- Trailing-space and `NULL` behavior follow the engine (`LEN` vs `LENGTH` / `CHAR_LENGTH`). Expresso does not expose a byte-length function.
 - See [`indexof`](indexof.md) for the other `int`-returning string function.

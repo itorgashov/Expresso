@@ -29,13 +29,48 @@ Exactly 2 arguments.
   - `dateTime.ReturnType` is not `DateTime` → `ArgumentException`
   - `amount.ReturnType` is not `int` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+`amount` is the bound `int` (zero and negative allowed).
+
+### SQL Server
 
 ```sql
 DATEADD(minute, amount, datetime)
 ```
 
 Example: `gt(addminutes(createdat,-30), dateTo)` renders as `(DATEADD(minute, @wparam_0, [created_at]) > [date_to])`.
+
+### PostgreSQL
+
+```sql
+(datetime + ((amount) * INTERVAL '1 minute'))
+```
+
+### SQLite
+
+```sql
+datetime(datetime, ((amount) || ' minutes'))
+```
+
+### MySQL / MariaDB
+
+```sql
+DATE_ADD(datetime, INTERVAL amount MINUTE)
+```
+
+### Oracle
+
+```sql
+(datetime + NUMTODSINTERVAL(amount, 'MINUTE'))
+```
+
+### DB2
+
+```sql
+(datetime + amount MINUTES)
+```
 
 ## Notes
 

@@ -2,21 +2,21 @@
 
 .NET Framework 4.8 sample using OWIN self-host and ASP.NET Web API 2. Shares data access and filtering logic with the modern sample via [Expresso.Sample.Shared](../Expresso.Sample.Shared).
 
-For architecture and endpoint examples, see [docs/sample-app.md](../../docs/sample-app.md).
+For architecture and endpoint examples, see [docs/sample-app.md](../../docs/sample-app.md). Schema/seed: [samples/database](../database).
 
 ## Prerequisites
 
 - .NET Framework 4.8 targeting pack (via Visual Studio or Build Tools)
 - .NET SDK (to build with `dotnet build`)
-- SQL Server with database **Expresso_Sample** (see [database/schema.sql](../Expresso.Sample.WebApi/database/schema.sql))
+- A database from [samples/database](../database) (`schema.sql` then `seed.sql`)
 
-## Connection string
+Db2 is **not** supported on this host; use [Expresso.Sample.WebApi](../Expresso.Sample.WebApi) (net10).
 
-The key is defined in `appsettings.json`; the value comes from **user secrets**:
+## Engine and connection strings
 
-```powershell
-dotnet user-secrets set "ConnectionStrings:ExpressoSample" "Server=YOUR_SERVER;Database=Expresso_Sample;Trusted_Connection=True;TrustServerCertificate=True" --project samples/Expresso.Sample.WebApi.NetFx
-```
+Switch engine only in `appsettings.json` (`ExpressoSample:Engine`, default `SqlServer`). Connection strings live in **user secrets** under `ConnectionStrings:{Engine}` (`SqlServer`, `PostgreSql`, `MySql`, `Sqlite`, `Oracle`). This host shares `UserSecretsId` with [Expresso.Sample.WebApi](../Expresso.Sample.WebApi); set secrets once there (including optional `Db2` for the net10 host).
+
+Allowed engines: `SqlServer`, `PostgreSql`, `MySql` / `MariaDb`, `Sqlite`, `Oracle`. SQLite on net48 needs the bundled `e_sqlite3` native library (the project sets `RuntimeIdentifier` `win-x64`).
 
 ## Run
 

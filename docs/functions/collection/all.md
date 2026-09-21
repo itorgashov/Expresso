@@ -28,7 +28,12 @@ all(collection, predicate)
 
 Not valid as a sort key.
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+`{FromClause}` and `{CorrelateSql}` come from `CollectionSqlMapping` (application-authored, so they may already be dialect-specific).
+
+### All dialects
 
 No predicate:
 
@@ -36,7 +41,7 @@ No predicate:
 (1 = 1)
 ```
 
-With predicate (portable “no counterexample” form):
+With predicate (portable "no counterexample" form):
 
 ```sql
 NOT EXISTS (SELECT 1 FROM {FromClause} WHERE {CorrelateSql} AND NOT (predicate))

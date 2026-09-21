@@ -27,13 +27,41 @@ Exactly 1 argument.
   - Argument is `null` → `ArgumentNullException`
   - Argument's `ReturnType` is not `DateTime` → `ArgumentException`
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+
+### SQL Server
 
 ```sql
 DATEPART(dayofyear, datetime)
 ```
 
 Example: `eq(dayofyear(createdat),32)` renders as `(DATEPART(dayofyear, [created_at]) = @wparam_0)`.
+
+### PostgreSQL
+
+```sql
+CAST(EXTRACT(DOY FROM datetime) AS integer)
+```
+
+### SQLite
+
+```sql
+CAST(strftime('%j', datetime) AS integer)
+```
+
+### MySQL / MariaDB, DB2
+
+```sql
+DAYOFYEAR(datetime)
+```
+
+### Oracle
+
+```sql
+TO_NUMBER(TO_CHAR(datetime, 'DDD'))
+```
 
 ## Notes
 

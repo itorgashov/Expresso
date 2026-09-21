@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Rendering\Expresso.Rendering.SqlServer\Expresso.Rendering.SqlServer.csproj" />
+    <ProjectReference Include="..\Expresso.Rendering.TestCases\Expresso.Rendering.TestCases.csproj" />
   </ItemGroup>
 
   <ItemGroup>

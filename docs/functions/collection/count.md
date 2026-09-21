@@ -28,7 +28,12 @@ count(collection, predicate)
 
 Allowed as a sort key (renders as a scalar subquery).
 
-## SQL Server rendering
+## SQL rendering
+
+Quotes and bind names: [docs/rendering.md](../../rendering.md).
+`{FromClause}` and `{CorrelateSql}` come from `CollectionSqlMapping` (application-authored, so they may already be dialect-specific).
+
+### All dialects
 
 ```sql
 (SELECT COUNT(*) FROM {FromClause} WHERE {CorrelateSql} [AND predicate])
@@ -39,6 +44,8 @@ Example: `eq(count(authors), 2)`:
 ```sql
 ((SELECT COUNT(*) FROM dbo.book_author AS ba INNER JOIN dbo.author AS a ON a.id = ba.author_id WHERE ba.book_id = b.id) = @wparam_0)
 ```
+
+**DB2 / `ORDER BY`:** DB2 rejects correlated references in `ORDER BY` scalar subqueries (`SQL0206N`). This fragment is valid in `WHERE` and in a `SELECT` list. For a sort key, select it in a derived table (or extra SELECT column) and order by that alias. See [docs/rendering.md](../../rendering.md).
 
 ## Notes
 
