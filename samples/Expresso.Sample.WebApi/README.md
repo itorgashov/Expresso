@@ -24,7 +24,7 @@ dotnet user-secrets set "ConnectionStrings:Oracle" "User Id=...;Password=...;Dat
 dotnet user-secrets set "ConnectionStrings:Db2" "Server=localhost:50000;Database=SAMPLE;UserID=...;Password=..." --project samples/Expresso.Sample.WebApi
 ```
 
-Allowed engines: `SqlServer`, `PostgreSql`, `MySql` (also `MariaDb`), `Sqlite`, `Oracle`, `Db2`. Oracle uses `:` binds; Db2 needs the IBM clidriver on PATH (same as IT). The net48 host does not use `Db2`.
+Allowed engines: `SqlServer`, `PostgreSql`, `MySql` (also `MariaDb`), `Sqlite`, `Oracle`, `Db2`. Oracle uses `:` binds. **Db2:** NuGet `Net.IBM.Data.Db2` plus IBM **clidriver** on `PATH` on every machine that runs this app (Expresso only renders SQL — see [docs/packages.md](../../docs/packages.md#database-clients-not-included)). The net48 sample host does not wire Db2.
 
 ## Run
 

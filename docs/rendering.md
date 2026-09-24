@@ -4,6 +4,8 @@ Expresso renderers turn a `FilterCriteria` / `SortDirective` into parameterized 
 
 Each function page under [docs/functions/](functions/README.md) documents dialect SQL, grouping engines that emit the same fragment. MariaDB uses the MySQL package and the same SQL as MySQL.
 
+Renderers do **not** connect to a database. Reference an ADO.NET provider in your app and install any required native client on the host. For DB2 (including .NET Framework vs .NET 6+ drivers), see [docs/packages.md — Database clients](packages.md#database-clients-not-included).
+
 ## Identifier quoting
 
 | Dialect | Example `p.age` |

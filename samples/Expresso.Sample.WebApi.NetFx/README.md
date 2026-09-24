@@ -10,7 +10,7 @@ For architecture and endpoint examples, see [docs/sample-app.md](../../docs/samp
 - .NET SDK (to build with `dotnet build`)
 - A database from [samples/database](../database) (`schema.sql` then `seed.sql`)
 
-Db2 is **not** supported on this host; use [Expresso.Sample.WebApi](../Expresso.Sample.WebApi) (net10).
+Db2 is **not** supported on this host; use [Expresso.Sample.WebApi](../Expresso.Sample.WebApi) (net10) to try Db2 against Docker or your own server. That is a **sample** limitation: `Expresso.Rendering.Db2` still works on .NET Framework 4.x if you add IBM’s **Data Server Provider for .NET** and client install (not `Net.IBM.Data.Db2`). See [docs/packages.md — DB2 and .NET Framework](../../docs/packages.md#db2-and-net-framework).
 
 ## Engine and connection strings
 

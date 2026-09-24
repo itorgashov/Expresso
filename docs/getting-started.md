@@ -21,6 +21,8 @@ dotnet add MyApp.DataAccess package Expresso.Rendering.SqlServer
 
 If a single project does both jobs (as in the sample), install `Expresso.Parsing` and `Expresso.Rendering.SqlServer` together — both already reference `Expresso.Core` transitively.
 
+Also add your database’s **ADO.NET driver** (and any OS-level client libraries) in the project that opens connections. Expresso does not include drivers — see [Database clients (not included)](packages.md#database-clients-not-included) (especially **DB2** and .NET Framework).
+
 ## 2. Register services
 
 ```csharp
@@ -127,7 +129,7 @@ For collection filters, pass `SqlQueryMapping` instead of the dictionary: outer 
 
 ## 6. Execute the SQL + parameters
 
-Bind `parameters` as `SqlParameter`s (ADO.NET) or pass the dictionary directly (Dapper's `DynamicParameters`) and execute `sql.ToString()` as usual. Expresso only produces the fragment and the parameter values — it does not open a connection or execute anything itself.
+Bind `parameters` as `SqlParameter`s (ADO.NET) or pass the dictionary directly (Dapper's `DynamicParameters`) and execute `sql.ToString()` as usual. Expresso only produces the fragment and the parameter values — it does not open a connection or execute anything itself. Install the provider and native client for your engine on each runtime machine ([packages.md](packages.md#database-clients-not-included)).
 
 ## Where to go next
 

@@ -52,6 +52,34 @@ builder.Services.AddSqlServerExpressionTransformations();
 
 Use `AddPostgreSqlExpressionTransformations`, `AddSqliteExpressionTransformations`, `AddMySqlExpressionTransformations`, `AddOracleExpressionTransformations`, or `AddDb2ExpressionTransformations` for other engines. MariaDB uses the **MySql** package.
 
+## Database clients (not included)
+
+Expresso **only** produces SQL text and parameter values. Your application must reference an **ADO.NET provider** for the database you execute against, and install any **native client** that provider requires on every machine that **runs** the app (developer workstations and servers). Expresso NuGet packages do not ship database drivers.
+
+| Engine | Typical managed package | Notes |
+|---|---|---|
+| SQL Server | `Microsoft.Data.SqlClient` | |
+| PostgreSQL | `Npgsql` | |
+| MySQL / MariaDB | `MySqlConnector` (or Oracle’s connector) | |
+| SQLite | `Microsoft.Data.Sqlite` (+ native bundle such as `SQLitePCLRaw.bundle_e_sqlite3` on some hosts) | |
+| Oracle | `Oracle.ManagedDataAccess` (.NET Framework) or `Oracle.ManagedDataAccess.Core` (.NET 6+) | |
+| **IBM DB2** | See below | Requires IBM **clidriver** (or full Data Server Client) on the host |
+
+### DB2 and .NET Framework
+
+`Expresso.Rendering.Db2` targets **`netstandard2.0`** — the **same** NuGet works on .NET Framework 4.6.1+ and on .NET 6+. You do **not** need a separate renderer package for .NET Framework.
+
+What differs is the **IBM ADO.NET stack**, not Expresso:
+
+| App TFM | IBM provider | Install |
+|---|---|---|
+| **.NET 6+** | NuGet [`Net.IBM.Data.Db2`](https://www.nuget.org/packages/Net.IBM.Data.Db2) | Also install IBM’s **clidriver** and ensure it is on `PATH` (or configure `DB2HOME` per IBM docs). The [net10 sample](../samples/Expresso.Sample.WebApi/README.md) uses this stack. |
+| **.NET Framework 4.x** | **IBM Data Server Provider for .NET** (`IBM.Data.DB2.dll` from the [IBM Data Server Driver Package](https://www.ibm.com/docs/en/db2/12.1.x?topic=adonet-data-server-provider-net)) | `Net.IBM.Data.Db2` does **not** target .NET Framework. Use IBM’s Framework provider plus the same native client/driver install IBM documents for your platform. |
+
+The [.NET Framework 4.8 sample host](../samples/Expresso.Sample.WebApi.NetFx/README.md) does **not** wire Db2 (it uses the other engines’ NuGet drivers only). You can still use `Expresso.Rendering.Db2` in your own net48 app with the IBM Framework provider.
+
+Db2-specific SQL behavior (for example `ORDER BY` vs correlated collection aggregates) is in [docs/rendering.md](rendering.md).
+
 ## Target framework and supported types
 
 - **Target frameworks:** `netstandard2.0` and `net6.0`.

@@ -20,7 +20,7 @@ Query string → Expresso.Parsing → expression tree (Expresso.Core) → Expres
 | `Expresso.Rendering.Common` | Shared rendering contract and SQL walker |
 | `Expresso.Rendering.SqlServer` (and PostgreSql, Sqlite, MySql, Oracle, Db2) | Dialect `WHERE` / `ORDER BY` rendering + DI |
 
-There is no metapackage — reference the packages you need. See [docs/packages.md](docs/packages.md) and [docs/rendering.md](docs/rendering.md).
+There is no metapackage — reference the packages you need. Database **drivers and native clients are not included** (DB2 needs IBM’s clidriver on the host). See [docs/packages.md](docs/packages.md) and [docs/rendering.md](docs/rendering.md).
 
 ## Example
 
