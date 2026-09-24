@@ -13,7 +13,7 @@ For a guided walkthrough, see [docs/sample-app.md](../../docs/sample-app.md). Sc
 
 ## Engine and connection strings
 
-Switch engine only in `appsettings.json` (`ExpressoSample:Engine`, default `SqlServer`). Store **all** connection strings in **user secrets** (never commit them). The host loads `ConnectionStrings:{Engine}` for the selected engine (`MariaDb` uses `MySql`). Both sample hosts share the same `UserSecretsId`, so one secrets file serves net10 and net48.
+Switch engine only in `appsettings.json` (`ExpressoSample:Engine`, default `SqlServer`). Store **all** connection strings in **user secrets** (never commit them). The host loads `ConnectionStrings:{Engine}` for the selected engine. `MariaDb` uses the MySQL renderer and `ConnectionStrings:MariaDb`. Both sample hosts share the same `UserSecretsId`, so one secrets file serves net10 and net48.
 
 ```powershell
 dotnet user-secrets set "ConnectionStrings:SqlServer" "Server=YOUR_SERVER;Database=Expresso_Sample;Trusted_Connection=True;TrustServerCertificate=True" --project samples/Expresso.Sample.WebApi

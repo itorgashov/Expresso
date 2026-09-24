@@ -40,9 +40,27 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 
 ### All dialects
 
-`sortfor` does not emit parent SQL. `RenderOrderByClause` uses only `SortDirective.Items`. Nested order is rendered by the host against the collection's `ItemFieldToColumn` map (same renderer, narrower mapping).
+`sortfor` never appears in the parent `ORDER BY`. `RenderOrderByClause(sortDirective, ...)` only reads `SortDirective.Items`; a `sortfor(path, expr)` call is parsed into `SortDirective.Nested` instead, keyed by the first path segment (`CollectionSort.Name` / `.Directive`, recursively for multi-segment paths).
 
-Boolean expressions in nested sort keys use `CASE WHEN ... THEN 1 ELSE 0 END` on every dialect. With `asc`, non-matches sort first; use `desc` for "matches first" (e.g. `gt(len(lastname),10),desc`).
+To turn a `sortfor` call into SQL, the **host** — not the parent query — walks to the matching `SortDirective.Nested` entry and calls `RenderOrderByClause` **again**, passing that nested directive with the collection's own **item** field map (e.g. an `items` collection's item catalog: `label` → `i.label`). This returns a second, independent `ORDER BY` fragment that the host applies to whatever query loads that related collection — typically a separate `SELECT` for the child rows, not the parent's `SELECT`.
+
+For `sort=name,desc,sortfor(items,label),asc`:
+
+- Parent `ORDER BY` (from `SortDirective.Items`, rendered against the outer field map):
+
+  ```sql
+  ORDER BY [p].[name] DESC
+  ```
+
+- Nested `ORDER BY` for the `items` collection (from `SortDirective.Nested["items"]`, rendered against that collection's **item** field map) is applied to whichever query loads the related rows, alongside the correlating key used to group them back to their parent:
+
+  ```sql
+  ORDER BY {parent_key}, [i].[label] ASC
+  ```
+
+A helper that resolves `SortDirective.Nested` by path and calls `RenderOrderByClause` on the result (falling back to a default `ORDER BY` when no `sortfor` targeted that collection) is a common pattern for hosts loading related rows in a second query.
+
+Boolean expressions in nested sort keys use `CASE WHEN ... THEN 1 ELSE 0 END` on every dialect, same as parent sort keys. With `asc`, non-matches sort first; use `desc` for "matches first" (e.g. `gt(len(label),10),desc`).
 
 ## Notes
 

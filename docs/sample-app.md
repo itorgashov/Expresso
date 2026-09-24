@@ -7,9 +7,32 @@ Expresso ships two runnable API hosts that share the same data and filtering log
 | [samples/Expresso.Sample.WebApi](../samples/Expresso.Sample.WebApi) | ASP.NET Core + Swagger | `net10` |
 | [samples/Expresso.Sample.WebApi.NetFx](../samples/Expresso.Sample.WebApi.NetFx) | OWIN self-host + Web API 2 + Swagger | `net48` |
 
-Shared code lives in [samples/Expresso.Sample.Shared](../samples/Expresso.Sample.Shared) (`netstandard2.0`): models, ADO.NET repositories, `ISampleSql` dialect catalog, and `QueryParametersParser`. Each host has its own `IRequestFieldsInfoProvider` so the catalog CLR types match the Expresso TFM that host loads. Schema and seed scripts for every engine are under [samples/database](../samples/database). Hosts pick the engine with `ExpressoSample:Engine` in appsettings (default SQL Server) and load `ConnectionStrings:{Engine}` from user secrets. The net48 host does not register Db2 (the sample uses `Net.IBM.Data.Db2` on the net10 host only; .NET Framework apps use IBM’s separate provider — see [docs/packages.md](packages.md#db2-and-net-framework)).
+Shared code lives in [samples/Expresso.Sample.Shared](../samples/Expresso.Sample.Shared) (`netstandard2.0`): models, ADO.NET repositories, `ISampleSql` dialect catalog, and `QueryParametersParser`. Each host has its own `IRequestFieldsInfoProvider` so the catalog CLR types match the Expresso TFM that host loads. Schema and seed scripts for every engine are under [samples/database](../samples/database). Hosts pick the engine with `ExpressoSample:Engine` in appsettings (default SQL Server) and open `ConnectionStrings:{Engine}` from the same file. The net48 host does not register Db2 (the sample uses `Net.IBM.Data.Db2` on the net10 host only; .NET Framework apps use IBM’s separate provider — see [docs/packages.md](packages.md#db2-and-net-framework)).
 
 For setup/run instructions, see each sample's README. This page focuses on *why* it's structured the way it is.
+
+## Switching the database
+
+Set `ExpressoSample:Engine` in the host's `appsettings.json` to `SqlServer`, `PostgreSql`, `MySql`, `MariaDb`, `Sqlite`, `Oracle`, or `Db2`. `MariaDb` uses the MySQL renderer and its own database (`ConnectionStrings:MariaDb`). `Db2` is available on the net10 host only.
+
+Put that engine's connection string in `ConnectionStrings` under the same name:
+
+```json
+{
+  "ExpressoSample": {
+    "Engine": "SqlServer"
+  },
+  "ConnectionStrings": {
+    "SqlServer": "",
+    "PostgreSql": "",
+    "MySql": "",
+    "MariaDb": "",
+    "Sqlite": "",
+    "Oracle": "",
+    "Db2": ""
+  }
+}
+```
 
 ## Domain: books, authors, publishers
 

@@ -17,13 +17,14 @@ public static class SampleEngineSetup
 {
     public static void AddSampleEngine(IServiceCollection services, IConfiguration configuration)
     {
-        var engine = SampleEngineParser.Parse(configuration["ExpressoSample:Engine"]);
+        var configuredEngine = configuration["ExpressoSample:Engine"];
+        var engine = SampleEngineParser.Parse(configuredEngine);
         if (engine == SampleEngine.Db2)
         {
             throw new InvalidOperationException("Db2 is not supported on the net48 sample host. Use Expresso.Sample.WebApi (net10).");
         }
 
-        var connectionString = RequireConnectionString(configuration, engine);
+        var connectionString = RequireConnectionString(configuration, configuredEngine);
 
         services.AddSingleton<ISampleSql>(SampleSqlFactory.Create(engine));
 
@@ -63,9 +64,9 @@ public static class SampleEngineSetup
         services.AddTransient<IRepository<Publisher>, PublisherRepository>();
     }
 
-    private static string RequireConnectionString(IConfiguration configuration, SampleEngine engine)
+    private static string RequireConnectionString(IConfiguration configuration, string? configuredEngine)
     {
-        var name = SampleEngineParser.ConnectionStringName(engine);
+        var name = SampleEngineParser.ConnectionStringName(configuredEngine);
         var connectionString = configuration.GetConnectionString(name);
         if (string.IsNullOrWhiteSpace(connectionString))
         {

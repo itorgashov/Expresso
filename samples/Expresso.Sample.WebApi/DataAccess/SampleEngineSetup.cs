@@ -15,8 +15,9 @@ public static class SampleEngineSetup
 {
     public static void AddSampleEngine(IServiceCollection services, IConfiguration configuration)
     {
-        var engine = SampleEngineParser.Parse(configuration["ExpressoSample:Engine"]);
-        var connectionString = RequireConnectionString(configuration, engine);
+        var configuredEngine = configuration["ExpressoSample:Engine"];
+        var engine = SampleEngineParser.Parse(configuredEngine);
+        var connectionString = RequireConnectionString(configuration, configuredEngine);
 
         services.AddSingleton<ISampleSql>(SampleSqlFactory.Create(engine));
 
@@ -61,9 +62,9 @@ public static class SampleEngineSetup
         services.AddScoped<IRepository<Publisher>, PublisherRepository>();
     }
 
-    private static string RequireConnectionString(IConfiguration configuration, SampleEngine engine)
+    private static string RequireConnectionString(IConfiguration configuration, string? configuredEngine)
     {
-        var name = SampleEngineParser.ConnectionStringName(engine);
+        var name = SampleEngineParser.ConnectionStringName(configuredEngine);
         var connectionString = configuration.GetConnectionString(name);
         if (string.IsNullOrWhiteSpace(connectionString))
         {
