@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Expresso.Rendering
 {
+    /// <summary>PostgreSQL renderer. Double-quoted identifiers, <c>@</c> parameters, and PostgreSQL function spellings.</summary>
     public sealed class ExpressionToPostgreSqlQueryClauseTransformer : AnsiSqlQueryClauseTransformerBase
     {
         protected override string SubstringFunctionName => "SUBSTR";

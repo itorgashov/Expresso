@@ -12,6 +12,7 @@ using Expresso.Rendering;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
+/// <summary>Loads authors and their awards from the sample database.</summary>
 public sealed class AuthorRepository : IRepository<Author>
 {
     private const string WhereParamPrefix = "wparam";
@@ -24,6 +25,9 @@ public sealed class AuthorRepository : IRepository<Author>
     private readonly SqlQueryMapping _queryMapping;
     private readonly string _baseSelect;
 
+    /// <summary>Creates the repository.</summary>
+    /// <param name="db">Open and bind helper for the selected engine.</param>
+    /// <param name="criteriaTransformer">Renderer that turns filters and sorts into SQL.</param>
     public AuthorRepository(
         ISampleDb db,
         IExpressionToQueryClauseTransformer criteriaTransformer)
@@ -46,6 +50,7 @@ public sealed class AuthorRepository : IRepository<Author>
             " FROM " + sql.TableAs("author", "a");
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<Author>> GetAllAsync(
         FilterCriteria? filterCriteria,
         SortDirective? sortDirective,
@@ -75,6 +80,7 @@ public sealed class AuthorRepository : IRepository<Author>
         }
     }
 
+    /// <inheritdoc />
     public async Task<Author?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var connection = await _db.OpenAsync(cancellationToken);

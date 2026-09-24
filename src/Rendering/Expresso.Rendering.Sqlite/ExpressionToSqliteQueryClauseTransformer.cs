@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Expresso.Rendering
 {
+    /// <summary>SQLite renderer. Double-quoted identifiers, <c>@</c> parameters, and SQLite function spellings.</summary>
     public sealed class ExpressionToSqliteQueryClauseTransformer : AnsiSqlQueryClauseTransformerBase
     {
         protected override string SubstringFunctionName => "substr";

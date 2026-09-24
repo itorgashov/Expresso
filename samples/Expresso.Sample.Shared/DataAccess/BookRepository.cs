@@ -12,6 +12,7 @@ using Expresso.Rendering;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
+/// <summary>Loads books, their authors, and those authors' awards from the sample database.</summary>
 public sealed class BookRepository : IRepository<Book>
 {
     private const string WhereParamPrefix = "wparam";
@@ -22,6 +23,9 @@ public sealed class BookRepository : IRepository<Book>
     private readonly SqlQueryMapping _queryMapping;
     private readonly string _baseSelect;
 
+    /// <summary>Creates the repository.</summary>
+    /// <param name="db">Open and bind helper for the selected engine.</param>
+    /// <param name="criteriaTransformer">Renderer that turns filters and sorts into SQL.</param>
     public BookRepository(
         ISampleDb db,
         IExpressionToQueryClauseTransformer criteriaTransformer)
@@ -58,6 +62,7 @@ public sealed class BookRepository : IRepository<Book>
             " INNER JOIN " + sql.TableAs("publisher", "p") + " ON " + sql.Col("p", "id") + " = " + sql.Col("b", "publisher_id");
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<Book>> GetAllAsync(
         FilterCriteria? filterCriteria,
         SortDirective? sortDirective,
@@ -93,6 +98,7 @@ public sealed class BookRepository : IRepository<Book>
         }
     }
 
+    /// <inheritdoc />
     public async Task<Book?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var connection = await _db.OpenAsync(cancellationToken);

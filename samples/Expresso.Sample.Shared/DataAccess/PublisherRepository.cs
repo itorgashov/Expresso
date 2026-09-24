@@ -11,6 +11,7 @@ using Expresso.Rendering;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
+/// <summary>Loads publishers from the sample database.</summary>
 public sealed class PublisherRepository : IRepository<Publisher>
 {
     private const string WhereParamPrefix = "wparam";
@@ -21,6 +22,9 @@ public sealed class PublisherRepository : IRepository<Publisher>
     private readonly Dictionary<string, string> _fieldToColumnMapping;
     private readonly string _baseSelect;
 
+    /// <summary>Creates the repository.</summary>
+    /// <param name="db">Open and bind helper for the selected engine.</param>
+    /// <param name="criteriaTransformer">Renderer that turns filters and sorts into SQL.</param>
     public PublisherRepository(
         ISampleDb db,
         IExpressionToQueryClauseTransformer criteriaTransformer)
@@ -47,6 +51,7 @@ public sealed class PublisherRepository : IRepository<Publisher>
             " FROM " + sql.TableAs("publisher", "p");
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<Publisher>> GetAllAsync(
         FilterCriteria? filterCriteria,
         SortDirective? sortDirective,
@@ -75,6 +80,7 @@ public sealed class PublisherRepository : IRepository<Publisher>
         }
     }
 
+    /// <inheritdoc />
     public async Task<Publisher?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var connection = await _db.OpenAsync(cancellationToken);

@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Expresso.Rendering
 {
+    /// <summary>Oracle renderer. Double-quoted identifiers, <c>:</c> parameters, and Oracle function spellings.</summary>
     public sealed class ExpressionToOracleQueryClauseTransformer : AnsiSqlQueryClauseTransformerBase
     {
         protected override string FormatParameterName(string prefix, int index) => $":{prefix}_{index}";

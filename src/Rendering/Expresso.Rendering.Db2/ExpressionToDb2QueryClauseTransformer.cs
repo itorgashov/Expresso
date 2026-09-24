@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Expresso.Rendering
 {
+    /// <summary>IBM Db2 renderer. Double-quoted identifiers, <c>@</c> parameters, and Db2 function spellings.</summary>
     public sealed class ExpressionToDb2QueryClauseTransformer : AnsiSqlQueryClauseTransformerBase
     {
         protected override string SubstringFunctionName => "SUBSTR";

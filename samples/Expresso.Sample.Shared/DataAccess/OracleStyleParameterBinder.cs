@@ -5,8 +5,13 @@ using System.Reflection;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
+/// <summary>Binds Oracle parameters by name and maps a few CLR types onto Oracle types.</summary>
 public sealed class OracleStyleParameterBinder : ISampleParameterBinder
 {
+    /// <summary>Sets <c>BindByName</c> and adds the parameter. <see cref="Guid"/> is bound as RAW and <see cref="TimeSpan"/> as INTERVAL DAY TO SECOND.</summary>
+    /// <param name="command">Oracle command that will execute.</param>
+    /// <param name="name">Parameter name, with or without a <c>@</c> or <c>:</c> prefix.</param>
+    /// <param name="value">Value to bind. <see langword="null"/> is stored as a database null.</param>
     public void Bind(DbCommand command, string name, object? value)
     {
         var bindByName = command.GetType().GetProperty("BindByName");

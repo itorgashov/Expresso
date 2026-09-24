@@ -13,8 +13,16 @@ using Oracle.ManagedDataAccess.Client;
 
 namespace Expresso.Sample.WebApi.NetFx.DataAccess;
 
+/// <summary>Registers the sample engine, its ADO.NET driver, and the shared repositories. Db2 is not registered on this host.</summary>
 public static class SampleEngineSetup
 {
+    /// <summary>
+    /// Registers the transformer, connection, and repositories for <c>ExpressoSample:Engine</c>.
+    /// The connection string is <c>ConnectionStrings:{Engine}</c>; <c>MariaDb</c> uses <c>ConnectionStrings:MariaDb</c>.
+    /// </summary>
+    /// <param name="services">Application service collection.</param>
+    /// <param name="configuration">Host configuration.</param>
+    /// <exception cref="InvalidOperationException">The engine is Db2, or the engine name or its connection string is missing.</exception>
     public static void AddSampleEngine(IServiceCollection services, IConfiguration configuration)
     {
         var configuredEngine = configuration["ExpressoSample:Engine"];

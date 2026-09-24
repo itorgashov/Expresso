@@ -5,11 +5,16 @@ using System.Threading.Tasks;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
+/// <summary>Opens connections for one sample engine and binds parameters through <see cref="ISampleParameterBinder"/>.</summary>
 public sealed class SampleDb : ISampleDb
 {
     private readonly System.Func<DbConnection> _createConnection;
     private readonly ISampleParameterBinder _binder;
 
+    /// <summary>Creates a database accessor for one engine.</summary>
+    /// <param name="sql">SQL fragments for that engine.</param>
+    /// <param name="createConnection">Factory that returns a closed connection.</param>
+    /// <param name="binder">Binder that writes parameters onto commands.</param>
     public SampleDb(ISampleSql sql, System.Func<DbConnection> createConnection, ISampleParameterBinder binder)
     {
         Sql = sql;
@@ -17,8 +22,10 @@ public sealed class SampleDb : ISampleDb
         _binder = binder;
     }
 
+    /// <inheritdoc />
     public ISampleSql Sql { get; }
 
+    /// <inheritdoc />
     public async Task<DbConnection> OpenAsync(CancellationToken cancellationToken = default)
     {
         var connection = _createConnection();
@@ -26,9 +33,11 @@ public sealed class SampleDb : ISampleDb
         return connection;
     }
 
+    /// <inheritdoc />
     public void Bind(DbCommand command, string name, object? value) =>
         _binder.Bind(command, name, Coerce(value));
 
+    /// <inheritdoc />
     public void BindAll(DbCommand command, Dictionary<string, object>? parameters)
     {
         if (parameters is null)

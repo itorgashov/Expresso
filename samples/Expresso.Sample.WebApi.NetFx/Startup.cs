@@ -14,8 +14,11 @@ using Swashbuckle.Application;
 
 namespace Expresso.Sample.WebApi.NetFx;
 
+/// <summary>OWIN startup for the .NET Framework sample host.</summary>
 public sealed class Startup
 {
+    /// <summary>Builds configuration, registers the sample engine, and hosts Web API with Swagger.</summary>
+    /// <param name="app">OWIN application builder.</param>
     public void Configuration(IAppBuilder app)
     {
         var configuration = BuildConfiguration();

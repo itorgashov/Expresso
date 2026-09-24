@@ -3,6 +3,10 @@ using Expresso.Core.Filtering;
 
 namespace Expresso.Sample.WebApi.NetFx.Filtering;
 
+/// <summary>
+/// Field catalog for the .NET Framework sample. Book and author queries include nested collections.
+/// <c>dateofbirth</c> is <see cref="DateTime"/> and publisher open/close times are <see cref="TimeSpan"/>.
+/// </summary>
 public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IRequestQueryModelProvider
 {
     private static readonly (string, Type)[] BookFilterFields =
@@ -65,6 +69,9 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         new CollectionModel("authors", AuthorItemsModel),
     };
 
+    /// <summary>Returns the scalar filter fields for <paramref name="context"/>.</summary>
+    /// <param name="context"><c>book</c>, <c>author</c>, or <c>publisher</c>.</param>
+    /// <returns>The allow-list, or an empty array for an unknown context.</returns>
     public (string, Type)[] GetValidFilterFields(string context) =>
         context.ToLowerInvariant() switch
         {
@@ -74,6 +81,9 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
             _ => Array.Empty<(string, Type)>(),
         };
 
+    /// <summary>Returns the scalar sort fields for <paramref name="context"/>. Book <c>externalid</c> is filter-only.</summary>
+    /// <param name="context"><c>book</c>, <c>author</c>, or <c>publisher</c>.</param>
+    /// <returns>The allow-list, or an empty array for an unknown context.</returns>
     public (string, Type)[] GetValidSortFields(string context) =>
         context.ToLowerInvariant() switch
         {
@@ -83,6 +93,9 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
             _ => Array.Empty<(string, Type)>(),
         };
 
+    /// <summary>Returns the filter model, including <c>authors</c> and <c>awards</c> where the context has them.</summary>
+    /// <param name="context"><c>book</c>, <c>author</c>, or <c>publisher</c>.</param>
+    /// <returns>The model, or <see cref="QueryModel.Empty"/> for an unknown context.</returns>
     public QueryModel GetFilterModel(string context) =>
         context.ToLowerInvariant() switch
         {
@@ -92,6 +105,9 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
             _ => QueryModel.Empty,
         };
 
+    /// <summary>Returns the sort model, including nested <c>sortfor</c> collections where the context has them.</summary>
+    /// <param name="context"><c>book</c>, <c>author</c>, or <c>publisher</c>.</param>
+    /// <returns>The model, or <see cref="QueryModel.Empty"/> for an unknown context.</returns>
     public QueryModel GetSortModel(string context) =>
         context.ToLowerInvariant() switch
         {

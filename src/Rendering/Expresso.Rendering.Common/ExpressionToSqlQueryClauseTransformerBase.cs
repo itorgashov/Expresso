@@ -15,9 +15,7 @@ namespace Expresso.Rendering
     {
         private static readonly Regex PrefixPattern = new(@"^[A-Za-z][A-Za-z0-9_]*$", RegexOptions.Compiled);
 
-        /// <summary>
-        /// Converts a filter criteria to an expression for the SQL WHERE clause.
-        /// </summary>
+        /// <inheritdoc />
         public (string whereClause, Dictionary<string, object> parameters) RenderWhereClause(
             FilterCriteria filterCriteria,
             Dictionary<string, string> fieldToColumnMap,
@@ -31,9 +29,7 @@ namespace Expresso.Rendering
             return RenderWhereClause(filterCriteria, new SqlQueryMapping(fieldToColumnMap), paramNamePrefix);
         }
 
-        /// <summary>
-        /// Converts a sort order directive to an expression for the SQL ORDER BY clause.
-        /// </summary>
+        /// <inheritdoc />
         public (string orderByClause, Dictionary<string, object> parameters) RenderOrderByClause(
             SortDirective sortDirective,
             Dictionary<string, string> fieldToColumnMap,

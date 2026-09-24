@@ -2,8 +2,13 @@ using System;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
+/// <summary>Reads <c>ExpressoSample:Engine</c> and the matching connection-string name.</summary>
 public static class SampleEngineParser
 {
+    /// <summary>Maps a configuration value to the renderer engine. <c>MariaDb</c> uses <see cref="SampleEngine.MySql"/>.</summary>
+    /// <param name="value">Raw <c>ExpressoSample:Engine</c> value. Blank selects SQL Server.</param>
+    /// <returns>The engine whose SQL catalog and transformer the host should register.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="value"/> is not a known engine name.</exception>
     public static SampleEngine Parse(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -35,9 +40,12 @@ public static class SampleEngineParser
     }
 
     /// <summary>
-    /// Configuration key under <c>ConnectionStrings</c>. <c>MariaDb</c> is its own database
-    /// (the MySQL renderer is selected separately by <see cref="Parse"/>).
+    /// Returns the <c>ConnectionStrings</c> key for <paramref name="configuredEngine"/>.
+    /// <c>MariaDb</c> is its own database; <see cref="Parse"/> still selects the MySQL renderer.
     /// </summary>
+    /// <param name="configuredEngine">Raw <c>ExpressoSample:Engine</c> value. Blank selects <c>SqlServer</c>.</param>
+    /// <returns>The connection-string name, such as <c>MariaDb</c> or <c>SqlServer</c>.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="configuredEngine"/> is not a known engine name.</exception>
     public static string ConnectionStringName(string? configuredEngine)
     {
         if (string.IsNullOrWhiteSpace(configuredEngine))
@@ -45,7 +53,8 @@ public static class SampleEngineParser
             return nameof(SampleEngine.SqlServer);
         }
 
-        switch (configuredEngine.Trim().ToLowerInvariant())
+        var engineName = configuredEngine!.Trim();
+        switch (engineName.ToLowerInvariant())
         {
             case "sqlserver":
             case "mssql":

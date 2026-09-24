@@ -8,6 +8,7 @@ namespace Expresso.Rendering
 {
     public abstract partial class ExpressionToSqlQueryClauseTransformerBase
     {
+        /// <inheritdoc />
         public (string whereClause, Dictionary<string, object> parameters) RenderWhereClause(
             FilterCriteria filterCriteria,
             SqlQueryMapping mapping,
@@ -34,6 +35,7 @@ namespace Expresso.Rendering
             return (sqlBuilder.ToString(), parameters);
         }
 
+        /// <inheritdoc />
         public (string orderByClause, Dictionary<string, object> parameters) RenderOrderByClause(
             SortDirective sortDirective,
             SqlQueryMapping mapping,

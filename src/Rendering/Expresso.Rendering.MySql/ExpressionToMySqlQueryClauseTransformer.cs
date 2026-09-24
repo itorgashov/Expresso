@@ -4,6 +4,7 @@ using System.Text;
 
 namespace Expresso.Rendering
 {
+    /// <summary>MySQL and MariaDB renderer. Backtick identifiers, <c>@</c> parameters, and MySQL function spellings.</summary>
     public sealed class ExpressionToMySqlQueryClauseTransformer : ExpressionToSqlQueryClauseTransformerBase
     {
         protected override string QuoteIdentifierPart(string part) =>
