@@ -1,0 +1,4 @@
+packageId: Expresso.Parsing
+project: src/Expresso.Parsing/Expresso.Parsing.csproj
+unitTestProject: test/Expresso.Parsing.Test/Expresso.Parsing.Test.csproj
+publishOrder: 2

@@ -1,0 +1,4 @@
+packageId: Expresso.Core
+project: src/Expresso.Core/Expresso.Core.csproj
+unitTestProject: test/Expresso.Core.Test/Expresso.Core.Test.csproj
+publishOrder: 1

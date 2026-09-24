@@ -1,0 +1,4 @@
+packageId: Expresso.Rendering.Common
+project: src/Rendering/Expresso.Rendering.Common/Expresso.Rendering.Common.csproj
+unitTestProject: test/Rendering/Expresso.Rendering.TestCases/Expresso.Rendering.TestCases.csproj
+publishOrder: 10

@@ -1,0 +1,4 @@
+packageId: Expresso.Rendering.MySql
+project: src/Rendering/Expresso.Rendering.MySql/Expresso.Rendering.MySql.csproj
+unitTestProject: test/Rendering/Expresso.Rendering.MySql.Test/Expresso.Rendering.MySql.Test.csproj
+publishOrder: 20

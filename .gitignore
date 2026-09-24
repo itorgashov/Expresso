@@ -37,6 +37,8 @@ msbuild.binlog
 *.nupkg
 *.snupkg
 **/packages/*
+!.github/harness/packages/
+!.github/harness/packages/**
 !**/packages/build/
 project.lock.json
 project.fragment.lock.json

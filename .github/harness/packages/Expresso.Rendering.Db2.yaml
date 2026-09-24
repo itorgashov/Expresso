@@ -1,0 +1,4 @@
+packageId: Expresso.Rendering.Db2
+project: src/Rendering/Expresso.Rendering.Db2/Expresso.Rendering.Db2.csproj
+unitTestProject: test/Rendering/Expresso.Rendering.Db2.Test/Expresso.Rendering.Db2.Test.csproj
+publishOrder: 20

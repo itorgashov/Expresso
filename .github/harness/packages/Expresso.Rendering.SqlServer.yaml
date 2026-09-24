@@ -1,0 +1,4 @@
+packageId: Expresso.Rendering.SqlServer
+project: src/Rendering/Expresso.Rendering.SqlServer/Expresso.Rendering.SqlServer.csproj
+unitTestProject: test/Rendering/Expresso.Rendering.SqlServer.Test/Expresso.SqlServer.Test.csproj
+publishOrder: 20

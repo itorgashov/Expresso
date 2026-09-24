@@ -1,0 +1,4 @@
+packageId: Expresso.Rendering.PostgreSql
+project: src/Rendering/Expresso.Rendering.PostgreSql/Expresso.Rendering.PostgreSql.csproj
+unitTestProject: test/Rendering/Expresso.Rendering.PostgreSql.Test/Expresso.Rendering.PostgreSql.Test.csproj
+publishOrder: 20

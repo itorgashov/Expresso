@@ -1,0 +1,4 @@
+packageId: Expresso.Rendering.Oracle
+project: src/Rendering/Expresso.Rendering.Oracle/Expresso.Rendering.Oracle.csproj
+unitTestProject: test/Rendering/Expresso.Rendering.Oracle.Test/Expresso.Rendering.Oracle.Test.csproj
+publishOrder: 20

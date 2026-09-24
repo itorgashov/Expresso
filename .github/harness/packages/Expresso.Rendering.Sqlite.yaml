@@ -1,0 +1,4 @@
+packageId: Expresso.Rendering.Sqlite
+project: src/Rendering/Expresso.Rendering.Sqlite/Expresso.Rendering.Sqlite.csproj
+unitTestProject: test/Rendering/Expresso.Rendering.Sqlite.Test/Expresso.Rendering.Sqlite.Test.csproj
+publishOrder: 20
