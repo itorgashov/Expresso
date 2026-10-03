@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <PackageId>Expresso.Rendering.EntityFramework</PackageId>
+    <Title>Expresso.Rendering.EntityFramework</Title>
+    <Description>Render Expresso filters and sorts to Entity Framework 6 predicates and sort keys, using canonical DbFunctions so results match the Expresso SQL renderers.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Compatibility\IsExternalInit.cs" Link="Compatibility\IsExternalInit.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EntityFramework" Version="6.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Expresso.Rendering.Linq\Expresso.Rendering.Linq.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Expresso.Rendering.EntityFramework.Test" />
+  </ItemGroup>
+
+</Project>

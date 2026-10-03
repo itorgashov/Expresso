@@ -62,6 +62,47 @@ A helper that resolves `SortDirective.Nested` by path and calls `RenderOrderByCl
 
 Boolean expressions in nested sort keys use `CASE WHEN ... THEN 1 ELSE 0 END` on every dialect, same as parent sort keys. With `asc`, non-matches sort first; use `desc` for "matches first" (e.g. `gt(len(label),10),desc`).
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+query.OrderBy(transformer, sort, mapping)
+items.OrderByNested(transformer, sort, itemMapping, "items")
+```
+
+`BuildSortKeys` and `LinqQueryExtensions.OrderBy` read only `SortDirective.Items`, so `sortfor` never reaches the parent order. The host orders the query that loads the related rows with `OrderByNested`, which resolves `SortDirective.Nested` by path (case-insensitive, one argument per segment, for example `"authors", "awards"`) and applies `OrderBy`/`ThenBy` with keys built against the item mapping. It returns the items unchanged when no `sortfor` targeted that path.
+
+A scalar key is the nullable value, and a boolean key is `condition ? 1 : 0`. NULL placement is the database's; see [docs/semantics.md](../../semantics.md). Example: `sort=name,desc,sortfor(items,label),asc` gives `OrderByDescending(e => e.Name)` on the parent query and `OrderBy(e => e.Label)` on the items query. `BuildSortKeys` throws `ArgumentException` for a directive without items, so skip the parent `OrderBy` when the sort has only `sortfor` calls.
+
+### In-memory
+
+`OrderByNested` on an `IEnumerable<TItem>` compiles the keys and orders with `InMemorySortComparer`, which follows PostgreSQL: NULL sorts last ascending and first descending, and strings compare ordinally.
+
+## EF Core rendering
+
+### All providers
+
+`query.IncludeSorted(transformer, sort, mapping)` adds one filtered `Include(e => e.Nav.OrderBy(...).ThenBy(...))` per nested directive, with `ThenInclude` for deeper paths, so the loaded collections arrive in directive order. Parent keys are not applied; order the parents with `OrderBy`. On SQLite, `sortfor(tags,label),asc` loads the tags through a `LEFT JOIN "widget_tag" AS "w0"` and orders by the parent key first:
+
+```sql
+ORDER BY "w"."Id", "w0"."Label"
+```
+
+A collection mapped to anything other than a navigation property (`e => e.Nav`) throws `NotSupportedException`; order a child query with `OrderByNested` instead. A nested name without a collection mapping throws `ArgumentException`.
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 `Include` cannot filter or order a collection, so there is no `IncludeSorted`. Load the related rows with a separate child query and order it with the `IQueryable<TItem>` overload of `OrderByNested`, for example `context.Tags.Where(t => t.WidgetId == id).OrderByNested(transformer, sort, tagMapping, "tags")`. Parent keys use `OrderBy` as usual.
+
+Every EF6 provider supports `sortfor`.
+
 ## Notes
 
 - Multiple `sortfor` calls with the same path append to that node's `Items` in appearance order.

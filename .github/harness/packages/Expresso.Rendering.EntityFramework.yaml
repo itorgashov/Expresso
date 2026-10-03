@@ -1,0 +1,4 @@
+packageId: Expresso.Rendering.EntityFramework
+project: src/Rendering/Expresso.Rendering.EntityFramework/Expresso.Rendering.EntityFramework.csproj
+unitTestProject: test/Rendering/Expresso.Rendering.EntityFramework.Test/Expresso.Rendering.EntityFramework.Test.csproj
+publishOrder: 20

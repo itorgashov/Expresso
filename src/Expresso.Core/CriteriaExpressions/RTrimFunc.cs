@@ -7,5 +7,8 @@ namespace Expresso.Core.CriteriaExpressions
         public RTrimFunc(AbstractExpression argument) : base(argument)
         {
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitRTrim(this, context);
     }
 }

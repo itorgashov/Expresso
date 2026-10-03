@@ -39,6 +39,46 @@ UPPER(text)
 
 Example: `eq(upper(code),"ABC")` renders as `(UPPER([code]) = @wparam_0)` on SQL Server.
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+text.ToUpper()
+```
+
+The result is NULL when `text` is NULL. Example: `eq(upper(code),"ABC")` builds `e => e.Code != null && e.Code.ToUpper() == p0`, where `p0` is a captured parameter. Case mapping of non-ASCII characters is engine-defined: see [docs/semantics.md](../../semantics.md).
+
+### In-memory
+
+`text.ToUpperInvariant()` uses the invariant culture, so the result does not depend on the current culture.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+UPPER([w].[Code])
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda with the canonical `ToUpper` function. On SQL Server:
+
+```sql
+UPPER([Extent1].[Code])
+```
+
+Every EF6 provider supports `upper`.
+
 ## Notes
 
 - See [`lower`](lower.md) for the inverse transform.

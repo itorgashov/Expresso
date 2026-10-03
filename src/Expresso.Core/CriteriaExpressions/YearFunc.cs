@@ -7,5 +7,8 @@ namespace Expresso.Core.CriteriaExpressions
         public YearFunc(AbstractExpression argument) : base(argument, DateTimeTypes.Calendar)
         {
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitYear(this, context);
     }
 }

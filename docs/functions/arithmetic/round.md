@@ -57,6 +57,63 @@ ROUND(CAST(argument AS numeric), 0)
 ROUND(CAST(argument AS numeric), digits)
 ```
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+Math.Round((double)argument)          // 1-argument form
+Math.Round((double)argument, digits)  // 2-argument form
+```
+
+A `byte` or `int` argument is converted to `double` first. The result is NULL when `argument` or `digits` is NULL. `Math.Round` is only a translation target: the provider's SQL `ROUND` does the rounding, so negative `digits` work. Example: `eq(round(mult(amount,10.0),-1),510.0)` builds `e => Math.Round(e.Amount * p0, p1) == p2`, where `amount` is a non-nullable `double` column and `p0` to `p2` are captured parameters.
+
+### In-memory
+
+`ExpressoFunctions.Round(argument, digits)`, with `digits` `0` for the 1-argument form, follows PostgreSQL `round(numeric, int)`: it rounds half away from zero (`round(2.5)` is `3`, not .NET's banker's `2`), and a negative `digits` rounds to the left of the decimal point.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+ROUND([w].[Amount], 0)
+```
+
+The overrides below call the `ExpressoDbFunctions.Round(argument, digits)` marker, with `digits` `0` for the 1-argument form.
+
+### PostgreSQL
+
+The cast to `numeric` makes the midpoint round away from zero. Npgsql prints the cast in PostgreSQL `::` form:
+
+```sql
+ROUND(argument::numeric, digits)
+```
+
+### DB2
+
+```sql
+ROUND(argument, digits)
+```
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda with the canonical `Round` function. On SQL Server:
+
+```sql
+ROUND([Extent1].[Amount], 0)
+```
+
+### Not supported
+
+PostgreSQL throws `NotSupportedException` because EF6 cannot cast to numeric, and PostgreSQL rounds double precision half to even.
+
 ## Notes
 
 - **Zero and negative `digits` are supported** — `round(price,-1)` rounds to the nearest ten, matching SQL Server's native `ROUND` semantics.

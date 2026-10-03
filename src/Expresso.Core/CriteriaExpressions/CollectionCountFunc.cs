@@ -24,5 +24,8 @@ namespace Expresso.Core.CriteriaExpressions
         public CollectionRef Collection => (CollectionRef)Arguments[0];
 
         public AbstractExpression? Predicate => Arguments.Count > 1 ? Arguments[1] : null;
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitCollectionCount(this, context);
     }
 }

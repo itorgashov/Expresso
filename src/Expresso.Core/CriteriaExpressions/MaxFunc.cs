@@ -8,5 +8,8 @@ namespace Expresso.Core.CriteriaExpressions
         {
             ReturnType = argument1.ReturnType;
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitMax(this, context);
     }
 }

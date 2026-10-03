@@ -38,6 +38,46 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 
 Example: `eq(min(price,cap),cap)` renders as `((CASE WHEN [price] < [cap] THEN [price] ELSE [cap] END) = [cap])` on SQL Server. Portable `CASE` is used instead of `LEAST` so older engines (including SQL Server before 2022) work. A parameterized literal is bound once per `CASE` occurrence.
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+argument1 < argument2 ? argument1 : argument2
+```
+
+Operands are promoted as in [`add`](add.md). As in the SQL `CASE`, the comparison is TRUE only when both arguments are non-NULL, so a NULL `argument1` returns `argument2`, and the result is NULL exactly when `argument2` is NULL. Example: `eq(min(age,18),0)` builds `e => (e.Age < p0 ? e.Age : p0) == p1`, where `age` is a non-nullable `int` column and `p0` and `p1` are captured parameters; `p0` is used twice.
+
+### In-memory
+
+Same as Queryable. The in-memory `ExpressoFunctions.Min` override applies only to the [collection form](../collection/min.md).
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda and binds the literal once. On SQL Server:
+
+```sql
+CASE WHEN [w].[Age] < @__Value_0 THEN [w].[Age] ELSE @__Value_0 END
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda and binds the literal once per occurrence. On SQL Server:
+
+```sql
+CASE WHEN ([Extent1].[Age] < @p__linq__0) THEN [Extent1].[Age] ELSE @p__linq__1 END
+```
+
+Every EF6 provider supports `min`.
+
 ## Notes
 
 - `ReturnType` is copied from `argument1` only.

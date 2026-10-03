@@ -13,5 +13,8 @@ namespace Expresso.Core.CriteriaExpressions
 
             Arguments.AddRange(arguments);
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitConcat(this, context);
     }
 }

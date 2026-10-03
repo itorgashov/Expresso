@@ -26,7 +26,10 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: |
+            6.0.x
+            8.0.x
+            10.0.x
 
       - name: Test
         run: dotnet test Expresso.slnx -c Release -f net6.0 --nologo --filter "Category!=Integration"
@@ -52,7 +55,7 @@ jobs:
           sed -i "s|](docs/|](${BLOB}docs/|g" README.md
           sed -i "s|](samples/Expresso.Sample.WebApi/README.md)|](${BLOB}samples/Expresso.Sample.WebApi/README.md)|g" README.md
           sed -i "s|](samples/Expresso.Sample.WebApi)|](${TREE}samples/Expresso.Sample.WebApi)|g" README.md
-      - name: Pack Core, Parsing, Common
+      - name: Pack Core, Parsing, Common, Linq
         run: |
           pack() {
             local file="$1"
@@ -66,6 +69,7 @@ jobs:
           pack .github/harness/packages/Expresso.Core.yaml
           pack .github/harness/packages/Expresso.Parsing.yaml
           pack .github/harness/packages/Expresso.Rendering.Common.yaml
+          pack .github/harness/packages/Expresso.Rendering.Linq.yaml
       - name: NuGet login (OIDC)
         uses: NuGet/login@v1
         id: nuget_login
@@ -76,7 +80,7 @@ jobs:
           dotnet nuget push artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate
           dotnet nuget push artifacts/*.snupkg --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate
 
-  publish-dialects:
+  publish-renderers:
     needs: publish-core-first
     runs-on: ubuntu-latest
     permissions:
@@ -91,13 +95,17 @@ jobs:
           - Expresso.Rendering.MySql.yaml
           - Expresso.Rendering.Oracle.yaml
           - Expresso.Rendering.Db2.yaml
+          - Expresso.Rendering.EntityFrameworkCore.yaml
+          - Expresso.Rendering.EntityFramework.yaml
     steps:
       - uses: actions/checkout@v4
       - name: Set version from tag
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: |
+            6.0.x
+            8.0.x
       - name: Rewrite README links for NuGet
         run: |
           TAG="${{ github.ref_name }}"

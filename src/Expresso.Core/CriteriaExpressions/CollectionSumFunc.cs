@@ -14,5 +14,8 @@ namespace Expresso.Core.CriteriaExpressions
 
             ReturnType = selector.ReturnType == typeof(double) ? typeof(double) : typeof(int);
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitCollectionSum(this, context);
     }
 }

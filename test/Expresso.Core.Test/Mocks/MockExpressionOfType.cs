@@ -1,3 +1,4 @@
+using Expresso.Core.CriteriaExpressions;
 using Expresso.Core.CriteriaExpressions.Abstract;
 
 namespace Expresso.Tests.Core.Mocks
@@ -8,5 +9,8 @@ namespace Expresso.Tests.Core.Mocks
         {
             ReturnType = returnType;
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            throw new NotSupportedException();
     }
 }

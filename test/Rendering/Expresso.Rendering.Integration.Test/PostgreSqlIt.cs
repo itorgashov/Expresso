@@ -37,7 +37,18 @@ namespace Expresso.Rendering.Integration.Test
                 "INSERT INTO widget_tag (id,widget_id,label,score) VALUES (@id,@widgetId,@label,@score)",
                 "INSERT INTO widget_tag_meta (id,tag_id,kind,value) VALUES (@id,@tagId,@kind,@value)");
             Session = new EngineSession(_connection, new ExpressionToPostgreSqlQueryClauseTransformer(), WidgetMapping.Create(), WidgetMapping.TagsOnly(), ParameterBinder.At);
+#if NET8_0_OR_GREATER
+            EfSession = new Ef.EfEngineSession(_connection, (b, c) => Microsoft.EntityFrameworkCore.NpgsqlDbContextOptionsBuilderExtensions.UseNpgsql(b, c));
+#endif
+#if NETFRAMEWORK
+            var connectionString = IntegrationEnabled.ConnectionString("PostgreSql");
+            Ef6Session = new Ef6.Ef6EngineSession(() => new NpgsqlConnection(connectionString), "public");
+#endif
         }
+
+        public IEngineSession? EfSession { get; }
+
+        public IEngineSession? Ef6Session { get; }
 
         public void Dispose() => _connection?.Dispose();
     }

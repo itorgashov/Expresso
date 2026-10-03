@@ -90,51 +90,6 @@ namespace Expresso.Rendering
             return (sqlBuilder.ToString(), parameters);
         }
 
-        protected virtual bool TryGenerateCollectionFunction(
-            AbstractExpression expression,
-            Dictionary<string, string> fieldToColumnMap,
-            StringBuilder sqlBuilder,
-            Dictionary<string, object> parameters,
-            string paramNamePrefix,
-            Dictionary<string, CollectionSqlMapping> collections)
-        {
-            switch (expression)
-            {
-                case AnyFunc any:
-                    GenerateExistsClause(any.Collection, any.Predicate, negate: false, negatePredicate: false, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case NoneFunc none:
-                    GenerateExistsClause(none.Collection, none.Predicate, negate: true, negatePredicate: false, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case AllFunc all:
-                    if (all.Predicate is null)
-                    {
-                        sqlBuilder.Append("(1 = 1)");
-                        return true;
-                    }
-
-                    GenerateExistsClause(all.Collection, all.Predicate, negate: true, negatePredicate: true, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case CollectionCountFunc count:
-                    GenerateCollectionAggregateClause("COUNT(*)", count.Collection, selector: null, count.Predicate, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case CollectionMinFunc min:
-                    GenerateCollectionAggregateClause("MIN", min.Collection, min.Selector, predicate: null, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case CollectionMaxFunc max:
-                    GenerateCollectionAggregateClause("MAX", max.Collection, max.Selector, predicate: null, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case CollectionSumFunc sum:
-                    GenerateCollectionAggregateClause("SUM", sum.Collection, sum.Selector, predicate: null, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case CollectionAvgFunc avg:
-                    GenerateCollectionAggregateClause("AVG", avg.Collection, avg.Selector, predicate: null, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
         private void GenerateExistsClause(
             CollectionRef collection,
             AbstractExpression? predicate,

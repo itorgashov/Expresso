@@ -4,6 +4,9 @@ namespace Expresso.Core.CriteriaExpressions.Abstract
     {
         public Type ReturnType { get; protected set; }
 
+        /// <summary>Dispatches to the <paramref name="visitor"/> method for this node type.</summary>
+        public abstract TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context);
+
         protected void AssertNotNull(object o, string argumentName)
         {
             if (o is null)

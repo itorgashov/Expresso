@@ -11,6 +11,9 @@ namespace Expresso.Tests.Core.CriteriaExpressions
             {
                 ReturnType = returnType;
             }
+
+            public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+                throw new NotSupportedException();
         }
 
         [Fact]

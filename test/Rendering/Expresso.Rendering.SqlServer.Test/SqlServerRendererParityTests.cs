@@ -28,7 +28,7 @@ namespace Expresso.Tests.SqlServer
         public override string Concat(params string[] parts) => $"CONCAT({string.Join(", ", parts)})";
 
         public override string IndexOf(string haystack, string needle) =>
-            $"(ISNULL(NULLIF(CHARINDEX({needle}, {haystack}), 0), 0) - 1)";
+            $"(CASE WHEN DATALENGTH({needle}) = 0 AND {haystack} IS NOT NULL THEN 0 ELSE CHARINDEX({needle}, {haystack}) - 1 END)";
 
         public override string Ceiling(string inner) => $"CEILING({inner})";
 

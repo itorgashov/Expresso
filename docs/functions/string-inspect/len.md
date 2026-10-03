@@ -52,6 +52,46 @@ CHAR_LENGTH(text)
 LENGTH(text)
 ```
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+text.Length
+```
+
+The result is NULL when `text` is NULL. Example: `gt(len(title),50)` builds `e => e.Title != null && e.Title.Length > p0`, where `p0` is a captured parameter. Trailing spaces are engine-defined, since SQL Server `LEN` ignores them: see [docs/semantics.md](../../semantics.md).
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+CAST(LEN([w].[Title]) AS int)
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda with the canonical `Length` function. On SQL Server:
+
+```sql
+CAST(LEN([Extent1].[Title]) AS int)
+```
+
+Every EF6 provider supports `len`.
+
 ## Notes
 
 - Trailing-space and `NULL` behavior follow the engine (`LEN` vs `LENGTH` / `CHAR_LENGTH`). Expresso does not expose a byte-length function.

@@ -3,7 +3,7 @@ using Expresso.Core.CriteriaExpressions.Abstract;
 using Expresso.Core.Filtering;
 using Expresso.Core.Sorting;
 
-namespace Expresso.Rendering.Integration.Test
+namespace Expresso.Rendering.TestCases
 {
     public sealed record FilterCase(string Id, FilterCriteria Filter, int[] ExpectedIdsOrdered);
 

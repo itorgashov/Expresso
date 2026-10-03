@@ -8,5 +8,8 @@ namespace Expresso.Core.CriteriaExpressions
             : base(collection, predicate)
         {
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitAll(this, context);
     }
 }

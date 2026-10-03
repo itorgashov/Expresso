@@ -32,6 +32,10 @@ namespace Expresso.Rendering
             sqlBuilder.Append(')');
         }
 
+        /// <summary>
+        /// <c>SUBSTR(s, GREATEST(LENGTH(s) - n + 1, 1))</c>: <c>SUBSTR(s, -n)</c> is NULL when <c>n</c> exceeds the length
+        /// and the whole string when <c>n</c> is 0.
+        /// </summary>
         protected override void AppendRight(
             RightFunc right,
             Dictionary<string, string> fieldToColumnMap,
@@ -42,9 +46,11 @@ namespace Expresso.Rendering
         {
             sqlBuilder.Append("SUBSTR(");
             GenerateClause(right.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-            sqlBuilder.Append(", -(");
+            sqlBuilder.Append(", GREATEST(LENGTH(");
+            GenerateClause(right.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
+            sqlBuilder.Append(") - (");
             GenerateClause(right.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-            sqlBuilder.Append("))");
+            sqlBuilder.Append(") + 1, 1))");
         }
 
         protected override void AppendIndexOf(

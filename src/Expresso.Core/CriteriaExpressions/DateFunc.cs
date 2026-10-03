@@ -17,5 +17,8 @@ namespace Expresso.Core.CriteriaExpressions
 
             Arguments.Add(argument);
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitDate(this, context);
     }
 }

@@ -66,7 +66,18 @@ namespace Expresso.Rendering.Integration.Test
                 "INSERT INTO widget_tag (id,widget_id,label,score) VALUES (@id,@widgetId,@label,@score)",
                 "INSERT INTO widget_tag_meta (id,tag_id,kind,value) VALUES (@id,@tagId,@kind,@value)");
             Session = new EngineSession(_connection, new ExpressionToSqlServerQueryClauseTransformer(), WidgetMapping.Create(), WidgetMapping.TagsOnly(), ParameterBinder.At);
+#if NET8_0_OR_GREATER
+            EfSession = new Ef.EfEngineSession(_connection, (b, c) => Microsoft.EntityFrameworkCore.SqlServerDbContextOptionsExtensions.UseSqlServer(b, c));
+#endif
+#if NETFRAMEWORK
+            var connectionString = IntegrationEnabled.ConnectionString("SqlServer");
+            Ef6Session = new Ef6.Ef6EngineSession(() => new System.Data.SqlClient.SqlConnection(connectionString), "dbo");
+#endif
         }
+
+        public IEngineSession? EfSession { get; }
+
+        public IEngineSession? Ef6Session { get; }
 
         public void Dispose() => _connection?.Dispose();
     }

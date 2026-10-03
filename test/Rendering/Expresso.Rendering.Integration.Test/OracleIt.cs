@@ -60,7 +60,19 @@ namespace Expresso.Rendering.Integration.Test
                 "\"id\"",
                 "\"label\"",
                 "\"widget_id\"");
+#if NET8_0_OR_GREATER
+            EfSession = new Ef.EfEngineSession(_connection, (b, c) => Microsoft.EntityFrameworkCore.OracleDbContextOptionsExtensions.UseOracle(b, c));
+#endif
+#if NETFRAMEWORK
+            var connectionString = OracleItConnectionString.Get();
+            var schema = new OracleConnectionStringBuilder(connectionString).UserID.ToUpperInvariant();
+            Ef6Session = new Ef6.Ef6EngineSession(() => new OracleConnection(connectionString), schema);
+#endif
         }
+
+        public IEngineSession? EfSession { get; }
+
+        public IEngineSession? Ef6Session { get; }
 
         public void Dispose()
         {

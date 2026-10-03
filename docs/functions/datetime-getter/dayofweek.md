@@ -25,7 +25,7 @@ Exactly 1 argument.
 - **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
 - **IR construction** (`DayOfWeekFunc`, via base `DateTimeSingleArgIntFunction`):
   - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not `DateTime` → `ArgumentException`
+  - Argument's `ReturnType` is not one of the types in the table above → `ArgumentException`
 
 ## SQL rendering
 
@@ -69,6 +69,82 @@ Assumes `NLS_TERRITORY` where `TO_CHAR(..., 'D')` uses Sunday = 1 (e.g. America)
 ```sql
 (TO_NUMBER(TO_CHAR(datetime, 'D')) - 1)
 ```
+
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+(int)datetime.DayOfWeek
+```
+
+The result is NULL when `datetime` is NULL. Example: `eq(dayofweek(createdat),0)` builds `e => (int)e.CreatedAt.DayOfWeek == p0`, where `createdat` is a non-nullable `DateTime` column and `p0` is a captured parameter.
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda on PostgreSQL, MySQL / MariaDB and SQLite. On SQLite:
+
+```sql
+CAST(strftime('%w', "w"."created_at") AS INTEGER)
+```
+
+### SQL Server
+
+`ExpressoDbFunctions.DayOfWeek`, independent of the session's `DATEFIRST`:
+
+```sql
+((DATEPART(weekday, datetime) + @@DATEFIRST) - 1) % 7
+```
+
+### Oracle
+
+`ExpressoDbFunctions.DayOfWeek`, with the same `NLS_TERRITORY` assumption as the Oracle SQL renderer:
+
+```sql
+TO_NUMBER(TO_CHAR(datetime, 'D')) - 1
+```
+
+### DB2
+
+`ExpressoDbFunctions.DayOfWeek`:
+
+```sql
+DAYOFWEEK(datetime) - 1
+```
+
+## EF6 rendering
+
+### All providers
+
+The transformer counts days from a known Sunday (1900-01-07) with the canonical `DbFunctions.DiffDays`, so the result does not depend on `DATEFIRST` or NLS settings. The outer `+ 7) % 7` keeps dates before 1900-01-07 non-negative. SQL Server, PostgreSQL and Oracle use this form:
+
+```csharp
+((DbFunctions.DiffDays(new DateTime(1900, 1, 7), datetime) % 7) + 7) % 7
+```
+
+On SQL Server:
+
+```sql
+((((DATEDIFF (day, convert(datetime2, '1900-01-07 00:00:00.0000000', 121), [Extent1].[created_at])) % 7) + 7) % 7)
+```
+
+### MySQL / MariaDB
+
+`Ef6Functions.MySqlDayOfWeek(datetime) - 1`, the store function `DAYOFWEEK` (Sunday = 1).
+
+### SQLite
+
+`Ef6Functions.SqliteDatePart("weekday", datetime)`, the store function `DATEPART`.
+
+Every EF6 provider supports `dayofweek`.
 
 ## Notes
 

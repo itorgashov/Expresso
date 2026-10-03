@@ -33,5 +33,8 @@ namespace Expresso.Core.CriteriaExpressions
                 throw new ArgumentException("Illegal argument type", argumentName);
             }
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitRound(this, context);
     }
 }

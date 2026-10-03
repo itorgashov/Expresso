@@ -39,6 +39,46 @@ TRIM(text)
 
 Example: `eq(trim(name),"Ada")` renders as `(TRIM([name]) = @wparam_0)` on SQL Server.
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+text.Trim()
+```
+
+The result is NULL when `text` is NULL. Example: `eq(trim(name),"Ada")` builds `e => e.Name != null && e.Name.Trim() == p0`, where `p0` is a captured parameter. The database decides what is trimmed: SQL `TRIM` removes spaces only, while .NET `Trim()` also removes tabs and line breaks. See [docs/semantics.md](../../semantics.md).
+
+### In-memory
+
+`ExpressoFunctions.Trim(text)` removes leading and trailing spaces only, like SQL `TRIM`.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+LTRIM(RTRIM([w].[Name]))
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda with the canonical `Trim` function. On SQL Server:
+
+```sql
+LTRIM(RTRIM([Extent1].[Name]))
+```
+
+Every EF6 provider supports `trim`.
+
 ## Notes
 
 - **Requires SQL Server 2017 or later** (`TRIM` as a built-in function). For older SQL Server versions, use [`ltrim`](ltrim.md) and [`rtrim`](rtrim.md) together instead, which have been available since early versions.

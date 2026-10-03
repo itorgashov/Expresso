@@ -23,5 +23,8 @@ namespace Expresso.Core.CriteriaExpressions
         {
             return base.GetHashCode();
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitIn(this, context);
     }
 }

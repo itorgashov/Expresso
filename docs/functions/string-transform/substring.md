@@ -55,6 +55,46 @@ SUBSTR(text, start, length)
 substr(text, start, length)
 ```
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+text.Substring(start - 1, length)
+```
+
+The 1-based `start` becomes the 0-based .NET index by subtracting 1. The result is NULL when any argument is NULL. Example: `eq(substring(name,1,3),"Mar")` builds `e => e.Name != null && e.Name.Substring(p0 - 1, p1) == p2`, where `p0`, `p1` and `p2` are captured parameters.
+
+### In-memory
+
+`ExpressoFunctions.Substring(text, start, length)` follows PostgreSQL `SUBSTRING(text FROM start FOR length)`: `start` stays 1-based and positions outside the string are dropped, so `substring("Alice",4,10)` is `"ce"`. A negative `length` throws `ArgumentException`.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. When `start` is a parameter, EF Core computes `start - 1` on the client as `@__p_0` and adds 1 back. On SQL Server:
+
+```sql
+SUBSTRING([w].[Name], @__p_0 + 1, @__Value_1)
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda with the canonical `Substring` function. On SQL Server:
+
+```sql
+SUBSTRING([Extent1].[Name], (@p__linq__0 - 1) + 1, @p__linq__1)
+```
+
+Every EF6 provider supports `substring`.
+
 ## Notes
 
 - **`start` follows SQL Server's native 1-based `SUBSTRING` convention** — it is passed through unchanged, *not* converted to 0-based. `substring(name,1,2)` extracts the first two characters, matching plain T-SQL. Contrast this with [`indexof`](../string-inspect/indexof.md), which *is* 0-based.

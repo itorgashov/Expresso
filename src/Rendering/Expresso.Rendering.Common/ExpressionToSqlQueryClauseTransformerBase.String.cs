@@ -25,66 +25,6 @@ namespace Expresso.Rendering
         /// <summary>Name of the SQL CONCAT function when <see cref="UseConcatFunction"/> is true.</summary>
         protected virtual string ConcatFunctionName => "CONCAT";
 
-        protected virtual bool TryGenerateStringFunction(
-            AbstractExpression expression,
-            Dictionary<string, string> fieldToColumnMap,
-            StringBuilder sqlBuilder,
-            Dictionary<string, object> parameters,
-            string paramNamePrefix,
-            Dictionary<string, CollectionSqlMapping> collections)
-        {
-            switch (expression)
-            {
-                case StrStartswithFunc startsWith:
-                    GenerateLikeClause(startsWith.Arguments[0], startsWith.Arguments[1], LikePatternKind.Prefix, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case StrEndswithFunc endsWith:
-                    GenerateLikeClause(endsWith.Arguments[0], endsWith.Arguments[1], LikePatternKind.Suffix, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case StrContainsFunc contains:
-                    GenerateLikeClause(contains.Arguments[0], contains.Arguments[1], LikePatternKind.Contains, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case SubStringFunc substring:
-                    AppendSubstring(substring, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case LeftFunc left:
-                    AppendLeft(left, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case RightFunc right:
-                    AppendRight(right, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case ConcatFunc concat:
-                    AppendConcat(concat, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case LowerFunc lower:
-                    GenerateNamedFunction("LOWER", lower.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case UpperFunc upper:
-                    GenerateNamedFunction("UPPER", upper.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case TrimFunc trim:
-                    GenerateNamedFunction("TRIM", trim.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case LTrimFunc ltrim:
-                    GenerateNamedFunction("LTRIM", ltrim.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case RTrimFunc rtrim:
-                    GenerateNamedFunction("RTRIM", rtrim.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case LenFunc len:
-                    GenerateNamedFunction(LengthFunctionName, len.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case ReplaceFunc replace:
-                    GenerateNamedFunction("REPLACE", replace.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case IndexOfFunc indexOf:
-                    AppendIndexOf(indexOf, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
         protected virtual void AppendSubstring(
             SubStringFunc substring,
             Dictionary<string, string> fieldToColumnMap,
@@ -145,7 +85,9 @@ namespace Expresso.Rendering
         }
 
         /// <summary>
-        /// Zero-based <c>indexof</c>. Default matches SQL Server CHARINDEX (1-based, 0 if missing).
+        /// Zero-based <c>indexof</c>, <c>-1</c> if missing, <c>0</c> for an empty <c>find</c>, NULL if either argument is NULL.
+        /// Default is SQL Server: <c>CHARINDEX</c> returns 0 for an empty <c>find</c>, and <c>= ''</c> / <c>LEN</c> ignore
+        /// trailing spaces, so emptiness is tested with <c>DATALENGTH</c>.
         /// </summary>
         protected virtual void AppendIndexOf(
             IndexOfFunc indexOf,
@@ -155,11 +97,15 @@ namespace Expresso.Rendering
             string paramNamePrefix,
             Dictionary<string, CollectionSqlMapping> collections)
         {
-            sqlBuilder.Append("(ISNULL(NULLIF(CHARINDEX(");
+            sqlBuilder.Append("(CASE WHEN DATALENGTH(");
+            GenerateClause(indexOf.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
+            sqlBuilder.Append(") = 0 AND ");
+            GenerateClause(indexOf.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
+            sqlBuilder.Append(" IS NOT NULL THEN 0 ELSE CHARINDEX(");
             GenerateClause(indexOf.Arguments[1], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
             sqlBuilder.Append(", ");
             GenerateClause(indexOf.Arguments[0], fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-            sqlBuilder.Append("), 0), 0) - 1)");
+            sqlBuilder.Append(") - 1 END)");
         }
 
         private void GenerateLikeClause(

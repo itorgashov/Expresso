@@ -38,6 +38,46 @@ POWER(argument1, argument2)
 
 Example: `eq(power(base,2),25)` renders as `(POWER([base], @wparam_0) = @wparam_1)` on SQL Server.
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+Math.Pow((double)argument1, (double)argument2)
+```
+
+Both arguments are converted to `double` first. The result is NULL when either argument is NULL. The `pow` alias builds the same lambda. Example: `eq(power(age,1),18)` builds `e => Math.Pow((double)e.Age, (double)p0) == (double)p1`, where `age` is a non-nullable `int` column and `p0` and `p1` are captured parameters.
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+POWER(CAST([w].[Age] AS float), @__p_0)
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda with the canonical `Power` function. On SQL Server:
+
+```sql
+POWER(CAST([Extent1].[Age] AS float), @p__linq__0)
+```
+
+Every EF6 provider supports `power`.
+
 ## Notes
 
 - Return type is always `double`, unlike [`add`](add.md)/[`sub`](sub.md)/[`mult`](mult.md)/[`div`](div.md), which copy `argument1`'s type.

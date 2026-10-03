@@ -54,6 +54,66 @@ date(value)
 TRUNC(value)
 ```
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+DateOnly.FromDateTime(value)
+```
+
+On netstandard2.0 the shape is `value.Date`. A `DateOnly` argument is passed through unchanged. Unlike SQL rendering, a string literal is parsed in C# with the invariant culture (`DateOnly.FromDateTime(DateTime.Parse(value))`, or `DateTime.Parse(value).Date` on netstandard2.0) and sent as a parameter; any other string argument throws `NotSupportedException` ("DateFunc accepts a string argument only as a literal in LINQ rendering."). The result is NULL when `value` is NULL. Example: `eq(date(createdat),"2020-01-01")` builds `e => DateOnly.FromDateTime(e.CreatedAt) == p0`, where `p0` is a captured `DateOnly` parameter.
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+CAST([w].[created_at] AS date)
+```
+
+### Oracle
+
+`ExpressoDbFunctions.Date`:
+
+```sql
+TO_CHAR(TRUNC(value), 'YYYY-MM-DD')
+```
+
+The Oracle EF Core provider stores `DateOnly` as ISO text, so the marker renders the same text the parameter carries; see [docs/semantics.md](../../semantics.md).
+
+### DB2
+
+`ExpressoDbFunctions.Date`:
+
+```sql
+DATE(value)
+```
+
+## EF6 rendering
+
+### All providers
+
+`DbFunctions.TruncateTime(value)`. EF6 runs on net48, where `date` returns `DateTime`, so the comparison uses a `DateTime` parameter. On SQL Server:
+
+```sql
+cast(cast([Extent1].[created_at] as date) as datetime2)
+```
+
+### MySQL / MariaDB
+
+`Ef6Functions.MySqlDate(value)`, the store function `DATE(value)`.
+
+SQLite throws `NotSupportedException`: "the provider does not translate TruncateTime".
+
 ## Notes
 
 - On **net6.0**, compare `date(...)` results to `DateOnly` fields/literals, not raw `DateTime` fields. Use `eq(date(createdat), date(other))` or compare to a `DateOnly` literal.

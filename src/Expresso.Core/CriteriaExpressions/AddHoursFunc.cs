@@ -7,5 +7,8 @@ namespace Expresso.Core.CriteriaExpressions
         public AddHoursFunc(AbstractExpression dateTime, AbstractExpression amount) : base(dateTime, amount, DateTimeTypes.Time)
         {
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitAddHours(this, context);
     }
 }

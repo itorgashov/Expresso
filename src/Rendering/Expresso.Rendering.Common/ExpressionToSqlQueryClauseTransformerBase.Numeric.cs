@@ -12,48 +12,6 @@ namespace Expresso.Rendering
         /// <summary>When true, <c>mod</c> uses the <c>%</c> operator; otherwise <c>MOD(a, b)</c>.</summary>
         protected virtual bool UsePercentModulo => true;
 
-        protected virtual bool TryGenerateNumericFunction(
-            AbstractExpression expression,
-            Dictionary<string, string> fieldToColumnMap,
-            StringBuilder sqlBuilder,
-            Dictionary<string, object> parameters,
-            string paramNamePrefix,
-            Dictionary<string, CollectionSqlMapping> collections)
-        {
-            switch (expression)
-            {
-                case ModFunc modFunc:
-                    AppendMod(modFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case FloorFunc floor:
-                    GenerateNamedFunction("FLOOR", floor.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case CeilingFunc ceiling:
-                    GenerateNamedFunction(CeilingFunctionName, ceiling.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case SqrtFunc sqrt:
-                    GenerateNamedFunction("SQRT", sqrt.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case SignFunc sign:
-                    GenerateNamedFunction("SIGN", sign.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case PowerFunc power:
-                    GenerateNamedFunction("POWER", power.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case RoundFunc round:
-                    AppendRound(round, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case MinFunc min:
-                    GenerateMinMaxClause(min.Arguments[0], min.Arguments[1], "<", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                case MaxFunc max:
-                    GenerateMinMaxClause(max.Arguments[0], max.Arguments[1], ">", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
         protected virtual void AppendMod(
             ModFunc modFunc,
             Dictionary<string, string> fieldToColumnMap,

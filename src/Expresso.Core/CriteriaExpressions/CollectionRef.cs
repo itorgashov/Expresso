@@ -42,5 +42,8 @@ namespace Expresso.Core.CriteriaExpressions
                 return hash;
             }
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitCollectionRef(this, context);
     }
 }

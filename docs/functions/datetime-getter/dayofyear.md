@@ -25,7 +25,7 @@ Exactly 1 argument.
 - **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
 - **IR construction** (`DayOfYearFunc`, via base `DateTimeSingleArgIntFunction`):
   - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not `DateTime` → `ArgumentException`
+  - Argument's `ReturnType` is not one of the types in the table above → `ArgumentException`
 
 ## SQL rendering
 
@@ -62,6 +62,62 @@ DAYOFYEAR(datetime)
 ```sql
 TO_NUMBER(TO_CHAR(datetime, 'DDD'))
 ```
+
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+datetime.DayOfYear
+```
+
+The result is NULL when `datetime` is NULL. Example: `eq(dayofyear(createdat),32)` builds `e => e.CreatedAt.DayOfYear == p0`, where `createdat` is a non-nullable `DateTime` column and `p0` is a captured parameter.
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+DATEPART(dayofyear, [w].[created_at])
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+`DbFunctions` has no day-of-year function, so by default the transformer counts days from January 1 of the same year. PostgreSQL uses this form:
+
+```csharp
+DbFunctions.DiffDays(DbFunctions.AddMonths(DbFunctions.AddDays(datetime, 1 - datetime.Day), 1 - datetime.Month), datetime) + 1
+```
+
+### SQL Server, Oracle
+
+`Ef6Functions.DayOfYear(datetime)`, the canonical `Edm.DayOfYear` function. On SQL Server:
+
+```sql
+DATEPART (dayofyear, [Extent1].[created_at])
+```
+
+### MySQL / MariaDB
+
+`Ef6Functions.MySqlDayOfYear(datetime)`, the store function `DAYOFYEAR(datetime)`.
+
+### SQLite
+
+`Ef6Functions.SqliteDatePart("dayofyear", datetime)`, the store function `DATEPART`.
+
+Every EF6 provider supports `dayofyear`.
 
 ## Notes
 

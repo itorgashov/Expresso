@@ -67,77 +67,17 @@ namespace Expresso.Rendering
             string paramNamePrefix,
             Dictionary<string, CollectionSqlMapping> collections)
         {
-            switch (expression)
+            expression.Accept(this, new SqlRenderScope(fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections));
+        }
+
+        private void GenerateFieldReference(Field field, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder)
+        {
+            string mapKey = field.Name.ToLower();
+            if (!fieldToColumnMap.ContainsKey(mapKey))
             {
-                case AndFunc andFunc:
-                    GenerateAndClause(andFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case OrFunc orFunc:
-                    GenerateOrClause(orFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case NotFunc notFunc:
-                    GenerateNotClause(notFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case EqFunc eqFunc:
-                    GenerateComparisonClause(eqFunc, "=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case NeqFunc neqFunc:
-                    GenerateComparisonClause(neqFunc, "!=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case GtFunc gtFunc:
-                    GenerateComparisonClause(gtFunc, ">", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case GteFunc gteFunc:
-                    GenerateComparisonClause(gteFunc, ">=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case LtFunc ltFunc:
-                    GenerateComparisonClause(ltFunc, "<", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case LteFunc lteFunc:
-                    GenerateComparisonClause(lteFunc, "<=", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case AbsFunc absFunc:
-                    GenerateNamedFunction("ABS", absFunc.Arguments, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case AddFunc addFunc:
-                    GenerateArithOperationClause(addFunc, "+", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case SubFunc subFunc:
-                    GenerateArithOperationClause(subFunc, "-", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case MultFunc multFunc:
-                    GenerateArithOperationClause(multFunc, "*", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case DivFunc divFunc:
-                    GenerateArithOperationClause(divFunc, "/", fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case InFunc inFunc:
-                    GenerateInClause(inFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case IsNullFunc isNullFunc:
-                    GenerateIsNullClause(isNullFunc, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections);
-                    break;
-                case Field field:
-                    string mapKey = field.Name.ToLower();
-                    if (!fieldToColumnMap.ContainsKey(mapKey))
-                    {
-                        throw new ArgumentException($"No mapping for the {field.Name} field");
-                    }
-                    sqlBuilder.Append(QuoteIdentifier(fieldToColumnMap[mapKey]));
-                    break;
-                case Literal literal:
-                    sqlBuilder.Append(AddParameter(literal.Value, parameters, paramNamePrefix));
-                    break;
-                default:
-                    if (TryGenerateCollectionFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections)
-                        || TryGenerateStringFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections)
-                        || TryGenerateDateTimeFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections)
-                        || TryGenerateNumericFunction(expression, fieldToColumnMap, sqlBuilder, parameters, paramNamePrefix, collections))
-                    {
-                        break;
-                    }
-                    throw new NotSupportedException($"Expression type '{expression.GetType().Name}' is not supported.");
+                throw new ArgumentException($"No mapping for the {field.Name} field");
             }
+            sqlBuilder.Append(QuoteIdentifier(fieldToColumnMap[mapKey]));
         }
 
         private void GenerateAndClause(AndFunc andFunc, Dictionary<string, string> fieldToColumnMap, StringBuilder sqlBuilder, Dictionary<string, object> parameters, string paramNamePrefix, Dictionary<string, CollectionSqlMapping> collections)

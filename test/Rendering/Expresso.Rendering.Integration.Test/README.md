@@ -10,9 +10,15 @@ Skip is applied inside `[SkippableTheory]` methods (`Skip.IfNot`) so VSTest stil
 docker compose -f docker/docker-compose.it.yml up -d
 # Wait until Oracle/DB2 are healthy (first pull is slow).
 $env:EXPRESSO_IT = "1"
-dotnet test test/Rendering/Expresso.Rendering.Integration.Test -c Release -f net6.0
-dotnet test test/Rendering/Expresso.Rendering.Integration.Test -c Release -f net48   # Windows; DB2 IT is net6.0-only
+dotnet test test/Rendering/Expresso.Rendering.Integration.Test -c Release   # net6.0, net8.0, net48 one after another
+dotnet test test/Rendering/Expresso.Rendering.Integration.Test -c Release -f net8.0   # one framework (EF Core runs on net8.0 only, EF6 on net48 only)
 ```
+
+Frameworks run sequentially (`TestTfmsInParallel=false`) because every fixture drops and re-seeds the same tables. net48 is Windows-only; DB2 ADO IT runs on net6.0 and net8.0.
+
+EF Core sessions (`Ef/`) reuse each ADO fixture's connection and seed. Provider specifics: Pomelo needs `AllowUserVariables=True` (added to the MySQL/MariaDB EF connection string); IBM needs `EnableEFCaseSensitivity=true` to quote identifiers, and DB2 sort keys are lifted into a derived table because DB2 rejects correlated subqueries in `ORDER BY`. A failing differential case prints the EF SQL.
+
+EF6 sessions (`Ef6/`, net48 only) open their own connection per query on the same seeded database. `ItEf6Configuration` registers every EF6 provider, because EF6 allows one `DbConfiguration` per AppDomain. Provider specifics: MySql.Data (MySQL and MariaDB) needs `SslMode=Disabled` instead of `None`; System.Data.SQLite needs `BinaryGUID=False` (GUIDs are seeded as text) and releases the file only after `ClearAllPools()` and a GC; Oracle's default schema is the uppercase user. Documented EF6 gaps are pinned in `Ef6ProviderGaps`: each must throw, and the MySQL 8 `TimeSpan`-parameter quirk is skipped with its reason. No DB2 (no EF6 provider on NuGet).
 
 Connection strings: **user secrets** (`UserSecretsId` in the test `.csproj`) or [appsettings.json](appsettings.json) placeholders. Set secrets once:
 

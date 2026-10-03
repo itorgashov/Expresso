@@ -14,5 +14,8 @@ namespace Expresso.Core.CriteriaExpressions
             Arguments.Add(sourceString);
             Arguments.Add(length);
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitLeft(this, context);
     }
 }

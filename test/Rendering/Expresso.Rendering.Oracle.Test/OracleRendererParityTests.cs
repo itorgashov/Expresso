@@ -20,7 +20,7 @@ namespace Expresso.Tests.Oracle
 
         public override string Left(string inner, string countSql) => $"SUBSTR({inner}, 1, {countSql})";
 
-        public override string Right(string inner, string countSql) => $"SUBSTR({inner}, -({countSql}))";
+        public override string Right(string inner, string countSql) => $"SUBSTR({inner}, GREATEST(LENGTH({inner}) - ({countSql}) + 1, 1))";
 
         public override string Substring(string inner, string startSql, string lengthSql) =>
             $"SUBSTR({inner}, {startSql}, {lengthSql})";

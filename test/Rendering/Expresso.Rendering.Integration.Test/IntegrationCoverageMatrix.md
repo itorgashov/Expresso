@@ -28,3 +28,24 @@ Case ids from `RendererIntegrationCases`. Every dialect collection (SQL Server, 
 | nested collection sort | `nested-label-asc`, `nested-score-desc` |
 
 `sortfor` grammar is covered by parsing unit tests; IT uses `SortDirective` trees.
+
+## LINQ / EF Core (net8.0) / EF6 (net48)
+
+- **Catalog:** every EF Core collection (`{Engine}EfItTests`, all seven engines) runs the ids above and must return the expected ids. `NestedSort_IncludeSorted` also runs the nested cases through `IncludeSorted`.
+- **EF6:** `{Engine}Ef6ItTests` (SQL Server, PostgreSQL, MySQL, MariaDB, SQLite, Oracle) run the catalog and the differential cases the same way. Cases listed in `Ef6ProviderGaps` for that provider must throw instead (skipped with the reason when the divergence is silent); see [docs/linq-rendering.md](../../../docs/linq-rendering.md#ef6-provider-limits).
+- **Differential:** `RendererDifferentialCases` has no fixed expectation; EF Core must return the same outcome as ADO on the same engine (both failing counts as agreement). In-memory LINQ must match PostgreSQL ADO (all TFMs) on the catalog and on the differential cases that don't depend on collation.
+
+| Split probed | Case id |
+|---|---|
+| integer vs decimal `/` | `div-odd-eq`, `div-odd-gt`, `sort-div` |
+| integer `AVG` (SQL Server, DB2) | `avg-fraction` |
+| rounding mode | `round-half`, `round-half-digits` |
+| NULL in `concat` (incl. every argument NULL) | `concat-null-isnull`, `concat-null-eq`, `concat-null-all` |
+| time-of-day arithmetic (wrap, carry, negative, compare) | `time-hour`, `time-wrap`, `time-carry`, `time-negative`, `time-seconds`, `time-add-eq` |
+| `left` / `right` / `substring` past the end | `left-long`, `right-long`, `substring-long` |
+| case-sensitive `indexof` | `indexof-case` |
+| empty, trailing-space and NULL `indexof` | `indexof-empty`, `indexof-space`, `indexof-null` |
+| case sensitivity of `contains` / `startswith` / `endswith` (`LIKE` vs `instr` / `CHARINDEX`) | `contains-case`, `startswith-case`, `endswith-case` (collation-dependent, EF only) |
+| empty `contains` / `startswith` / `endswith` pattern | `contains-empty`, `startswith-empty`, `endswith-empty` |
+| empty-collection `sum`, string `min` | `sum-empty-isnull`, `min-label` |
+| NULL sort position | `sort-len-notes-asc`, `sort-len-notes-desc`, `sort-notes-asc`, `sort-notes-desc` (collation-dependent, EF only) |

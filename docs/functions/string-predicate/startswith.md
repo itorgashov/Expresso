@@ -67,6 +67,54 @@ Non-literal prefix:
 (text LIKE CONCAT(REPLACE(REPLACE(REPLACE(prefix, '\\', '\\\\'), '%', '\\%'), '_', '\\_'), '%') ESCAPE '\\')
 ```
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+text.StartsWith(prefix)
+```
+
+The TRUE condition is `text != null && prefix != null && text.StartsWith(prefix)`. The FALSE condition, used by `not(...)`, is `text != null && prefix != null && !text.StartsWith(prefix)`. When either argument is NULL, neither holds. Example: `startswith(name,"Jo")` builds `e => e.Name != null && e.Name.StartsWith(p0)`, where `p0` is the captured parameter `"Jo"`; the LINQ provider adds the `%` wildcard and the escaping. Whether the match ignores case depends on the engine and column collation: see [docs/semantics.md](../../semantics.md).
+
+### In-memory
+
+`text.StartsWith(prefix, StringComparison.Ordinal)` is a case-sensitive, culture-independent match, like PostgreSQL `LIKE`.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. The parameter carries the escaped prefix with `%` appended. On SQL Server:
+
+```sql
+[w].[Name] LIKE @__Value_0_startswith ESCAPE N'\'
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda. On SQL Server it becomes `LIKE`, escaping the parameter with `~`:
+
+```sql
+([Extent1].[Name] IS NOT NULL) AND ([Extent1].[Name] LIKE @p__linq__0 ESCAPE N'~')
+```
+
+### SQLite
+
+The provider translates `StartsWith` to `CHARINDEX(prefix, text) = 1`, which is case-sensitive and false for an empty prefix, and it rejects `LIKE ... ESCAPE`. The override compares lower-cased values, which matches the SQL renderer's `LIKE`: SQLite `LIKE` and `LOWER` both fold ASCII case only. An empty prefix matches every non-NULL value:
+
+```sql
+([Extent1].[Name] IS NOT NULL) AND ((0 = (LENGTH(@p__linq__0))) OR ((CHARINDEX(LOWER(@p__linq__1), LOWER([Extent1].[Name]))) = 1))
+```
+
+Every EF6 provider supports `startswith`.
+
 ## Notes
 
 - See [`endswith`](endswith.md) and [`contains`](contains.md) for the other `LIKE`-based predicates — all three share the same escaping rules, differing only in where `%` is placed.

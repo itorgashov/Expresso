@@ -1,4 +1,4 @@
-﻿using Expresso.Core.CriteriaExpressions.Abstract;
+using Expresso.Core.CriteriaExpressions.Abstract;
 
 namespace Expresso.Core.CriteriaExpressions
 {
@@ -21,5 +21,8 @@ namespace Expresso.Core.CriteriaExpressions
         {
             return base.GetHashCode();
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitIsNull(this, context);
     }
 }

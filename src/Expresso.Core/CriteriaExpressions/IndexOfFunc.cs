@@ -15,5 +15,8 @@ namespace Expresso.Core.CriteriaExpressions
             Arguments.Add(find);
             ReturnType = typeof(int);
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitIndexOf(this, context);
     }
 }

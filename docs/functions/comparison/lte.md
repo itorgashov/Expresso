@@ -17,7 +17,7 @@ Exactly 2 arguments.
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `leftOperand` | `byte`, `int`, `double`, or `DateTime` |
+| 1 | `leftOperand` | `byte`, `int`, `double`, `DateTime`, `TimeSpan`; plus `DateOnly`/`TimeOnly` on net6.0 |
 | 2 | `rightOperand` | Same set; see [`gt`](gt.md) for the full compatibility rule (identical here) |
 
 ## Validation & exceptions
@@ -37,6 +37,47 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 ```
 
 Example: `lte(price,19.99)` renders as `([price] <= @wparam_0)` on SQL Server.
+
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+left <= right   // TRUE
+left > right    // FALSE
+```
+
+Both conditions also require `left != null && right != null`, so a NULL operand makes the result unknown, as in SQL; the check is left out for an operand that can never be NULL. The FALSE condition is what `not(lte(...))` uses. Numeric operands are promoted first: `byte` becomes `int`, and any `double` operand makes both `double`. `DateTime`, time-of-day `TimeSpan`, `DateOnly` and `TimeOnly` operands use the C# operators directly. Example: `lte(age,25)` builds `e => e.Age <= p0`, where `age` is a non-nullable `int` column and `p0` is a captured parameter.
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+[w].[Age] <= @__Value_0
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda. On SQL Server:
+
+```sql
+[Extent1].[Age] <= @p__linq__0
+```
+
+Every EF6 provider supports `lte`, except that Oracle and SQLite cannot use a time-of-day `TimeSpan` operand: the provider has no time-of-day (Edm.Time) type.
 
 ## Notes
 

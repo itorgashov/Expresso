@@ -14,5 +14,8 @@ namespace Expresso.Core.CriteriaExpressions
 
             ReturnType = typeof(double);
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitCollectionAvg(this, context);
     }
 }

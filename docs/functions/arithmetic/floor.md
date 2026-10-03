@@ -37,6 +37,46 @@ FLOOR(argument)
 
 Example: `eq(floor(price),19)` renders as `(FLOOR([price]) = @wparam_0)` on SQL Server.
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+Math.Floor((double)argument)
+```
+
+A `byte` or `int` argument is converted to `double` first. The result is NULL when `argument` is NULL. Example: `eq(floor(amount),50.0)` builds `e => Math.Floor(e.Amount) == p0`, where `amount` is a non-nullable `double` column and `p0` is a captured parameter.
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+FLOOR([w].[Amount])
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda with the canonical `Floor` function. On SQL Server:
+
+```sql
+FLOOR([Extent1].[Amount])
+```
+
+Every EF6 provider supports `floor`.
+
 ## Notes
 
 - Unlike [`abs`](abs.md), the return type is always `double`, regardless of the argument's original type — contrast with `abs`, which copies the argument's type unchanged.

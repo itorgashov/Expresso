@@ -1,0 +1,4 @@
+packageId: Expresso.Rendering.Linq
+project: src/Rendering/Expresso.Rendering.Linq/Expresso.Rendering.Linq.csproj
+unitTestProject: test/Rendering/Expresso.Rendering.Linq.Test/Expresso.Rendering.Linq.Test.csproj
+publishOrder: 10

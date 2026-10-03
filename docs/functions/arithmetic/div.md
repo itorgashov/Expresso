@@ -38,6 +38,48 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 
 Example: `gt(div(revenue,unitsSold),10)` renders as `(([revenue] / [unitsSold]) > @wparam_0)` on SQL Server. Integral operands follow the engine's integer-division rules.
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+argument1 / argument2
+```
+
+A `byte` operand is widened to `int`, and when either operand is `double` both become `double`. When both operands are then `int`, this is C# integer division, which truncates toward zero (`div(-7,2)` is `-3`). The result is NULL when either argument is NULL. Example: `eq(div(age,2),15)` builds `e => e.Age / p0 == p1`, where `age` is a non-nullable `int` column and `p0` and `p1` are captured parameters; it matches ages 30 and 31.
+
+The SQL renderers' integer `/` is engine-defined, while the lambda always means truncating division; see [docs/semantics.md](../../semantics.md).
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+[w].[Age] / @__Value_0
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda. On SQL Server:
+
+```sql
+([Extent1].[Age] / @p__linq__0)
+```
+
+Every EF6 provider supports `div`.
+
 ## Notes
 
 - SQL Server performs **integer division** when both operands are integral (`byte`/`int`) — `div(sub(price,1), 2)` truncates just like plain SQL `/` would. Cast a field to `double`-typed data or use a `double` literal if you need fractional results.

@@ -14,5 +14,8 @@ namespace Expresso.Core.CriteriaExpressions
 
             ReturnType = selector.ReturnType;
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitCollectionMin(this, context);
     }
 }

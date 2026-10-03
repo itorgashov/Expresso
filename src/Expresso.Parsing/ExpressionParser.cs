@@ -629,6 +629,9 @@ namespace Expresso.Parsing
             {
                 Value = @value;
             }
+
+            public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+                throw new NotSupportedException("Unresolved string tokens never leave the parser.");
         }
     }
 }

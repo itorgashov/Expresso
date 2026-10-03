@@ -39,12 +39,29 @@ namespace Expresso.Rendering.Integration.Test
                 "INSERT INTO widget_tag (id,widget_id,label,score) VALUES (@id,@widgetId,@label,@score)",
                 "INSERT INTO widget_tag_meta (id,tag_id,kind,value) VALUES (@id,@tagId,@kind,@value)");
             Session = new EngineSession(_connection, new ExpressionToSqliteQueryClauseTransformer(), WidgetMapping.Create(), WidgetMapping.TagsOnly(), ParameterBinder.At);
+#if NET8_0_OR_GREATER
+            EfSession = new Ef.EfEngineSession(_connection, (b, c) => Microsoft.EntityFrameworkCore.SqliteDbContextOptionsBuilderExtensions.UseSqlite(b, c));
+#endif
+#if NETFRAMEWORK
+            var path = _path;
+            Ef6Session = new Ef6.Ef6EngineSession(() => new System.Data.SQLite.SQLiteConnection("Data Source=" + path + ";BinaryGUID=False"));
+#endif
         }
+
+        public IEngineSession? EfSession { get; }
+
+        public IEngineSession? Ef6Session { get; }
 
         public void Dispose()
         {
             _connection?.Dispose();
             SqliteConnection.ClearAllPools();
+#if NETFRAMEWORK
+            // System.Data.SQLite (EF6) releases the file only once its finalizable statements are collected.
+            System.Data.SQLite.SQLiteConnection.ClearAllPools();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+#endif
             if (File.Exists(_path))
             {
                 File.Delete(_path);

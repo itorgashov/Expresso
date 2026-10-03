@@ -1,6 +1,6 @@
 # Packages
 
-Expresso ships as independent NuGet packages. There is no rendering metapackage — reference only the dialect you execute against.
+Expresso ships as independent NuGet packages. There is no rendering metapackage — reference only the dialect (or LINQ / EF package) you execute against.
 
 | Package | Contains | Depends on |
 |---|---|---|
@@ -13,6 +13,9 @@ Expresso ships as independent NuGet packages. There is no rendering metapackage 
 | `Expresso.Rendering.MySql` | MySQL / MariaDB transformer + `AddMySqlExpressionTransformations()` | Common |
 | `Expresso.Rendering.Oracle` | Oracle transformer + `AddOracleExpressionTransformations()` | Common |
 | `Expresso.Rendering.Db2` | IBM DB2 transformer + `AddDb2ExpressionTransformations()` | Common |
+| `Expresso.Rendering.Linq` | LINQ lambdas (Queryable and in-memory profiles), `LinqQueryMapping<T>`, `AddLinqExpressionTransformations()` | `Expresso.Core` |
+| `Expresso.Rendering.EntityFrameworkCore` | EF Core 8+ transformer and provider translations, `IncludeSorted`, `AddEfCoreExpressionTransformations<TContext>()` (net8.0) | Linq, `Microsoft.EntityFrameworkCore.Relational` |
+| `Expresso.Rendering.EntityFramework` | EF6 transformer with canonical and store functions, `AddEf6ExpressionTransformations()` (net48) | Linq, `EntityFramework` |
 
 `Expresso.Core` is published on its own so parsers and renderers share one type identity for the expression tree.
 
@@ -52,6 +55,10 @@ builder.Services.AddSqlServerExpressionTransformations();
 
 Use `AddPostgreSqlExpressionTransformations`, `AddSqliteExpressionTransformations`, `AddMySqlExpressionTransformations`, `AddOracleExpressionTransformations`, or `AddDb2ExpressionTransformations` for other engines. MariaDB uses the **MySql** package.
 
+## LINQ, EF Core and EF6
+
+`Expresso.Rendering.Linq` renders lambdas instead of SQL text; the EF packages add provider overrides on top of it. Setup, mapping and provider limits: [docs/linq-rendering.md](linq-rendering.md).
+
 ## Database clients (not included)
 
 Expresso **only** produces SQL text and parameter values. Your application must reference an **ADO.NET provider** for the database you execute against, and install any **native client** that provider requires on every machine that **runs** the app (developer workstations and servers). Expresso NuGet packages do not ship database drivers.
@@ -82,7 +89,7 @@ Db2-specific SQL behavior (for example `ORDER BY` vs correlated collection aggre
 
 ## Target framework and supported types
 
-- **Target frameworks:** `netstandard2.0` and `net6.0`.
+- **Target frameworks:** `netstandard2.0` and `net6.0`; `Expresso.Rendering.EntityFrameworkCore` targets `net8.0` and `Expresso.Rendering.EntityFramework` targets `net48`.
 - **Supported CLR types:** `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`, `TimeSpan` (time-of-day) on all TFMs; `DateOnly` and `TimeOnly` on **net6.0**.
 - **Not supported:** `float`, `decimal`.
 

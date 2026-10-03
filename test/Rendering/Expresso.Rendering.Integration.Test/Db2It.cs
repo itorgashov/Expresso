@@ -56,7 +56,15 @@ namespace Expresso.Rendering.Integration.Test
                 "\"label\"",
                 "\"widget_id\"",
                 orderByInSelectList: true);
+#if NET8_0_OR_GREATER
+            // IBM EF quotes identifiers (the tables are quoted lowercase) only with this connection-string keyword.
+            var efConnectionString = IntegrationEnabled.ConnectionString("Db2")!.TrimEnd(';') + ";EnableEFCaseSensitivity=true";
+            EfSession = new Ef.EfEngineSession(_connection, (b, _) => IBM.EntityFrameworkCore.Db2DbContextOptionsExtensions.UseDb2(b, efConnectionString, _ => { }),
+                liftSortKeys: true);
+#endif
         }
+
+        public IEngineSession? EfSession { get; }
 
         public void Dispose() => _connection?.Dispose();
 

@@ -17,7 +17,7 @@ Exactly 2 arguments.
 
 | Position | Name | Required type |
 |---|---|---|
-| 1 | `leftOperand` | `byte`, `int`, `double`, `DateTime`, `bool`, or `string` |
+| 1 | `leftOperand` | `byte`, `int`, `double`, `DateTime`, `bool`, `string`, `Guid`, `TimeSpan`; plus `DateOnly`/`TimeOnly` on net6.0 |
 | 2 | `rightOperand` | Same set; see compatibility rule below |
 
 ## Type compatibility rule
@@ -41,6 +41,43 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 ```
 
 Example: `neq(status,1)` renders as `([status] != @wparam_0)` on SQL Server. Renders as SQL `!=`, not `<>`, on every dialect.
+
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+left != right   // TRUE
+left == right   // FALSE
+```
+
+Both conditions also require `left != null && right != null`, so a NULL operand makes the result unknown and the row does not match, unlike plain C# `!=`; the check is left out for an operand that can never be NULL. The FALSE condition is what `not(neq(...))` uses. Numeric operands are promoted first: `byte` becomes `int`, and any `double` operand makes both `double`. Example: `neq(name,"Bob")` builds `e => e.Name != null && e.Name != p0`, where `p0` is a captured parameter.
+
+### In-memory
+
+Same as Queryable. String `!=` is ordinal and case-sensitive in memory, while a database compares by the column collation ([docs/semantics.md](../../semantics.md)).
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda and drops the redundant `IS NOT NULL` check. On SQL Server:
+
+```sql
+[w].[Name] <> @__Value_0
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda.
+
+Every EF6 provider supports `neq`, except that Oracle and SQLite cannot use a time-of-day `TimeSpan` operand: the provider has no time-of-day (Edm.Time) type.
 
 ## Notes
 

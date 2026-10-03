@@ -7,5 +7,8 @@ namespace Expresso.Core.CriteriaExpressions
         public AddYearsFunc(AbstractExpression dateTime, AbstractExpression amount) : base(dateTime, amount, DateTimeTypes.Calendar)
         {
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitAddYears(this, context);
     }
 }

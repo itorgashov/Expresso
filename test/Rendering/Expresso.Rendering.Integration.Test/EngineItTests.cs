@@ -15,8 +15,7 @@ namespace Expresso.Rendering.Integration.Test
         public void Filter_ReturnsExpectedIds(FilterCase testCase)
         {
             Skip.IfNot(IntegrationEnabled.IsOn, IntegrationEnabled.SkipReason);
-            var ids = Session.QueryWidgetIds(testCase.Filter, sort: null);
-            Assert.Equal(testCase.ExpectedIdsOrdered, ids);
+            AssertOutcome(testCase.Id, testCase.ExpectedIdsOrdered, () => Session.QueryWidgetIds(testCase.Filter, sort: null));
         }
 
         [SkippableTheory]
@@ -24,8 +23,7 @@ namespace Expresso.Rendering.Integration.Test
         public void ParentSort_ReturnsExpectedIds(ParentSortCase testCase)
         {
             Skip.IfNot(IntegrationEnabled.IsOn, IntegrationEnabled.SkipReason);
-            var ids = Session.QueryWidgetIds(testCase.Filter, testCase.Sort);
-            Assert.Equal(testCase.ExpectedIdsOrdered, ids);
+            AssertOutcome(testCase.Id, testCase.ExpectedIdsOrdered, () => Session.QueryWidgetIds(testCase.Filter, testCase.Sort));
         }
 
         [SkippableTheory]
@@ -33,9 +31,12 @@ namespace Expresso.Rendering.Integration.Test
         public void NestedSort_ReturnsExpectedLabels(NestedSortCase testCase)
         {
             Skip.IfNot(IntegrationEnabled.IsOn, IntegrationEnabled.SkipReason);
-            var labels = Session.QueryTagLabels(testCase.WidgetId, testCase.Sort);
-            Assert.Equal(testCase.ExpectedLabels, labels);
+            AssertOutcome(testCase.Id, testCase.ExpectedLabels, () => Session.QueryTagLabels(testCase.WidgetId, testCase.Sort));
         }
+
+        /// <summary>Asserts the query result; sessions with documented provider gaps assert those instead.</summary>
+        protected virtual void AssertOutcome<T>(string caseId, IReadOnlyList<T> expected, Func<IReadOnlyList<T>> query) =>
+            Assert.Equal(expected, query());
     }
 
     public interface IEngineSession

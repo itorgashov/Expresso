@@ -14,5 +14,8 @@ namespace Expresso.Core.CriteriaExpressions
             Arguments.Add(testExpression);
             Arguments.Add(matchToExpression);
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitStrEndswith(this, context);
     }
 }

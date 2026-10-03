@@ -61,12 +61,12 @@ namespace Expresso.Rendering.TestCases
                 new()
                 {
                     Expression = new GtFunc(
-                        new IndexOfFunc(new Field("name", typeof(string)), new Literal("o")),
+                        new IndexOfFunc(new Field("name", typeof(string)), new Field("foo", typeof(string))),
                         new Literal(0))
                 },
                 RendererMaps.Standard,
                 D.Prefix);
-            Assert.Equal($"({D.IndexOf(D.Q("name_col"), D.P(0))} > {D.P(1)})", result.whereClause);
+            Assert.Equal($"({D.IndexOf(D.Q("name_col"), D.Q("foo_col"))} > {D.P(0)})", result.whereClause);
         }
 
         [Fact]

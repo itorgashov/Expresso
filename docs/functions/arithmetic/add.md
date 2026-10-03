@@ -38,6 +38,46 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 
 Example: `gt(add(price,tax),100)` renders as `(([price] + [tax]) > @wparam_0)` on SQL Server.
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+argument1 + argument2
+```
+
+A `byte` operand is widened to `int`, and when either operand is `double` both become `double`, so the value's type can differ from the IR `ReturnType`. The result is NULL when either argument is NULL. Example: `eq(add(age,10),40)` builds `e => e.Age + p0 == p1`, where `age` is a non-nullable `int` column and `p0` and `p1` are captured parameters.
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+[w].[Age] + @__Value_0
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda. On SQL Server:
+
+```sql
+([Extent1].[Age] + @p__linq__0)
+```
+
+Every EF6 provider supports `add`.
+
 ## Notes
 
 - `ReturnType` is copied from `argument1` only.

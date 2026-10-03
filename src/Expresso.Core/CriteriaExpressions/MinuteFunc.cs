@@ -7,5 +7,8 @@ namespace Expresso.Core.CriteriaExpressions
         public MinuteFunc(AbstractExpression argument) : base(argument, DateTimeTypes.Time)
         {
         }
+
+        public override TResult Accept<TContext, TResult>(IExpressoVisitor<TContext, TResult> visitor, TContext context) =>
+            visitor.VisitMinute(this, context);
     }
 }

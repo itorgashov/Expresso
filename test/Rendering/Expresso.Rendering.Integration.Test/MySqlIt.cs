@@ -25,7 +25,17 @@ namespace Expresso.Rendering.Integration.Test
             _connection.Open();
             MySqlSeed.Apply(_connection);
             Session = new EngineSession(_connection, new ExpressionToMySqlQueryClauseTransformer(), WidgetMapping.Create(), WidgetMapping.TagsOnly(), ParameterBinder.At);
+#if NET8_0_OR_GREATER
+            EfSession = MySqlSeed.EfSession(_connection, "MySql");
+#endif
+#if NETFRAMEWORK
+            Ef6Session = MySqlSeed.Ef6Session("MySql");
+#endif
         }
+
+        public IEngineSession? EfSession { get; }
+
+        public IEngineSession? Ef6Session { get; }
 
         public void Dispose() => _connection?.Dispose();
     }
@@ -64,7 +74,17 @@ namespace Expresso.Rendering.Integration.Test
             _connection.Open();
             MySqlSeed.Apply(_connection);
             Session = new EngineSession(_connection, new ExpressionToMySqlQueryClauseTransformer(), WidgetMapping.Create(), WidgetMapping.TagsOnly(), ParameterBinder.At);
+#if NET8_0_OR_GREATER
+            EfSession = MySqlSeed.EfSession(_connection, "MariaDb");
+#endif
+#if NETFRAMEWORK
+            Ef6Session = MySqlSeed.Ef6Session("MariaDb");
+#endif
         }
+
+        public IEngineSession? EfSession { get; }
+
+        public IEngineSession? Ef6Session { get; }
 
         public void Dispose() => _connection?.Dispose();
     }
@@ -83,6 +103,24 @@ namespace Expresso.Rendering.Integration.Test
 
     internal static class MySqlSeed
     {
+#if NET8_0_OR_GREATER
+        public static IEngineSession EfSession(MySqlConnection connection, string connectionStringName)
+        {
+            // Pomelo requires AllowUserVariables on the connection it uses, so EF opens its own connection.
+            var connectionString = IntegrationEnabled.ConnectionString(connectionStringName)!.TrimEnd(';') + ";AllowUserVariables=True";
+            var version = Microsoft.EntityFrameworkCore.ServerVersion.AutoDetect(connection);
+            return new Ef.EfEngineSession(connection, (b, _) => Microsoft.EntityFrameworkCore.MySqlDbContextOptionsBuilderExtensions.UseMySql(b, connectionString, version));
+        }
+#endif
+#if NETFRAMEWORK
+        /// <summary>EF6 uses Oracle's MySql.Data driver (the only EF6 MySQL provider) on its own connection.</summary>
+        public static IEngineSession Ef6Session(string connectionStringName)
+        {
+            var connectionString = IntegrationEnabled.ConnectionString(connectionStringName)!.Replace("SslMode=None", "SslMode=Disabled");
+            return new Ef6.Ef6EngineSession(() => new MySql.Data.MySqlClient.MySqlConnection(connectionString));
+        }
+#endif
+
         public static void Apply(MySqlConnection connection)
         {
             WidgetDdl.ResetAndSeed(

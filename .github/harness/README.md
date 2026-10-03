@@ -16,6 +16,6 @@ publishOrder: 20
 | `packageId` | NuGet `PackageId` |
 | `project` | csproj to `dotnet pack` |
 | `unitTestProject` | Optional; solution tests already ran before pack |
-| `publishOrder` | Lower numbers push first (Core=1, Parsing=2, Common=10, dialects=20) |
+| `publishOrder` | Lower numbers push first (Core=1, Parsing=2, Common and Linq=10, dialects and EF Core/EF6=20) |
 
 MariaDB is not a separate package (`Expresso.Rendering.MySql` covers MySQL and MariaDB).

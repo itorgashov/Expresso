@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Expresso.Core\Expresso.Core.csproj" />
     <ProjectReference Include="..\..\..\src\Rendering\Expresso.Rendering.Common\Expresso.Rendering.Common.csproj" />
+    <ProjectReference Include="..\..\..\src\Rendering\Expresso.Rendering.Linq\Expresso.Rendering.Linq.csproj" />
   </ItemGroup>
 
   <ItemGroup>

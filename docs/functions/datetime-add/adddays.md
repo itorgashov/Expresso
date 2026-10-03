@@ -26,7 +26,7 @@ Exactly 2 arguments.
 - **Parser coercion:** argument 1 coerced to `DateTime` if a quoted date/time token; argument 2 coerced to `int` if a literal token.
 - **IR construction** (`AddDaysFunc`, via base `DateTimeAddFunction`):
   - Either argument is `null` → `ArgumentNullException`
-  - `dateTime.ReturnType` is not `DateTime` → `ArgumentException`
+  - `dateTime.ReturnType` is not one of the types in the table above → `ArgumentException`
   - `amount.ReturnType` is not `int` → `ArgumentException`
 
 ## SQL rendering
@@ -71,6 +71,61 @@ DATE_ADD(datetime, INTERVAL amount DAY)
 ```sql
 (datetime + amount DAYS)
 ```
+
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+datetime.AddDays(amount)
+```
+
+On a `DateTime` the amount is passed as `double`; `DateOnly.AddDays` takes the `int` directly. The result is NULL when `datetime` or `amount` is NULL. Example: `eq(day(adddays(createdat,1)),16)` builds `e => e.CreatedAt.AddDays((double)p0).Day == p1`, where `createdat` is a non-nullable `DateTime` column and `p0` and `p1` are captured parameters.
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+DATEADD(day, CAST(@__p_0 AS int), [w].[created_at])
+```
+
+### DB2
+
+`ExpressoDbFunctions.AddDays`:
+
+```sql
+ADD_DAYS(datetime, amount)
+```
+
+## EF6 rendering
+
+### All providers
+
+The canonical `DbFunctions.AddDays(datetime, amount)`, used by SQL Server and PostgreSQL. On SQL Server:
+
+```sql
+CAST( DATEADD (day, @p__linq__0, [Extent1].[created_at]) AS datetime2)
+```
+
+### MySQL / MariaDB
+
+`Ef6Functions.MySqlAddDate(datetime, amount)`, the store function `ADDDATE(datetime, amount)`.
+
+### Not supported
+
+The transformer throws `NotSupportedException` on these providers:
+
+- Oracle: "the provider pastes the amount into an INTERVAL literal, so parameters fail (ORA-01867)".
+- SQLite: "the provider translates no canonical date arithmetic".
 
 ## Notes
 

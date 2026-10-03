@@ -37,6 +37,46 @@ ABS(argument)
 
 Example: `eq(abs(balance),100)` renders as `(ABS([balance]) = @wparam_0)` on SQL Server.
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+Math.Abs(argument)
+```
+
+A `byte` argument is widened to `int` first. The result is NULL when `argument` is NULL. Example: `eq(abs(amount),12.7)` builds `e => Math.Abs(e.Amount) == p0`, where `amount` is a non-nullable `double` column and `p0` is a captured parameter.
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+ABS([w].[Amount])
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda with the canonical `Abs` function. On SQL Server:
+
+```sql
+ABS([Extent1].[Amount])
+```
+
+Every EF6 provider supports `abs`.
+
 ## Notes
 
 - `ReturnType` is copied from the argument, not promoted — `abs` of a `byte` field is still typed `byte`.

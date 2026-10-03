@@ -43,6 +43,46 @@ Example: `eq(ceiling(price),20)` renders as `(CEILING([price]) = @wparam_0)` on 
 CEIL(argument)
 ```
 
+## LINQ rendering
+
+Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logic and parameters: [docs/semantics.md](../../semantics.md).
+
+### Queryable
+
+```csharp
+Math.Ceiling((double)argument)
+```
+
+A `byte` or `int` argument is converted to `double` first. The result is NULL when `argument` is NULL. The `ceil` alias builds the same lambda. Example: `eq(ceiling(amount),51.0)` builds `e => Math.Ceiling(e.Amount) == p0`, where `amount` is a non-nullable `double` column and `p0` is a captured parameter.
+
+### In-memory
+
+Same as Queryable.
+
+## EF Core rendering
+
+### All providers
+
+EF Core translates the Queryable lambda. On SQL Server:
+
+```sql
+CEILING([w].[Amount])
+```
+
+No provider overrides.
+
+## EF6 rendering
+
+### All providers
+
+EF6 translates the Queryable lambda with the canonical `Ceiling` function. On SQL Server:
+
+```sql
+CEILING([Extent1].[Amount])
+```
+
+Every EF6 provider supports `ceiling`.
+
 ## Notes
 
 - Return type is always `double`, regardless of the argument's original type.
