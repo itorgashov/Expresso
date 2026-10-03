@@ -1,6 +1,6 @@
 # `or`
 
-Logical OR. True if **any** argument evaluates to true.
+Returns true when at least one argument is true.
 
 ## Syntax
 
@@ -21,12 +21,10 @@ At least 2 arguments; no upper bound.
 
 ## Validation & exceptions
 
-- **Parser arity check:** fewer than 2 arguments → `System.Exception`: `"Or() function should at least 2 arguments."` (see [docs/error-handling.md](../../error-handling.md)).
-- **IR construction** (`OrFunc`):
-  - `arguments` is `null` → `ArgumentNullException`
-  - Fewer than 2 arguments → `ArgumentException`
-  - Any argument is `null` → `ArgumentException`
-  - Any argument's `ReturnType` is not `bool` → `ArgumentException`
+- If you pass fewer than 2 arguments, the parser throws `System.Exception` with the message `"Or() function should at least 2 arguments."` (see [docs/error-handling.md](../../error-handling.md)).
+- If the argument list itself is `null`, the call throws `ArgumentNullException`.
+- If the list has fewer than 2 arguments, the call throws `ArgumentException`.
+- If any argument is `null`, or any argument does not return `bool`, the call throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -38,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (expr1 OR expr2 OR ...)
 ```
 
-Example: `or(eq(status,1),eq(status,2))` renders as `([status] = @wparam_0 OR [status] = @wparam_1)` on SQL Server.
+SQL Server example: `or(eq(status,1),eq(status,2))` renders as `([status] = @wparam_0 OR [status] = @wparam_1)`.
 
 ## LINQ rendering
 
@@ -79,5 +77,5 @@ Every EF6 provider supports `or`.
 
 ## Notes
 
-- Function name is case-insensitive.
+- The function name is case-insensitive.
 - See [`and`](and.md) and [`not`](not.md) for the other logical functions.

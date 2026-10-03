@@ -1,6 +1,6 @@
 # `adddays`
 
-Adds (or subtracts) a whole number of days to a `DateTime` value.
+Adds a number of days to a date. A negative amount subtracts days.
 
 ## Syntax
 
@@ -18,16 +18,15 @@ Exactly 2 arguments.
 | Position | Name | Required type |
 |---|---|---|
 | 1 | `dateTime` | `DateTime` or `DateOnly` (net6.0) |
-| 2 | `amount` | `int` — zero and negative values are allowed |
+| 2 | `amount` | `int` (zero and negative values are allowed) |
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Adddays() function should have 2 arguments."`
-- **Parser coercion:** argument 1 coerced to `DateTime` if a quoted date/time token; argument 2 coerced to `int` if a literal token.
-- **IR construction** (`AddDaysFunc`, via base `DateTimeAddFunction`):
-  - Either argument is `null` → `ArgumentNullException`
-  - `dateTime.ReturnType` is not one of the types in the table above → `ArgumentException`
-  - `amount.ReturnType` is not `int` → `ArgumentException`
+- If you pass any number of arguments other than 2, parsing fails with `System.Exception`: `"Adddays() function should have 2 arguments."`
+- The parser converts a quoted date or time string in the first argument to `DateTime`, and a literal in the second argument to `int`.
+- A `null` in either argument throws `ArgumentNullException`.
+- A first argument whose type is not listed in the Arguments table throws `ArgumentException`.
+- An `amount` that is not an `int` throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -40,7 +39,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 DATEADD(day, amount, datetime)
 ```
 
-Example: `gt(adddays(createdat,-7), dateTo)` renders as `(DATEADD(day, @wparam_0, [created_at]) > [date_to])`.
+SQL Server example: `gt(adddays(createdat,-7), dateTo)` renders as `(DATEADD(day, @wparam_0, [created_at]) > [date_to])`.
 
 ### PostgreSQL
 
@@ -122,13 +121,13 @@ CAST( DATEADD (day, @p__linq__0, [Extent1].[created_at]) AS datetime2)
 
 ### Not supported
 
-The transformer throws `NotSupportedException` on these providers:
+Expresso throws `NotSupportedException` on these providers:
 
 - Oracle: "the provider pastes the amount into an INTERVAL literal, so parameters fail (ORA-01867)".
 - SQLite: "the provider translates no canonical date arithmetic".
 
 ## Notes
 
-- **Negative and zero amounts are supported**: `adddays(createdat,-7)` looks back 7 days; `adddays(createdat,0)` is equivalent to `createdat`.
-- Only whole days via `int`; there is no fractional-day variant. Use [`addhours`](addhours.md)/[`addminutes`](addminutes.md)/[`addseconds`](addseconds.md) to add sub-day increments.
+- Negative and zero amounts are supported. `adddays(createdat,-7)` looks back 7 days, and `adddays(createdat,0)` is equivalent to `createdat`.
+- You can add whole days only, as an `int`. There is no fractional-day variant. To add smaller increments, use [`addhours`](addhours.md), [`addminutes`](addminutes.md) or [`addseconds`](addseconds.md).
 - See [`addyears`](addyears.md) and [`addmonths`](addmonths.md) for larger-unit date arithmetic.

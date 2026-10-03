@@ -1,6 +1,6 @@
 # `neq`
 
-Inequality comparison.
+Compares two values for inequality and returns true when they differ.
 
 ## Syntax
 
@@ -26,9 +26,10 @@ Same as [`eq`](eq.md): both `bool`, both `string`, both `DateTime`, or both nume
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Neq() function should have 2 arguments."`
-- **Parser coercion:** same literal-type inference as `eq` — first argument's type drives coercion of the second.
-- **IR construction** (`NeqFunc`, built via reflection): `ArgumentNullException` / `ArgumentException` as above; surfaces wrapped in `TargetInvocationException` — see [docs/error-handling.md](../../error-handling.md).
+- If you pass any number of arguments other than two, the parser throws `System.Exception` with the message `"Neq() function should have 2 arguments."`
+- Literal types are inferred as in [`eq`](eq.md): the type of the first argument determines how the second literal is converted.
+- If an operand is `null`, the call throws `ArgumentNullException`. If the operand types are incompatible, it throws `ArgumentException`.
+- When the parser builds the function, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. The real error is in `InnerException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -40,7 +41,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (left != right)
 ```
 
-Example: `neq(status,1)` renders as `([status] != @wparam_0)` on SQL Server. Renders as SQL `!=`, not `<>`, on every dialect.
+SQL Server example: `neq(status,1)` renders as `([status] != @wparam_0)`. Every dialect uses `!=`, not `<>`.
 
 ## LINQ rendering
 

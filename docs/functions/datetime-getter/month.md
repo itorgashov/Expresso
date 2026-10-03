@@ -1,6 +1,6 @@
 # `month`
 
-The month component (1–12) of a `DateTime` value.
+Returns the month (1–12) of a date.
 
 ## Syntax
 
@@ -21,11 +21,10 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Month() function should have 1 argument."`
-- **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
-- **IR construction** (`MonthFunc`, via base `DateTimeSingleArgIntFunction`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not one of the types in the table above → `ArgumentException`
+- If you pass any number of arguments other than 1, parsing fails with `System.Exception`: `"Month() function should have 1 argument."`
+- The parser converts a quoted date or time string to `DateTime`.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not listed in the Arguments table throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -37,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 MONTH(datetime)
 ```
 
-Example: `eq(month(createdat),1)` renders as `(MONTH([created_at]) = @wparam_0)` on SQL Server.
+SQL Server example: `eq(month(createdat),1)` renders as `(MONTH([created_at]) = @wparam_0)`.
 
 ### PostgreSQL
 

@@ -1,6 +1,6 @@
 # `min`
 
-The smaller of two numeric arguments.
+Returns the smaller of two numeric arguments.
 
 ## Syntax
 
@@ -22,9 +22,11 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Min() function should have 2 arguments."`
-- **Parser coercion:** each literal argument's type is inferred independently.
-- **IR construction** (`MinFunc`, built via reflection): base `NumericArithFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", "argument1"|"argument2")` if either `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass a number of arguments other than 2, the parser throws `System.Exception` with the message `"Min() function should have 2 arguments."`.
+- The parser infers the type of each literal argument independently.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not `byte`, `int`, or `double` throws `ArgumentException("Illegal argument type", "argument1")` or `ArgumentException("Illegal argument type", "argument2")`, depending on which argument is wrong.
+- When the parser builds the call, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -36,7 +38,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (CASE WHEN argument1 < argument2 THEN argument1 ELSE argument2 END)
 ```
 
-Example: `eq(min(price,cap),cap)` renders as `((CASE WHEN [price] < [cap] THEN [price] ELSE [cap] END) = [cap])` on SQL Server. Portable `CASE` is used instead of `LEAST` so older engines (including SQL Server before 2022) work. A parameterized literal is bound once per `CASE` occurrence.
+SQL Server example: `eq(min(price,cap),cap)` renders as `((CASE WHEN [price] < [cap] THEN [price] ELSE [cap] END) = [cap])`. Expresso uses a portable `CASE` instead of `LEAST`, so older engines (including SQL Server before 2022) work. A parameterized literal is bound once per `CASE` occurrence.
 
 ## LINQ rendering
 
@@ -80,6 +82,6 @@ Every EF6 provider supports `min`.
 
 ## Notes
 
-- `ReturnType` is copied from `argument1` only.
+- The return type comes from `argument1` only.
 - See [`max`](max.md) for the counterpart.
-- Collection overload: when the first argument is a collection name, `min` is [`CollectionMinFunc`](../collection/min.md), not this scalar form.
+- If the first argument is a collection name, `min` is the [collection form](../collection/min.md) instead of this scalar form.

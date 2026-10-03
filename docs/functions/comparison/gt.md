@@ -1,6 +1,6 @@
 # `gt`
 
-Greater-than comparison.
+Returns true when the left operand is greater than the right operand.
 
 ## Syntax
 
@@ -22,13 +22,14 @@ Exactly 2 arguments.
 
 ## Type compatibility rule
 
-`GtFunc` first applies the base comparison check (both `bool`, both `string`, both `DateTime`, both `Guid`, both `TimeSpan`, both `DateOnly`/`TimeOnly` on net6.0, or both numeric), then narrows further: only **numeric-vs-numeric** (mixed `byte`/`int`/`double`), **`DateTime` vs `DateTime`**, **`TimeSpan` vs `TimeSpan`**, or same-type **`DateOnly`/`TimeOnly`** on net6.0 are accepted. `Guid` and `bool`/`string` pairs pass the base check but are then rejected — ordering comparisons don't apply to those types.
+The operands must first form a compatible pair, as for [`eq`](eq.md): both `bool`, both `string`, both `DateTime`, both `Guid`, both `TimeSpan`, both `DateOnly`/`TimeOnly` on net6.0, or both numeric. `gt` then narrows this set further. It accepts only numeric against numeric (mixed `byte`/`int`/`double`), `DateTime` against `DateTime`, `TimeSpan` against `TimeSpan`, or the same type of `DateOnly`/`TimeOnly` on net6.0. `Guid`, `bool` and `string` pairs are rejected, because ordering comparisons do not apply to those types.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Gt() function should have 2 arguments."`
-- **Parser coercion:** literal type inferred from the first operand, applied to the second.
-- **IR construction** (`GtFunc`, built via reflection): `ArgumentNullException` / `ArgumentException` for `null`/incompatible/`bool`/`string` operands; wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass any number of arguments other than two, the parser throws `System.Exception` with the message `"Gt() function should have 2 arguments."`
+- The parser infers a literal's type from the first operand and applies it to the second.
+- If an operand is `null`, the call throws `ArgumentNullException`. If the operands are incompatible, or are `bool` or `string` values, it throws `ArgumentException`.
+- When the parser builds the function, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. The real error is in `InnerException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -40,7 +41,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (left > right)
 ```
 
-Example: `gt(age,25)` renders as `([age] > @wparam_0)` on SQL Server.
+SQL Server example: `gt(age,25)` renders as `([age] > @wparam_0)`.
 
 ## LINQ rendering
 
@@ -85,4 +86,4 @@ Every EF6 provider supports `gt`, except that Oracle and SQLite cannot use a tim
 
 ## Notes
 
-- See [`gte`](gte.md), [`lt`](lt.md), [`lte`](lte.md) for the other ordering comparisons, and [`eq`](eq.md)/[`neq`](neq.md) for equality (which do allow `bool`/`string`).
+- See [`gte`](gte.md), [`lt`](lt.md), [`lte`](lte.md) for the other ordering comparisons, and [`eq`](eq.md)/[`neq`](neq.md) for equality (which do allow `bool` and `string`).

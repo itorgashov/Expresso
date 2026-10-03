@@ -1,6 +1,6 @@
 # `not`
 
-Logical negation of a single boolean argument.
+Negates a boolean argument: returns true when the argument is false, and false when it is true.
 
 ## Syntax
 
@@ -21,10 +21,9 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Not() function should have 1."` (see [docs/error-handling.md](../../error-handling.md)).
-- **IR construction** (`NotFunc`):
-  - `argument` is `null` → `ArgumentNullException`
-  - `argument.ReturnType` is not `bool` → `ArgumentException`
+- If you pass any number of arguments other than one, the parser throws `System.Exception` with the message `"Not() function should have 1."` (see [docs/error-handling.md](../../error-handling.md)).
+- If the argument is `null`, the call throws `ArgumentNullException`.
+- If the argument does not return `bool`, the call throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -36,7 +35,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 NOT (expr)
 ```
 
-Example: `not(eq(status,1))` renders as `NOT ([status] = @wparam_0)` on SQL Server.
+SQL Server example: `not(eq(status,1))` renders as `NOT ([status] = @wparam_0)`.
 
 ## LINQ rendering
 
@@ -77,5 +76,5 @@ Every EF6 provider supports `not`.
 
 ## Notes
 
-- Function name is case-insensitive.
+- The function name is case-insensitive.
 - See [`and`](and.md) and [`or`](or.md) for the other logical functions.

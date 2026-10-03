@@ -1,6 +1,6 @@
 # `concat`
 
-Concatenates two or more strings.
+Concatenates two or more strings into one string.
 
 ## Syntax
 
@@ -21,12 +21,11 @@ At least 2 arguments; no upper bound.
 
 ## Validation & exceptions
 
-- **Parser arity check:** fewer than 2 arguments → `System.Exception`: `"Concat() function should have at least 2 arguments."`
-- **Parser coercion:** every argument is coerced to `string` if it is a quoted string token.
-- **IR construction** (`ConcatFunc`):
-  - `arguments` is `null` → `ArgumentNullException`
-  - Fewer than 2 arguments → `ArgumentException`
-  - Any argument's `ReturnType` is not `string` → `ArgumentException`
+- Parsing a call with fewer than 2 arguments throws `System.Exception` with the message `"Concat() function should have at least 2 arguments."`
+- Quoted string tokens in any argument are treated as `string` literals.
+- A `null` argument list throws `ArgumentNullException`.
+- A list with fewer than 2 arguments throws `ArgumentException`.
+- An argument that does not return `string` throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -38,8 +37,8 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 CONCAT(text1, text2, ...)
 ```
 
-Example: `eq(concat(firstname,lastname),"GeorgeOrwell")` renders as `(CONCAT([firstname], [lastname]) = @wparam_0)` on SQL Server.
-SQL Server `CONCAT` requires SQL Server 2012+ and treats `NULL` arguments as empty strings.
+SQL Server example: `eq(concat(firstname,lastname),"GeorgeOrwell")` renders as `(CONCAT([firstname], [lastname]) = @wparam_0)`.
+SQL Server `CONCAT` requires SQL Server 2012 or later and treats `NULL` arguments as empty strings.
 
 ### SQLite, Oracle, DB2
 
@@ -101,4 +100,4 @@ No EF6 provider throws for `concat`, but on Oracle a query that emits the concat
 
 ## Notes
 
-- On SQLite and DB2, `||` returns `NULL` if any operand is `NULL`. Oracle `||` and SQL Server `CONCAT` (2012+) treat `NULL` as an empty string; on Oracle the result is still `NULL` when every operand is `NULL` or empty, because Oracle treats `''` as `NULL`.
+- On SQLite and DB2, `||` returns `NULL` if any operand is `NULL`. Oracle `||` and SQL Server `CONCAT` (2012 and later) treat `NULL` as an empty string. On Oracle the result is still `NULL` when every operand is `NULL` or empty, because Oracle treats `''` as `NULL`.

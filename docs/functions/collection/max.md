@@ -1,6 +1,6 @@
 # `max` (collection)
 
-Maximum of a selector expression over a related collection. The first argument must be a collection; otherwise the parser builds scalar [`max`](../arithmetic/max.md) (`MaxFunc`).
+Returns the maximum of a selector expression over a related collection. If the first argument is not a collection, the call is parsed as the scalar [`max`](../arithmetic/max.md) instead.
 
 ## Syntax
 
@@ -22,8 +22,8 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser (collection overload):** first argument is a `CollectionRef`; one argument → `System.Exception`: `"Max() function should have 2 arguments."`
-- **IR construction** (`CollectionMaxFunc`): illegal selector type → `ArgumentException("Illegal argument type", "selector")`. Constructed directly by the parser.
+- If the first argument is a collection and you pass only one argument, parsing throws `System.Exception`: `"Max() function should have 2 arguments."`
+- A selector of an unsupported type throws `ArgumentException("Illegal argument type", "selector")`.
 
 ## SQL rendering
 
@@ -36,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (SELECT MAX(selector) FROM {FromClause} WHERE {CorrelateSql})
 ```
 
-**DB2 / `ORDER BY`:** DB2 rejects correlated references in `ORDER BY` scalar subqueries (`SQL0206N`). This fragment is valid in `WHERE` and in a `SELECT` list. For a sort key, select it in a derived table (or extra SELECT column) and order by that alias. See [docs/rendering.md](../../rendering.md).
+DB2 rejects correlated references in `ORDER BY` scalar subqueries (`SQL0206N`). This fragment is valid in `WHERE` and in a `SELECT` list. For a sort key, select it in a derived table (or extra SELECT column) and order by that alias. See [docs/rendering.md](../../rendering.md).
 
 ## LINQ rendering
 

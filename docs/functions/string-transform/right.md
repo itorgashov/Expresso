@@ -1,6 +1,6 @@
 # `right`
 
-Returns the rightmost N characters of a string.
+Returns the rightmost characters of a string, up to the given length.
 
 ## Syntax
 
@@ -22,12 +22,11 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Right() function should have 2 arguments."`
-- **Parser coercion:** argument 1 coerced to `string`; argument 2 coerced to `int` if a literal token.
-- **IR construction** (`RightFunc`):
-  - Either argument is `null` → `ArgumentNullException`
-  - `sourceString.ReturnType` is not `string` → `ArgumentException`
-  - `length.ReturnType` is not `int` → `ArgumentException`
+- Passing any number of arguments other than 2 throws `System.Exception` with the message `"Right() function should have 2 arguments."`
+- The first argument is treated as a `string` literal when it is a quoted string token. The second is treated as an `int` literal when it is a literal token.
+- A `null` argument throws `ArgumentNullException`.
+- A first argument that does not return `string` throws `ArgumentException`.
+- A second argument that does not return `int` throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -39,7 +38,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 RIGHT(text, length)
 ```
 
-Example: `eq(right(isbn,1),"3")` renders as `(RIGHT([isbn], @wparam_0) = @wparam_1)` on SQL Server.
+SQL Server example: `eq(right(isbn,1),"3")` renders as `(RIGHT([isbn], @wparam_0) = @wparam_1)`.
 
 ### SQLite
 

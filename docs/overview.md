@@ -1,31 +1,35 @@
 # Overview
 
-## What Expresso is
+Expresso turns the `filter` and `sort` query strings a client sends, such as `?filter=...&sort=...`, into a validated expression tree. It then renders that tree as parameterized SQL or as LINQ. Read this page to decide whether Expresso fits your application.
 
-Expresso turns a **function-call query string** — the kind of thing a client might send as `?filter=...&sort=...` — into a **validated expression tree**, then renders that tree in one of two ways:
+## How it works
 
-- **Parameterized SQL** for the dialect you choose (SQL Server, PostgreSQL, SQLite, MySQL/MariaDB, Oracle, or DB2), for ADO.NET or Dapper.
-- **LINQ expressions** (`Where` predicate and `OrderBy` keys) for an `IQueryable<T>` — EF Core, EF6, or another LINQ provider — or for an in-memory collection.
+A client sends a filter:
 
 ```text
 gt(createdAt,"2021-01-01")
 ```
 
-becomes, as SQL,
+Expresso can render it as SQL for the dialect you choose. This table shows the output for the field map `createdAt` → `p.created_at` and the parameter prefix `wparam`:
 
-```sql
-([p].[created_at] > @wparam_0)
-```
+| Dialect | Rendered filter |
+|---|---|
+| SQL Server | `([p].[created_at] > @wparam_0)` |
+| PostgreSQL | `("p"."created_at" > @wparam_0)` |
+| MySQL, MariaDB | `` (`p`.`created_at` > @wparam_0) `` |
+| Oracle | `("p"."created_at" > :wparam_0)` |
 
-with `@wparam_0` bound to a `DateTime` parameter, and, as LINQ,
+Each `@wparam_0` is bound to a `DateTime` parameter. SQLite and DB2 quote identifiers like PostgreSQL.
+
+Or it can render the filter as a LINQ lambda:
 
 ```csharp
 e => e.CreatedAt > p0
 ```
 
-where `p0` is a captured parameter, which EF Core or EF6 binds as a SQL parameter. In both forms the value is never string-concatenated into the query.
+Here `p0` is a captured value, which EF Core or EF6 binds as a SQL parameter. In both forms the value is never concatenated into the query text.
 
-It exists to replace the usual ad-hoc approach to "list" endpoints, where every optional filter/sort combination ends up as hand-written `if` statements building a `StringBuilder` of SQL, or a pile of optional LINQ `Where` clauses. Expresso gives you one small, well-tested pipeline instead:
+Expresso replaces the usual approach to list endpoints, where every optional filter and sort combination becomes another hand-written `if` that builds a SQL string or stacks a `Where` clause. It gives you one small pipeline instead:
 
 ```mermaid
 flowchart LR
@@ -46,42 +50,42 @@ flowchart LR
     style E fill:#e5e7eb,stroke:#111827,color:#111827
 ```
 
-Every node of the tree validates its own argument types when it is constructed (see [docs/error-handling.md](error-handling.md)), and every field name is checked against an allow-list you provide (see [docs/field-providers.md](field-providers.md)) — so a caller can never filter or sort on a column you did not expose. Both renderers apply the same rules for NULL handling and types; see [docs/semantics.md](semantics.md).
+Every function checks its arguments when the tree is built (see [Error handling](error-handling.md)). Every field name is checked against an allow-list you provide (see [Field providers](field-providers.md)), so a client can never filter or sort on a column you did not expose. Both renderers follow the same rules for NULL handling and types. See [Filter behavior and database differences](semantics.md).
 
 ## Two ways to run a filter
 
 | | SQL renderers | LINQ renderers |
 |---|---|---|
 | Packages | `Expresso.Rendering.SqlServer`, `PostgreSql`, `Sqlite`, `MySql`, `Oracle`, `Db2` | `Expresso.Rendering.Linq`, plus `EntityFrameworkCore` (net8.0) or `EntityFramework` (EF6, net48) |
-| Output | `WHERE` / `ORDER BY` text and parameter values | `Expression<Func<T, bool>>` and sort keys; `Where` / `OrderBy` / `IncludeSorted` extensions |
-| Mapping | `SqlQueryMapping`, `CollectionSqlMapping` (field to column, collection to `FROM`) | `LinqQueryMapping<T>` (field to member lambda, collection to navigation) |
-| You execute with | ADO.NET, Dapper | EF Core, EF6, any LINQ provider, or LINQ to objects |
+| Output | `WHERE` and `ORDER BY` text, and parameter values | `Expression<Func<T, bool>>` and sort keys, through `Where`, `OrderBy` and `IncludeSorted` extensions |
+| Mapping | `SqlQueryMapping` and `CollectionSqlMapping` (field to column, collection to `FROM`) | `LinqQueryMapping<T>` (field to member lambda, collection to navigation) |
+| You run it with | ADO.NET or Dapper | EF Core, EF6, any LINQ provider, or LINQ to objects |
 
-Pick the one that matches how your data access works. Setup for the LINQ side is in [docs/linq-rendering.md](linq-rendering.md). EF Core and EF6 add provider-specific translations so results match the SQL renderer for the same database. Where EF6 cannot, it throws instead of returning a different result.
+Pick the one that matches how your application reads data. EF Core and EF6 add provider-specific translations so that results match the SQL renderer for the same database. Where EF6 cannot, it throws instead of returning a different result.
 
 ## Use cases
 
-- **Paginated list/search APIs** where the client picks which columns to filter and sort by (e.g. `GET /api/books?filter=...&sort=...`), without you writing a bespoke query per combination.
-- **Admin / back-office grids** where the UI lets users build ad-hoc filters (date ranges, text search, status flags) against a data grid.
-- **Reporting or export endpoints** that need flexible, safe predicates over a known set of columns.
-- **ADO.NET / Dapper-based data-access layers** that want dynamic `WHERE` / `ORDER BY` fragments without adding an ORM or hand-rolling SQL string concatenation (and its injection risk).
-- **EF Core or EF6 applications** that want the same client-driven filtering and sorting on an `IQueryable<T>`, including `sortfor` on child collections.
-- **Filtering lists in memory** with the same query strings you use against the database.
+- Paginated list and search APIs where the client picks which columns to filter and sort by (`GET /api/books?filter=...&sort=...`), without a bespoke query per combination.
+- Admin and back-office grids where users build ad-hoc filters such as date ranges, text search and status flags.
+- Reporting and export endpoints that need flexible, safe predicates over a known set of columns.
+- ADO.NET and Dapper data-access layers that want dynamic `WHERE` and `ORDER BY` fragments without an ORM and without string concatenation (and its injection risk).
+- EF Core and EF6 applications that want the same client-driven filtering and sorting on an `IQueryable<T>`, including `sortfor` on child collections.
+- Filtering lists in memory with the same query strings you use against the database.
 
-## When *not* to reach for it
+## When not to use Expresso
 
-Expresso is intentionally narrow. It is not a replacement for:
+Expresso is deliberately narrow. It does not replace:
 
-- **OData** or similar full query protocols — no `$expand`, `$select`, pagination envelope, or standardized wire format. If you need a broad, standards-based query protocol with a large existing client ecosystem, prefer OData.
-- **An ORM** — Expresso only renders `WHERE`/`ORDER BY` fragments or LINQ predicates and sort keys; you still write (or generate) the base `SELECT`/joins yourself, or supply the `IQueryable<T>`. Collection filters add correlated `EXISTS`/aggregate subqueries from your `CollectionSqlMapping` (or use the navigation in your `LinqQueryMapping<T>`); they do not hydrate related rows for you.
+- OData or another full query protocol. There is no `$expand`, `$select`, pagination envelope or standard wire format. If you need a broad, standards-based protocol with an existing client ecosystem, use OData.
+- An ORM. Expresso renders `WHERE` and `ORDER BY` fragments, or LINQ predicates and sort keys. You still write the base `SELECT` and joins, or supply the `IQueryable<T>`. Collection filters add correlated `EXISTS` and aggregate subqueries from your `CollectionSqlMapping`, or use the navigation in your `LinqQueryMapping<T>`. They do not load related rows for you.
 
-If your API surface is small, fixed, and known ahead of time, plain parameters might be simpler than a query language at all. Expresso is aimed at the middle ground: more filters/sort combinations than you want to hand-code, but not so open-ended that you need a full query protocol.
+If your API surface is small and fixed, plain parameters can be simpler than a query language. Expresso fits the middle ground: more filter and sort combinations than you want to code by hand, but not so open-ended that you need a full protocol.
 
 ## Next steps
 
-- [docs/packages.md](packages.md) — NuGet packages and layers
-- [docs/getting-started.md](getting-started.md) — step-by-step integration guide (SQL)
-- [docs/linq-rendering.md](linq-rendering.md) — LINQ, EF Core and EF6: mapping, setup, provider limits
-- [docs/semantics.md](semantics.md) — NULL handling, types, and what depends on the database
-- [docs/functions/README.md](functions/README.md) — full function reference
-- [docs/sample-app.md](sample-app.md) — a complete worked example
+- [Get started](getting-started.md): install, register, parse, then choose [SQL](getting-started-sql.md) or [LINQ and EF](getting-started-linq.md)
+- [Packages](packages.md): the NuGet packages and which ones you need
+- [LINQ rendering](linq-rendering.md): profiles, EF Core, EF6 and provider limits
+- [Filter behavior and database differences](semantics.md): NULL handling, types and engine differences
+- [Function reference](functions/README.md): every supported function
+- [Sample app](sample-app.md): a complete worked example

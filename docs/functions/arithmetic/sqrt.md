@@ -1,6 +1,6 @@
 # `sqrt`
 
-Square root of a numeric argument.
+Returns the square root of a numeric argument.
 
 ## Syntax
 
@@ -11,7 +11,7 @@ sqrt(argument)
 Exactly 1 argument.
 
 - **Category:** Arithmetic
-- **Return type:** `double` (always — not the argument's original type)
+- **Return type:** `double` (always, not the argument's original type)
 
 ## Arguments
 
@@ -21,9 +21,12 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Sqrt() function should have 1 argument."`
-- **Parser coercion:** a literal argument's type is inferred (`GetLiteralType`).
-- **IR construction** (`SqrtFunc`, built via reflection): base `NumericSingleArgDoubleFunction`/`NumericSingleArgFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", nameof(argument))` if the `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass a number of arguments other than 1, the parser throws `System.Exception` with the message `"Sqrt() function should have 1 argument."`.
+- The parser infers the type of a literal argument.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not `byte`, `int`, or `double` throws `ArgumentException("Illegal argument type", "argument")`.
+- When the parser builds the call, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. See [docs/error-handling.md](../../error-handling.md).
+- A negative input is not rejected when the expression is parsed. See the Notes section.
 
 ## SQL rendering
 
@@ -35,7 +38,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 SQRT(argument)
 ```
 
-Example: `lte(sqrt(area),10)` renders as `(SQRT([area]) <= @wparam_0)` on SQL Server. A negative input is not rejected at parse time; the engine raises an error at execution (SQL Server error 3623).
+SQL Server example: `lte(sqrt(area),10)` renders as `(SQRT([area]) <= @wparam_0)`. A negative input is not rejected at parse time. The engine raises an error at execution (SQL Server error 3623).
 
 ## LINQ rendering
 
@@ -51,7 +54,7 @@ A `byte` or `int` argument is converted to `double` first. The result is NULL wh
 
 ### In-memory
 
-Same as Queryable. A negative argument yields `NaN` in memory, while SQL Server raises error 3623; what other engines return is engine-defined, see [docs/semantics.md](../../semantics.md).
+Same as Queryable. A negative argument yields `NaN` in memory, while SQL Server raises error 3623. What other engines return depends on the engine; see [docs/semantics.md](../../semantics.md).
 
 ## EF Core rendering
 
@@ -85,6 +88,6 @@ PostgreSQL throws `NotSupportedException` because the provider exposes no store 
 
 ## Notes
 
-- **Negative values are not rejected at parse/build time** — the negativity of a field or literal generally can't be known until query execution. At execution, SQL Server's `SQRT` raises error 3623 (`"An invalid floating point operation occurred."`) for a negative input; it does **not** return `NULL`. Guard against this with a filter on the underlying column if negative values are possible.
-- Return type is always `double`, regardless of the argument's original type.
+- Expresso does not reject negative values when it parses or builds the expression, because the sign of a field or literal usually isn't known until the query runs. At execution, SQL Server's `SQRT` raises error 3623 (`"An invalid floating point operation occurred."`) for a negative input. It does **not** return `NULL`. If negative values are possible, filter them out on the underlying column.
+- The return type is always `double`, regardless of the argument's original type.
 - See [`power`](power.md) for raising to an arbitrary exponent.

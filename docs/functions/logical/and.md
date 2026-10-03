@@ -1,6 +1,6 @@
 # `and`
 
-Logical AND. True only if **every** argument evaluates to true.
+Returns true only when every argument is true.
 
 ## Syntax
 
@@ -21,12 +21,10 @@ At least 2 arguments; no upper bound.
 
 ## Validation & exceptions
 
-- **Parser arity check:** fewer than 2 arguments → `System.Exception`: `"And() function should at least 2 arguments."` (see the note on plain-`Exception` arity errors in [docs/error-handling.md](../../error-handling.md)).
-- **IR construction** (`AndFunc`):
-  - `arguments` is `null` → `ArgumentNullException`
-  - Fewer than 2 arguments → `ArgumentException` ("contains less elements than expected: 2")
-  - Any argument is `null` → `ArgumentException`
-  - Any argument's `ReturnType` is not `bool` → `ArgumentException`
+- If you pass fewer than 2 arguments, the parser throws `System.Exception` with the message `"And() function should at least 2 arguments."` (see the note on plain-`Exception` arity errors in [docs/error-handling.md](../../error-handling.md)).
+- If the argument list itself is `null`, the call throws `ArgumentNullException`.
+- If the list has fewer than 2 arguments, the call throws `ArgumentException` ("contains less elements than expected: 2").
+- If any argument is `null`, or any argument does not return `bool`, the call throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -38,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (expr1 AND expr2 AND ...)
 ```
 
-Example: `and(gt(age,25),eq(status,1))` renders as `([age] > @wparam_0 AND [status] = @wparam_1)` on SQL Server.
+SQL Server example: `and(gt(age,25),eq(status,1))` renders as `([age] > @wparam_0 AND [status] = @wparam_1)`.
 
 ## LINQ rendering
 
@@ -79,5 +77,5 @@ Every EF6 provider supports `and`.
 
 ## Notes
 
-- Function name is case-insensitive (`and`, `AND`, `And`).
+- The function name is case-insensitive (`and`, `AND`, `And`).
 - See [`or`](or.md) and [`not`](not.md) for the other logical functions.

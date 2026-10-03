@@ -1,6 +1,6 @@
 # `round`
 
-Rounds a numeric argument to a given number of decimal digits (0 if omitted).
+Rounds a numeric argument to a given number of decimal digits. If you omit `digits`, it defaults to 0.
 
 ## Syntax
 
@@ -12,26 +12,24 @@ round(argument, digits)
 1 or 2 arguments.
 
 - **Category:** Arithmetic
-- **Return type:** `double` (always — not the argument's original type)
+- **Return type:** `double` (always, not the argument's original type)
 
 ## Arguments
 
 | Position | Name | Required type |
 |---|---|---|
 | 1 | `argument` | `byte`, `int`, or `double` |
-| 2 (optional) | `digits` | `int` — zero, positive, and **negative** values are allowed |
+| 2 (optional) | `digits` | `int` (zero, positive, and negative values are allowed) |
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1 and != 2` → `System.Exception`: `"Round() function should have 1 or 2 arguments."`
-- **Parser coercion:** `argument` coerced via literal-type inference if a literal token; `digits` coerced to `int` if a literal token.
-- **IR construction** (`RoundFunc`, constructed directly — **not** via reflection, unlike the other numeric functions on this page):
-  - `argument` is `null` → `ArgumentNullException`
-  - `argument.ReturnType` is not `byte`/`int`/`double` → `ArgumentException("Illegal argument type", nameof(value))`
-  - `digits` is `null` (2-argument overload) → `ArgumentNullException`
-  - `digits.ReturnType` is not `int` → `ArgumentException`
-
-  Because `RoundFunc` is constructed directly rather than via `Activator.CreateInstance`, these exceptions are **not** wrapped in `TargetInvocationException` — see [docs/error-handling.md](../../error-handling.md).
+- If you pass a number of arguments other than 1 or 2, the parser throws `System.Exception` with the message `"Round() function should have 1 or 2 arguments."`.
+- The parser infers the type of a literal `argument`, and converts a literal `digits` to `int`.
+- A `null` `argument` throws `ArgumentNullException`.
+- An `argument` whose type is not `byte`, `int`, or `double` throws `ArgumentException("Illegal argument type", "value")`.
+- A `null` `digits` (in the 2-argument form) throws `ArgumentNullException`.
+- A `digits` value whose type is not `int` throws `ArgumentException`.
+- Unlike the other numeric functions in this section, `round` throws these exceptions directly, not wrapped in `System.Reflection.TargetInvocationException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -45,12 +43,13 @@ ROUND(argument, 0)       -- 1-argument form
 ROUND(argument, digits)  -- 2-argument form
 ```
 
-Example: `lte(round(price),20)` renders as `(ROUND([price], 0) <= @wparam_0)` on SQL Server.
-Example: `eq(round(price,-1),20)` renders as `(ROUND([price], @wparam_0) = @wparam_1)`.
+SQL Server example: `lte(round(price),20)` renders as `(ROUND([price], 0) <= @wparam_0)`.
+
+SQL Server example: `eq(round(price,-1),20)` renders as `(ROUND([price], @wparam_0) = @wparam_1)`.
 
 ### PostgreSQL
 
-PostgreSQL has `round(double precision)` and `round(numeric, int)`, but not `round(double precision, int)`. The first argument is cast to `numeric`:
+PostgreSQL has `round(double precision)` and `round(numeric, int)`, but not `round(double precision, int)`. Expresso casts the first argument to `numeric`:
 
 ```sql
 ROUND(CAST(argument AS numeric), 0)
@@ -72,7 +71,7 @@ A `byte` or `int` argument is converted to `double` first. The result is NULL wh
 
 ### In-memory
 
-`ExpressoFunctions.Round(argument, digits)`, with `digits` `0` for the 1-argument form, follows PostgreSQL `round(numeric, int)`: it rounds half away from zero (`round(2.5)` is `3`, not .NET's banker's `2`), and a negative `digits` rounds to the left of the decimal point.
+`ExpressoFunctions.Round(argument, digits)`, with `digits` `0` for the 1-argument form, follows PostgreSQL `round(numeric, int)`. It rounds half away from zero (`round(2.5)` is `3`, not .NET's banker's `2`), and a negative `digits` rounds to the left of the decimal point.
 
 ## EF Core rendering
 
@@ -116,7 +115,7 @@ PostgreSQL throws `NotSupportedException` because EF6 cannot cast to numeric, an
 
 ## Notes
 
-- **Zero and negative `digits` are supported** — `round(price,-1)` rounds to the nearest ten, matching SQL Server's native `ROUND` semantics.
-- SQL Server's `ROUND` rounds away from zero at the midpoint (`ROUND(2.5,0) = 3`), which differs from .NET's default `Math.Round` (banker's rounding, `MidpointRounding.ToEven`). Expresso does not change this — the SQL Server behavior is what executes.
-- Return type is always `double`, regardless of the argument's original type.
+- Zero and negative `digits` are supported. For example, `round(price,-1)` rounds to the nearest ten, matching SQL Server's native `ROUND` semantics.
+- SQL Server's `ROUND` rounds away from zero at the midpoint (`ROUND(2.5,0) = 3`), which differs from .NET's default `Math.Round` (banker's rounding, `MidpointRounding.ToEven`). Expresso does not change this: the SQL Server behavior is what executes.
+- The return type is always `double`, regardless of the argument's original type.
 - See [`floor`](floor.md)/[`ceiling`](ceiling.md) for rounding to the nearest whole number in a fixed direction.

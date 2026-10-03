@@ -1,39 +1,34 @@
-# Getting started
+# Get started with Expresso
 
-Step-by-step guide to adding Expresso to an application. For a complete, runnable version of all the steps below, see [docs/sample-app.md](sample-app.md) and the sample projects under [samples/](../samples/).
+Expresso turns a `filter` and `sort` query string into a validated expression tree, then renders that tree as parameterized SQL or as LINQ. The first steps are the same for both: install the parsing packages, register the parser, describe which fields clients may use, and parse the incoming query strings. Then you choose how to run the result.
 
-## 1. Install the right packages in the right layer
+For a complete, runnable version of these steps, see the [sample app](sample-app.md) and the projects under [samples/](../samples/).
 
-Expresso has no metapackage — install only what a project needs:
+## Install the parsing packages
 
-| Project / layer | Packages |
+Expresso has no metapackage. Install only what each project needs.
+
+| Layer | Packages |
 |---|---|
-| Presentation / API layer (reads `filter`/`sort` query params) | `Expresso.Core`, `Expresso.Parsing` |
-| Data-access layer (builds/executes SQL) | `Expresso.Core` + one of `Expresso.Rendering.SqlServer` / `PostgreSql` / `Sqlite` / `MySql` / `Oracle` / `Db2` |
+| API layer, where the `filter` and `sort` query parameters arrive | `Expresso.Core`, `Expresso.Parsing` |
+| Data-access layer, where the query runs | `Expresso.Core` plus the renderer you choose in [Choose how to run the filter](#choose-how-to-run-the-filter) |
 
 ```powershell
 dotnet add MyApp.Api package Expresso.Core
 dotnet add MyApp.Api package Expresso.Parsing
-
-dotnet add MyApp.DataAccess package Expresso.Core
-dotnet add MyApp.DataAccess package Expresso.Rendering.SqlServer
 ```
 
-If a single project does both jobs (as in the sample), install `Expresso.Parsing` and `Expresso.Rendering.SqlServer` together — both already reference `Expresso.Core` transitively.
+If one project does both jobs, as the sample does, install the parsing package and the renderer package in that project. Both bring `Expresso.Core` with them.
 
-Also add your database’s **ADO.NET driver** (and any OS-level client libraries) in the project that opens connections. Expresso does not include drivers — see [Database clients (not included)](packages.md#database-clients-not-included) (especially **DB2** and .NET Framework).
-
-## 2. Register services
+## Register the parser
 
 ```csharp
 using Expresso.Parsing;
-using Expresso.Rendering;
 
 builder.Services.AddRequestParametersParsers();
-builder.Services.AddSqlServerExpressionTransformations();
 ```
 
-Optional: configure date/time literal parsing (culture and format patterns):
+To change how date and time literals are read, pass options:
 
 ```csharp
 builder.Services.AddRequestParametersParsers(o =>
@@ -41,15 +36,18 @@ builder.Services.AddRequestParametersParsers(o =>
     o.CultureName = "nl-NL";
     o.DateTimeFormats = new[] { "dd-MM-yyyy", "yyyy-MM-dd" };
 });
-
-// Or bind from appsettings (host only — Expresso.Parsing does not reference IConfiguration):
-// builder.Services.AddRequestParametersParsers(
-//     builder.Configuration.GetSection("Expresso:Parsing").Get<LiteralParseOptions>() ?? new());
 ```
 
-## 3. Implement `IRequestFieldsInfoProvider`
+`Expresso.Parsing` does not read configuration on its own. To bind the options from `appsettings.json`, do it in the host:
 
-This is the allow-list that tells Expresso which fields exist, what their CLR type is, and — implicitly — which fields are **not** filterable/sortable at all. See [docs/field-providers.md](field-providers.md) for the full explanation; minimal example:
+```csharp
+builder.Services.AddRequestParametersParsers(
+    builder.Configuration.GetSection("Expresso:Parsing").Get<LiteralParseOptions>() ?? new());
+```
+
+## Describe the fields clients can use
+
+Implement `IRequestFieldsInfoProvider`. It is the allow-list: it names each field, gives its CLR type, and implicitly rejects every other field. A client can never filter or sort on a column you did not list. The [field providers](field-providers.md) page covers the details.
 
 ```csharp
 using Expresso.Core.Filtering;
@@ -68,9 +66,9 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider
 builder.Services.AddSingleton<IRequestFieldsInfoProvider, RequestFieldsInfoProvider>();
 ```
 
-## 4. Parse the incoming query strings
+## Parse the query strings
 
-In the layer that received `Expresso.Parsing` (typically a controller or application service):
+Parse in the layer that received the request, typically a controller or an application service:
 
 ```csharp
 public async Task<IActionResult> GetBooks(
@@ -91,49 +89,23 @@ public async Task<IActionResult> GetBooks(
 }
 ```
 
-Parsing throws on invalid input — see [docs/error-handling.md](error-handling.md) for exactly what to catch and how to turn it into a `400 Bad Request`.
+Parsing throws on invalid input. The [error handling](error-handling.md) page lists what to catch and how to return a `400 Bad Request`.
 
-## 5. Render to SQL in the repository
+## Choose how to run the filter
 
-In the data-access layer, holding `IExpressionToQueryClauseTransformer`:
+`FilterCriteria` and `SortDirective` are independent of the database. Pick the renderer that matches how your application reads data.
 
-```csharp
-private static readonly Dictionary<string, string> FieldToColumn = new(StringComparer.OrdinalIgnoreCase)
-{
-    ["title"] = "b.title",
-    ["year"] = "b.year",
-    ["rating"] = "b.rating",
-};
+| If you use | Read | Packages |
+|---|---|---|
+| ADO.NET or Dapper | [Render to SQL](getting-started-sql.md) | `Expresso.Rendering.SqlServer`, `PostgreSql`, `Sqlite`, `MySql`, `Oracle` or `Db2` |
+| EF Core, EF6, another LINQ provider, or objects in memory | [Render to LINQ and EF](getting-started-linq.md) | `Expresso.Rendering.Linq`, plus `EntityFrameworkCore` or `EntityFramework` |
 
-var sql = new StringBuilder("SELECT b.id, b.title, b.year, b.rating FROM dbo.book b");
-var parameters = new Dictionary<string, object>();
+You can use both in the same application, for example SQL for reports and EF Core for the rest.
 
-if (filterCriteria is not null)
-{
-    var (whereClause, whereParams) = _transformer.RenderWhereClause(filterCriteria, FieldToColumn, "wparam");
-    sql.Append(" WHERE ").Append(whereClause);
-    foreach (var (key, value) in whereParams) parameters[key] = value;
-}
+## Next steps
 
-if (sortDirective is not null)
-{
-    var (orderByClause, orderParams) = _transformer.RenderOrderByClause(sortDirective, FieldToColumn, "oparam");
-    sql.Append(" ORDER BY ").Append(orderByClause);
-    foreach (var (key, value) in orderParams) parameters[key] = value;
-}
-```
-
-Use a **case-insensitive** `fieldToColumnMap` (`StringComparer.OrdinalIgnoreCase`) so lookups by field name are robust regardless of casing used when the field catalog was declared.
-
-For collection filters, pass `SqlQueryMapping` instead of the dictionary: outer `FieldToColumn` plus recursive `CollectionSqlMapping` (`FromClause`, `CorrelateSql`, `ItemFieldToColumn`, `Nested`). See [docs/field-providers.md](field-providers.md) and the sample [BookRepository](../samples/Expresso.Sample.Shared/DataAccess/BookRepository.cs).
-
-## 6. Execute the SQL + parameters
-
-Bind `parameters` as `SqlParameter`s (ADO.NET) or pass the dictionary directly (Dapper's `DynamicParameters`) and execute `sql.ToString()` as usual. Expresso only produces the fragment and the parameter values — it does not open a connection or execute anything itself. Install the provider and native client for your engine on each runtime machine ([packages.md](packages.md#database-clients-not-included)).
-
-## Where to go next
-
-- [docs/query-syntax.md](query-syntax.md) — full filter/sort grammar and literal rules
-- [docs/functions/README.md](functions/README.md) — every supported function, with syntax and validation rules
-- [docs/error-handling.md](error-handling.md) — what exceptions to expect and catch
-- [docs/sample-app.md](sample-app.md) — the same steps, fully wired up in a runnable Web API
+- [Render to SQL](getting-started-sql.md)
+- [Render to LINQ and EF](getting-started-linq.md)
+- [Query syntax](query-syntax.md): the filter and sort grammar and literal rules
+- [Function reference](functions/README.md): every supported function
+- [Sample app](sample-app.md): these steps wired up in a runnable Web API

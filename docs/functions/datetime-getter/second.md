@@ -1,6 +1,6 @@
 # `second`
 
-The second component (0–59) of a `DateTime` value.
+Returns the second (0–59) of a date and time or of a time of day.
 
 ## Syntax
 
@@ -21,11 +21,10 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Second() function should have 1 argument."`
-- **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
-- **IR construction** (`SecondFunc`, via base `DateTimeSingleArgIntFunction`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not one of the types in the table above → `ArgumentException`
+- If you pass any number of arguments other than 1, parsing fails with `System.Exception`: `"Second() function should have 1 argument."`
+- The parser converts a quoted date or time string to `DateTime`.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not listed in the Arguments table throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -37,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 DATEPART(second, datetime)
 ```
 
-Example: `eq(second(createdat),0)` renders as `(DATEPART(second, [created_at]) = @wparam_0)`.
+SQL Server example: `eq(second(createdat),0)` renders as `(DATEPART(second, [created_at]) = @wparam_0)`.
 
 ### PostgreSQL
 
@@ -119,4 +118,4 @@ Every EF6 provider supports `second` on a `DateTime`. Oracle and SQLite have no 
 
 ## Notes
 
-- Whole seconds only — Expresso does not expose milliseconds/microseconds in v1. See [`hour`](hour.md) and [`minute`](minute.md) for the other time components.
+- This returns whole seconds only. Expresso v1 does not expose milliseconds or microseconds. See [`hour`](hour.md) and [`minute`](minute.md) for the other time components.

@@ -1,6 +1,6 @@
 # `min` (collection)
 
-Minimum of a selector expression over a related collection. The first argument must be a collection; otherwise the parser builds scalar [`min`](../arithmetic/min.md) (`MinFunc`).
+Returns the minimum of a selector expression over a related collection. If the first argument is not a collection, the call is parsed as the scalar [`min`](../arithmetic/min.md) instead.
 
 ## Syntax
 
@@ -22,9 +22,9 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser (collection overload):** first argument is a `CollectionRef`; one argument → `System.Exception`: `"Min() function should have 2 arguments."`
-- **Parser (scalar overload):** first argument is not a collection; same arity error as arithmetic `min`.
-- **IR construction** (`CollectionMinFunc`): illegal selector type → `ArgumentException("Illegal argument type", "selector")`. Constructed directly by the parser.
+- If the first argument is a collection and you pass only one argument, parsing throws `System.Exception`: `"Min() function should have 2 arguments."`
+- If the first argument is not a collection, the call is parsed as scalar `min` and gives the same arity error as arithmetic `min`.
+- A selector of an unsupported type throws `ArgumentException("Illegal argument type", "selector")`.
 
 ## SQL rendering
 
@@ -39,7 +39,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 
 Example: `gt(min(authors, dateofbirth), "1828-01-01")`.
 
-**DB2 / `ORDER BY`:** DB2 rejects correlated references in `ORDER BY` scalar subqueries (`SQL0206N`). This fragment is valid in `WHERE` and in a `SELECT` list. For a sort key, select it in a derived table (or extra SELECT column) and order by that alias. See [docs/rendering.md](../../rendering.md).
+DB2 rejects correlated references in `ORDER BY` scalar subqueries (`SQL0206N`). This fragment is valid in `WHERE` and in a `SELECT` list. For a sort key, select it in a derived table (or extra SELECT column) and order by that alias. See [docs/rendering.md](../../rendering.md).
 
 ## LINQ rendering
 

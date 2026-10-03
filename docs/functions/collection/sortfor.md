@@ -1,6 +1,6 @@
 # `sortfor`
 
-Sort-only construct for ordering related collections. **Not** an IR filter function and **not** valid in `filter=`.
+Orders the items of a related collection. You can use `sortfor` only in a sort directive, not in `filter=`.
 
 ## Syntax
 
@@ -8,7 +8,7 @@ Sort-only construct for ordering related collections. **Not** an IR filter funct
 sortfor(collectionPath, expression),asc|desc
 ```
 
-Exactly 2 arguments inside `sortfor`, then the direction token **outside** (same as scalar sort keys).
+`sortfor` takes exactly 2 arguments. The direction token goes outside the parentheses, as with scalar sort keys.
 
 ```text
 year,desc
@@ -16,23 +16,23 @@ sortfor(authors, lastname),asc
 sortfor(authors/awards, title),desc
 ```
 
-- **Category:** Sort directive helper (not in the expression IR)
-- **Return type:** N/A — fills `SortDirective.Nested`, not `Items`
+- **Category:** Sort directive helper
+- **Return type:** N/A. `sortfor` fills `SortDirective.Nested`, not `Items`.
 
 ## Arguments
 
 | Position | Name | Description |
 |---|---|---|
-| 1 | `collectionPath` | One or more collection segments separated by `/` (e.g. `authors`, `authors/awards`). Must not start with `/`. |
-| 2 | `expression` | Sort key parsed in the **item** catalog of the path's final collection (same scope rules as `any`). |
+| 1 | `collectionPath` | One or more collection segments separated by `/` (for example `authors` or `authors/awards`). Must not start with `/`. |
+| 2 | `expression` | Sort key, parsed against the item fields of the last collection in the path (same scope rules as `any`). |
 
 ## Validation & exceptions
 
-- **Sort parser:** not exactly 2 arguments → `ArgumentException`: `"sortfor() requires exactly 2 arguments."`
-- **Sort parser:** empty path or leading `/` → `ArgumentException`
-- **Sort parser:** unknown collection segment → `ArgumentException`: `"Illegal field name: '...'"`
-- **Sort parser:** `CollectionRef` / `any`/`all`/`none` as the sort key → `ArgumentException` (collections cannot be sort keys)
-- **Filter parser:** `sortfor(...)` anywhere in `filter=` → `ArgumentException`: `'sortfor' is only valid in a sort directive, not in a filter.`
+- If you pass any number of arguments other than 2, parsing the sort throws `ArgumentException`: `"sortfor() requires exactly 2 arguments."`
+- If the path is empty or starts with `/`, parsing the sort throws `ArgumentException`.
+- If a path segment is not a known collection, parsing the sort throws `ArgumentException`: `"Illegal field name: '...'"`
+- If the sort key is a collection or an `any`, `all` or `none` call, parsing the sort throws `ArgumentException`. Collections can't be sort keys.
+- If `sortfor(...)` appears anywhere in `filter=`, parsing the filter throws `ArgumentException`: `'sortfor' is only valid in a sort directive, not in a filter.`
 
 ## SQL rendering
 
@@ -40,27 +40,27 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 
 ### All dialects
 
-`sortfor` never appears in the parent `ORDER BY`. `RenderOrderByClause(sortDirective, ...)` only reads `SortDirective.Items`; a `sortfor(path, expr)` call is parsed into `SortDirective.Nested` instead, keyed by the first path segment (`CollectionSort.Name` / `.Directive`, recursively for multi-segment paths).
+`sortfor` never appears in the parent `ORDER BY`. `RenderOrderByClause(sortDirective, ...)` reads only `SortDirective.Items`. A `sortfor(path, expr)` call is parsed into `SortDirective.Nested` instead, keyed by the first path segment (`CollectionSort.Name` and `.Directive`, recursively for multi-segment paths).
 
-To turn a `sortfor` call into SQL, the **host** — not the parent query — walks to the matching `SortDirective.Nested` entry and calls `RenderOrderByClause` **again**, passing that nested directive with the collection's own **item** field map (e.g. an `items` collection's item catalog: `label` → `i.label`). This returns a second, independent `ORDER BY` fragment that the host applies to whatever query loads that related collection — typically a separate `SELECT` for the child rows, not the parent's `SELECT`.
+To turn a `sortfor` call into SQL, your application walks to the matching `SortDirective.Nested` entry and calls `RenderOrderByClause` again. You pass the nested directive together with the collection's own item field map (for example the item fields of an `items` collection: `label` maps to `i.label`). This returns a second, independent `ORDER BY` fragment. You apply it to the query that loads that related collection, typically a separate `SELECT` for the child rows rather than the parent's `SELECT`.
 
-For `sort=name,desc,sortfor(items,label),asc`:
+For `sort=name,desc,sortfor(items,label),asc`, the SQL Server output is:
 
-- Parent `ORDER BY` (from `SortDirective.Items`, rendered against the outer field map):
+- The parent `ORDER BY`, from `SortDirective.Items` and rendered against the outer field map:
 
   ```sql
   ORDER BY [p].[name] DESC
   ```
 
-- Nested `ORDER BY` for the `items` collection (from `SortDirective.Nested["items"]`, rendered against that collection's **item** field map) is applied to whichever query loads the related rows, alongside the correlating key used to group them back to their parent:
+- The nested `ORDER BY` for the `items` collection, from `SortDirective.Nested["items"]` and rendered against that collection's item field map. You apply it to whichever query loads the related rows, together with the correlating key that groups them back to their parent:
 
   ```sql
   ORDER BY {parent_key}, [i].[label] ASC
   ```
 
-A helper that resolves `SortDirective.Nested` by path and calls `RenderOrderByClause` on the result (falling back to a default `ORDER BY` when no `sortfor` targeted that collection) is a common pattern for hosts loading related rows in a second query.
+When you load related rows in a second query, a common pattern is a helper that resolves `SortDirective.Nested` by path and calls `RenderOrderByClause` on the result. The helper falls back to a default `ORDER BY` when no `sortfor` targeted that collection.
 
-Boolean expressions in nested sort keys use `CASE WHEN ... THEN 1 ELSE 0 END` on every dialect, same as parent sort keys. With `asc`, non-matches sort first; use `desc` for "matches first" (e.g. `gt(len(label),10),desc`).
+Boolean expressions in nested sort keys use `CASE WHEN ... THEN 1 ELSE 0 END` on every dialect, the same as parent sort keys. With `asc`, non-matches sort first. Use `desc` to put matches first (for example `gt(len(label),10),desc`).
 
 ## LINQ rendering
 
@@ -73,7 +73,7 @@ query.OrderBy(transformer, sort, mapping)
 items.OrderByNested(transformer, sort, itemMapping, "items")
 ```
 
-`BuildSortKeys` and `LinqQueryExtensions.OrderBy` read only `SortDirective.Items`, so `sortfor` never reaches the parent order. The host orders the query that loads the related rows with `OrderByNested`, which resolves `SortDirective.Nested` by path (case-insensitive, one argument per segment, for example `"authors", "awards"`) and applies `OrderBy`/`ThenBy` with keys built against the item mapping. It returns the items unchanged when no `sortfor` targeted that path.
+`BuildSortKeys` and `LinqQueryExtensions.OrderBy` read only `SortDirective.Items`, so `sortfor` never reaches the parent order. You order the query that loads the related rows with `OrderByNested`, which resolves `SortDirective.Nested` by path (case-insensitive, one argument per segment, for example `"authors", "awards"`) and applies `OrderBy`/`ThenBy` with keys built against the item mapping. It returns the items unchanged when no `sortfor` targeted that path.
 
 A scalar key is the nullable value, and a boolean key is `condition ? 1 : 0`. NULL placement is the database's; see [docs/semantics.md](../../semantics.md). Example: `sort=name,desc,sortfor(items,label),asc` gives `OrderByDescending(e => e.Name)` on the parent query and `OrderBy(e => e.Label)` on the items query. `BuildSortKeys` throws `ArgumentException` for a directive without items, so skip the parent `OrderBy` when the sort has only `sortfor` calls.
 
@@ -105,8 +105,8 @@ Every EF6 provider supports `sortfor`.
 
 ## Notes
 
-- Multiple `sortfor` calls with the same path append to that node's `Items` in appearance order.
-- `SortDirective.RemoveDuplicates()` dedupes parent `Items` and each nested `Items` list separately; parent `year` and `sortfor(authors, year)` do not collapse.
-- Empty parent `Items` with only `sortfor` is valid; omit parent `ORDER BY` when `Items.Count == 0`.
+- Multiple `sortfor` calls with the same path append to that node's `Items` in the order they appear.
+- `SortDirective.RemoveDuplicates()` removes duplicates from the parent `Items` and from each nested `Items` list separately. A parent `year` and `sortfor(authors, year)` don't collapse into one.
+- A sort with only `sortfor` calls is valid and leaves the parent `Items` empty. Omit the parent `ORDER BY` when `Items.Count == 0`.
 
 See also [docs/query-syntax.md](../../query-syntax.md).

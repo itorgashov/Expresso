@@ -1,6 +1,6 @@
 # `lower`
 
-Converts a string to lowercase.
+Converts a string to lower case.
 
 ## Syntax
 
@@ -21,11 +21,10 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Lower() function should have 1 argument."`
-- **Parser coercion:** argument coerced to `string` if a quoted string token.
-- **IR construction** (`LowerFunc`, via base `StringSingleArgFunction`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not `string` → `ArgumentException`
+- Passing any number of arguments other than 1 throws `System.Exception` with the message `"Lower() function should have 1 argument."`
+- A quoted string token is treated as a `string` literal.
+- A `null` argument throws `ArgumentNullException`.
+- An argument that does not return `string` throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -37,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 LOWER(text)
 ```
 
-Example: `eq(lower(email),"a@b.com")` renders as `(LOWER([email]) = @wparam_0)` on SQL Server.
+SQL Server example: `eq(lower(email),"a@b.com")` renders as `(LOWER([email]) = @wparam_0)`.
 
 ## LINQ rendering
 

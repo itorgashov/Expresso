@@ -1,6 +1,6 @@
 # `time`
 
-Converts a value to a time-of-day. Conversion happens in SQL; no C# conversion is performed in the function itself.
+Converts a value to a time of day. The database does the conversion; the function itself performs no conversion in C#.
 
 **Availability:** all package TFMs (`netstandard2.0` and `net6.0`).
 
@@ -23,16 +23,15 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Time() function should have 1 argument."`
-- **Parser coercion:** quoted tokens become **string** literals (not parsed as `DateTime` in C#).
-- **IR construction** (`TimeFunc`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not allowed → `ArgumentException`
+- If you pass any number of arguments other than 1, parsing fails with `System.Exception`: `"Time() function should have 1 argument."`
+- The parser treats a quoted value as a string literal. It does not parse it as a `DateTime` in C#.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not listed in the Arguments table throws `ArgumentException`.
 
 ## SQL rendering
 
 Quotes and bind names: [docs/rendering.md](../../rendering.md).
-Conversion happens in SQL; the function itself does not convert in C#.
+The database does the conversion; the function itself does not convert in C#.
 
 ### SQL Server, PostgreSQL, MySQL / MariaDB, DB2
 
@@ -40,7 +39,7 @@ Conversion happens in SQL; the function itself does not convert in C#.
 CAST(value AS time)
 ```
 
-Example: `eq(time(createdat),"14:30")` renders as `(CAST([created_at] AS time) = @wparam_0)` on SQL Server (`TimeSpan` on netstandard2.0, `TimeOnly` on net6.0).
+SQL Server example: `eq(time(createdat),"14:30")` renders as `(CAST([created_at] AS time) = @wparam_0)`. The parameter is a `TimeSpan` on netstandard2.0 and a `TimeOnly` on net6.0.
 
 ### SQLite
 
@@ -82,7 +81,7 @@ EF Core translates the Queryable lambda on PostgreSQL. Every other provider over
 CAST(value AS time)
 ```
 
-On SQL Server this is `CAST([w].[created_at] AS time)`.
+On SQL Server, this is `CAST([w].[created_at] AS time)`.
 
 ### SQLite
 
@@ -140,6 +139,6 @@ Oracle and SQLite throw `NotSupportedException`: "the provider has no time-of-da
 
 ## Notes
 
-- On **net6.0**, compare `time(...)` results to `TimeOnly` fields/literals. On **netstandard2.0**, use `TimeSpan` fields/literals (e.g. `eq(opens,"09:00")` on a SQL `time` column).
-- Do not use `TimeSpan` in the field catalog for SQL **interval** columns — Expresso treats it as clock time-of-day only.
+- On net6.0, compare `time(...)` results to `TimeOnly` fields or literals. On netstandard2.0, use `TimeSpan` fields or literals (for example `eq(opens,"09:00")` on a SQL `time` column).
+- Do not use `TimeSpan` in the field catalog for SQL `interval` columns. Expresso treats `TimeSpan` as a clock time of day only.
 - Pair with [`hour`](hour.md), [`minute`](minute.md), [`second`](second.md) for time components.

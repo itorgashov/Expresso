@@ -1,6 +1,6 @@
 # `addseconds`
 
-Adds (or subtracts) a whole number of seconds to a `DateTime` value.
+Adds a number of seconds to a date or time of day. A negative amount subtracts seconds.
 
 ## Syntax
 
@@ -18,16 +18,15 @@ Exactly 2 arguments.
 | Position | Name | Required type |
 |---|---|---|
 | 1 | `dateTime` | `DateTime`, `TimeSpan` (time-of-day), or `TimeOnly` (net6.0) |
-| 2 | `amount` | `int` — zero and negative values are allowed |
+| 2 | `amount` | `int` (zero and negative values are allowed) |
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Addseconds() function should have 2 arguments."`
-- **Parser coercion:** argument 1 coerced to `DateTime` if a quoted date/time token; argument 2 coerced to `int` if a literal token.
-- **IR construction** (`AddSecondsFunc`, via base `DateTimeAddFunction`):
-  - Either argument is `null` → `ArgumentNullException`
-  - `dateTime.ReturnType` is not one of the types in the table above → `ArgumentException`
-  - `amount.ReturnType` is not `int` → `ArgumentException`
+- If you pass any number of arguments other than 2, parsing fails with `System.Exception`: `"Addseconds() function should have 2 arguments."`
+- The parser converts a quoted date or time string in the first argument to `DateTime`, and a literal in the second argument to `int`.
+- A `null` in either argument throws `ArgumentNullException`.
+- A first argument whose type is not listed in the Arguments table throws `ArgumentException`.
+- An `amount` that is not an `int` throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -40,7 +39,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 DATEADD(second, amount, datetime)
 ```
 
-Example: `eq(addseconds(createdat,0), createdat)` renders as `(DATEADD(second, @wparam_0, [created_at]) = [created_at])`.
+SQL Server example: `eq(addseconds(createdat,0), createdat)` renders as `(DATEADD(second, @wparam_0, [created_at]) = [created_at])`.
 
 ### PostgreSQL
 
@@ -146,12 +145,12 @@ On a `DateTime`, `Ef6Functions.MySqlTimestamp` and `Ef6Functions.MySqlSecToTime`
 
 ### Not supported
 
-The transformer throws `NotSupportedException` on these providers:
+Expresso throws `NotSupportedException` on these providers:
 
 - Oracle: "the provider pastes the amount into an INTERVAL literal, so parameters fail (ORA-01867)".
 - SQLite: "the provider translates no canonical date arithmetic".
 
 ## Notes
 
-- **Negative and zero amounts are supported**: `addseconds(createdat,0)` is a no-op equivalent to `createdat` itself.
-- Whole seconds only — Expresso does not expose milliseconds/microseconds in v1. See [`addminutes`](addminutes.md) for the next larger unit.
+- Negative and zero amounts are supported. `addseconds(createdat,0)` returns `createdat` unchanged.
+- You can add whole seconds only. Expresso v1 does not expose milliseconds or microseconds. See [`addminutes`](addminutes.md) for the next larger unit.

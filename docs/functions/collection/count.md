@@ -1,6 +1,6 @@
 # `count`
 
-Number of items in a related collection, optionally restricted by an item-scope predicate. Returns `int`. Distinct from [`len`](../string-inspect/len.md) (string length).
+Counts the items in a related collection, optionally only those matching a condition. The result is an `int`. To get a string's length, use [`len`](../string-inspect/len.md) instead.
 
 ## Syntax
 
@@ -23,10 +23,10 @@ count(collection, predicate)
 
 ## Validation & exceptions
 
-- **Parser:** first argument is not a collection → `ArgumentException`: `"First argument of Count() must be a collection."`
-- **IR construction** (`CollectionCountFunc`): `collection` is `null` → `ArgumentNullException`; predicate present but not `bool` → `ArgumentException`. Constructed directly by the parser.
+- If the first argument is not a collection, parsing throws `ArgumentException`: `"First argument of Count() must be a collection."`
+- A `null` collection throws `ArgumentNullException`. A predicate that is not `bool` throws `ArgumentException`.
 
-Allowed as a sort key (renders as a scalar subquery).
+You can use `count` as a sort key. It renders as a scalar subquery.
 
 ## SQL rendering
 
@@ -39,13 +39,13 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (SELECT COUNT(*) FROM {FromClause} WHERE {CorrelateSql} [AND predicate])
 ```
 
-Example: `eq(count(authors), 2)`:
+SQL Server example: `eq(count(authors), 2)` renders as:
 
 ```sql
 ((SELECT COUNT(*) FROM dbo.book_author AS ba INNER JOIN dbo.author AS a ON a.id = ba.author_id WHERE ba.book_id = b.id) = @wparam_0)
 ```
 
-**DB2 / `ORDER BY`:** DB2 rejects correlated references in `ORDER BY` scalar subqueries (`SQL0206N`). This fragment is valid in `WHERE` and in a `SELECT` list. For a sort key, select it in a derived table (or extra SELECT column) and order by that alias. See [docs/rendering.md](../../rendering.md).
+DB2 rejects correlated references in `ORDER BY` scalar subqueries (`SQL0206N`). This fragment is valid in `WHERE` and in a `SELECT` list. For a sort key, select it in a derived table (or extra SELECT column) and order by that alias. See [docs/rendering.md](../../rendering.md).
 
 ## LINQ rendering
 

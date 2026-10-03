@@ -1,6 +1,6 @@
 # `abs`
 
-Absolute value of a numeric argument.
+Returns the absolute value of a numeric argument.
 
 ## Syntax
 
@@ -11,7 +11,7 @@ abs(argument)
 Exactly 1 argument.
 
 - **Category:** Arithmetic
-- **Return type:** same as the argument's type (`byte`, `int`, or `double` — **not** widened)
+- **Return type:** same as the argument's type (`byte`, `int`, or `double`); **not** widened
 
 ## Arguments
 
@@ -21,9 +21,11 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Abs() function should have 1 argument."`
-- **Parser coercion:** a literal argument's type is inferred (`GetLiteralType`).
-- **IR construction** (`AbsFunc`, built via reflection): base `NumericSingleArgFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", nameof(argument))` if the `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass a number of arguments other than 1, the parser throws `System.Exception` with the message `"Abs() function should have 1 argument."`.
+- The parser infers the type of a literal argument.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not `byte`, `int`, or `double` throws `ArgumentException("Illegal argument type", "argument")`.
+- When the parser builds the call, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -35,7 +37,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 ABS(argument)
 ```
 
-Example: `eq(abs(balance),100)` renders as `(ABS([balance]) = @wparam_0)` on SQL Server.
+SQL Server example: `eq(abs(balance),100)` renders as `(ABS([balance]) = @wparam_0)`.
 
 ## LINQ rendering
 
@@ -79,5 +81,5 @@ Every EF6 provider supports `abs`.
 
 ## Notes
 
-- `ReturnType` is copied from the argument, not promoted — `abs` of a `byte` field is still typed `byte`.
+- The return type is copied from the argument, not promoted. The `abs` of a `byte` field is still typed `byte`.
 - See [`add`](add.md), [`sub`](sub.md), [`mult`](mult.md), [`div`](div.md) for binary arithmetic, and [`sign`](sign.md) for the related unary numeric function.

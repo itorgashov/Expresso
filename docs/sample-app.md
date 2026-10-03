@@ -1,15 +1,17 @@
 # Sample app walkthrough
 
-Expresso ships two runnable API hosts that share the same data and filtering logic:
+The sample app is a pair of runnable Web APIs that show the SQL path end to end: parse a query string, render it with a dialect renderer, and run it with ADO.NET. Both hosts share the same data and filtering logic. For the LINQ and EF path, see [Render to LINQ and EF](getting-started-linq.md).
+
+
 
 | Project | Host | TFM |
 |---|---|---|
 | [samples/Expresso.Sample.WebApi](../samples/Expresso.Sample.WebApi) | ASP.NET Core + Swagger | `net10` |
 | [samples/Expresso.Sample.WebApi.NetFx](../samples/Expresso.Sample.WebApi.NetFx) | OWIN self-host + Web API 2 + Swagger | `net48` |
 
-Shared code lives in [samples/Expresso.Sample.Shared](../samples/Expresso.Sample.Shared) (`netstandard2.0`): models, ADO.NET repositories, `ISampleSql` dialect catalog, and `QueryParametersParser`. Each host has its own `IRequestFieldsInfoProvider` so the catalog CLR types match the Expresso TFM that host loads. Schema and seed scripts for every engine are under [samples/database](../samples/database). Hosts pick the engine with `ExpressoSample:Engine` in appsettings (default SQL Server) and open `ConnectionStrings:{Engine}` from the same file. The net48 host does not register Db2 (the sample uses `Net.IBM.Data.Db2` on the net10 host only; .NET Framework apps use IBM’s separate provider — see [docs/packages.md](packages.md#db2-and-net-framework)).
+Shared code lives in [samples/Expresso.Sample.Shared](../samples/Expresso.Sample.Shared) (`netstandard2.0`): models, ADO.NET repositories, `ISampleSql` dialect catalog, and `QueryParametersParser`. Each host has its own `IRequestFieldsInfoProvider` so the catalog CLR types match the Expresso TFM that host loads. Schema and seed scripts for every engine are under [samples/database](../samples/database). Hosts pick the engine with `ExpressoSample:Engine` in appsettings (default SQL Server) and open `ConnectionStrings:{Engine}` from the same file. The net48 host does not register Db2 (the sample uses `Net.IBM.Data.Db2` on the net10 host only; .NET Framework apps use IBM’s separate provider — see [Packages](packages.md#db2-and-net-framework)).
 
-For setup/run instructions, see each sample's README. This page focuses on *why* it's structured the way it is.
+Each sample's README explains how to set up and run it. This page explains how the sample is structured and why.
 
 ## Switching the database
 
@@ -36,15 +38,15 @@ Put that engine's connection string in `ConnectionStrings` under the same name:
 
 ## Domain: books, authors, publishers
 
-The sample database (`samples/database/*/schema.sql`, seed from `seed.json`) models a small library catalog:
+The sample database (`samples/database/*/schema.sql`, seed from `seed.json`) models a small library catalog. Table names are shown without a schema prefix; the dialect catalog adds one where the engine needs it.
 
 | Table | Purpose |
 |---|---|
-| `dbo.publisher` | Publishing houses (`name`, `country`, `location`, `opens_at`/`closes_at` TIME) |
-| `dbo.author` | Authors (`first_name`, `last_name`, `display_name`, `date_of_birth`, `created_at`) |
-| `dbo.book` | Books (`title`, `year`, `isbn`, `publisher_id`, `rating`, `price`, `created_at`, `external_id` UNIQUEIDENTIFIER) |
-| `dbo.book_author` | Many-to-many join between `book` and `author` |
-| `dbo.award` | Author awards (`title`, `year`; FK to `author`) |
+| `publisher` | Publishing houses (`name`, `country`, `location`, `opens_at`/`closes_at` TIME) |
+| `author` | Authors (`first_name`, `last_name`, `display_name`, `date_of_birth`, `created_at`) |
+| `book` | Books (`title`, `year`, `isbn`, `publisher_id`, `rating`, `price`, `created_at`, `external_id` UNIQUEIDENTIFIER) |
+| `book_author` | Many-to-many join between `book` and `author` |
+| `award` | Author awards (`title`, `year`; FK to `author`) |
 
 ## Architecture
 
@@ -86,14 +88,14 @@ flowchart TD
     style Db fill:#e5e7eb,stroke:#111827,color:#111827
 ```
 
-- **Shared layer** ([Expresso.Sample.Shared](../samples/Expresso.Sample.Shared)): domain models, view models, repositories, and query-parameter parsing. Dialect table names and bind markers are in `ISampleSql`; hosts supply `ISampleDb`, thin controllers, and a field catalog.
-- **Presentation (per host):** controllers parse `filter`/`sort` via `QueryParametersParser`, guarded by that host's `IRequestFieldsInfoProvider`. Parse failures → `400 Bad Request`.
-- **Data access (shared):** repositories implement `IRepository<T>` and use `IExpressionToQueryClauseTransformer` with per-entity mappings. Books use `SqlQueryMapping` with nested `authors` and `authors.awards`. Parent `ORDER BY` runs only when `SortDirective.Items` is non-empty; child lists use `SortDirective.Nested` via `sortfor`.
-- **Engine switch:** `SampleEngineSetup` registers the dialect transformer and ADO.NET provider from `ExpressoSample:Engine`, and opens `ConnectionStrings:{Engine}` from user secrets. Db2 cannot `ORDER BY` a correlated collection aggregate (`count(authors)`).
+- The shared layer ([Expresso.Sample.Shared](../samples/Expresso.Sample.Shared)): domain models, view models, repositories, and query-parameter parsing. Dialect table names and bind markers are in `ISampleSql`; hosts supply `ISampleDb`, thin controllers, and a field catalog.
+- In each host, the presentation layer: controllers parse `filter`/`sort` via `QueryParametersParser`, guarded by that host's `IRequestFieldsInfoProvider`. Parse failures → `400 Bad Request`.
+- In the shared layer, data access: repositories implement `IRepository<T>` and use `IExpressionToQueryClauseTransformer` with per-entity mappings. Books use `SqlQueryMapping` with nested `authors` and `authors.awards`. Parent `ORDER BY` runs only when `SortDirective.Items` is non-empty; child lists use `SortDirective.Nested` via `sortfor`.
+- To switch engines, `SampleEngineSetup` registers the dialect transformer and ADO.NET provider from `ExpressoSample:Engine`, and opens `ConnectionStrings:{Engine}` from user secrets. Db2 cannot `ORDER BY` a correlated collection aggregate (`count(authors)`).
 
 ## Field catalog
 
-Each host implements `IRequestFieldsInfoProvider` and `IRequestQueryModelProvider` (same query field names, different CLR types). Book context includes nested `authors` (with nested `awards` on author items). Author context includes collection `awards`. See [docs/field-providers.md](field-providers.md).
+Each host implements `IRequestFieldsInfoProvider` and `IRequestQueryModelProvider` (same query field names, different CLR types). Book context includes nested `authors` (with nested `awards` on author items). Author context includes collection `awards`. See [Field providers](field-providers.md).
 
 | Host | Implementation |
 |---|---|
@@ -140,11 +142,11 @@ GET /api/authors?sort=lastname,asc,sortfor(awards, title),asc
 GET /api/authors?filter=eq(firstname,"George")&sort=lastname,asc
 ```
 
-On **net48**, configure `LiteralParseOptions` with `CultureName = "nl-NL"` and `DateTimeFormats = ["dd-MM-yyyy", "yyyy-MM-dd"]` if clients send European date literals (e.g. `gt(dateofbirth,"31-12-1899")`). See [docs/query-syntax.md](query-syntax.md).
+On net48, configure `LiteralParseOptions` with `CultureName = "nl-NL"` and `DateTimeFormats = ["dd-MM-yyyy", "yyyy-MM-dd"]` if clients send European date literals (for example `gt(dateofbirth,"31-12-1899")`). See [Query syntax](query-syntax.md).
 
 ## Reading further
 
 - ASP.NET Core controller: [Controllers/BooksController.cs](../samples/Expresso.Sample.WebApi/Controllers/BooksController.cs)
 - Web API 2 controller: [Controllers/BooksController.cs](../samples/Expresso.Sample.WebApi.NetFx/Controllers/BooksController.cs)
 - Repository pattern: [DataAccess/BookRepository.cs](../samples/Expresso.Sample.Shared/DataAccess/BookRepository.cs)
-- Grammar and functions: [docs/query-syntax.md](query-syntax.md), [docs/functions/README.md](functions/README.md)
+- Grammar and functions: [Query syntax](query-syntax.md), [Function reference](functions/README.md)

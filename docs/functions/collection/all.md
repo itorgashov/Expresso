@@ -1,6 +1,6 @@
 # `all`
 
-True if every item in the related collection matches the predicate. An empty collection is treated as vacuously true. A one-argument call (`all(authors)`) has no item constraint and always renders as true.
+Returns true when every item in a related collection matches a condition. An empty collection is vacuously true, and the one-argument form (`all(authors)`) has no condition and always renders as true.
 
 ## Syntax
 
@@ -23,10 +23,10 @@ all(collection, predicate)
 
 ## Validation & exceptions
 
-- **Parser:** first argument is not a collection → `ArgumentException`: `"First argument of All() must be a collection."`
-- **IR construction** (`AllFunc`): same null/type rules as [`any`](any.md). Constructed directly by the parser.
+- If the first argument is not a collection, parsing throws `ArgumentException`: `"First argument of All() must be a collection."`
+- A `null` collection or a predicate that is not `bool` fails with the same exceptions as [`any`](any.md).
 
-Not valid as a sort key.
+You can't use `all` as a sort key.
 
 ## SQL rendering
 
@@ -89,5 +89,5 @@ Every EF6 provider supports `all`.
 
 ## Notes
 
-- Vacuous truth: `all(authors, pred)` is true when there are no related rows.
+- `all(authors, pred)` is true when there are no related rows.
 - See [`any`](any.md) and [`none`](none.md).

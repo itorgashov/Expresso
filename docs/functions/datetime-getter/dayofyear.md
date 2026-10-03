@@ -1,6 +1,6 @@
 # `dayofyear`
 
-The day-of-year component (1–366) of a `DateTime` value.
+Returns the day of the year (1–366) of a date.
 
 ## Syntax
 
@@ -21,11 +21,10 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Dayofyear() function should have 1 argument."`
-- **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
-- **IR construction** (`DayOfYearFunc`, via base `DateTimeSingleArgIntFunction`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not one of the types in the table above → `ArgumentException`
+- If you pass any number of arguments other than 1, parsing fails with `System.Exception`: `"Dayofyear() function should have 1 argument."`
+- The parser converts a quoted date or time string to `DateTime`.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not listed in the Arguments table throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -37,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 DATEPART(dayofyear, datetime)
 ```
 
-Example: `eq(dayofyear(createdat),32)` renders as `(DATEPART(dayofyear, [created_at]) = @wparam_0)`.
+SQL Server example: `eq(dayofyear(createdat),32)` renders as `(DATEPART(dayofyear, [created_at]) = @wparam_0)`.
 
 ### PostgreSQL
 
@@ -95,7 +94,7 @@ No provider overrides.
 
 ### All providers
 
-`DbFunctions` has no day-of-year function, so by default the transformer counts days from January 1 of the same year. PostgreSQL uses this form:
+`DbFunctions` has no day-of-year function, so by default Expresso counts days from January 1 of the same year. PostgreSQL uses this form:
 
 ```csharp
 DbFunctions.DiffDays(DbFunctions.AddMonths(DbFunctions.AddDays(datetime, 1 - datetime.Day), 1 - datetime.Month), datetime) + 1
@@ -121,4 +120,4 @@ Every EF6 provider supports `dayofyear`.
 
 ## Notes
 
-- Matches C#'s `DateTime.DayOfYear` (1-based). See [`day`](day.md) for day-of-month instead.
+- The result matches C#'s `DateTime.DayOfYear` (1-based). See [`day`](day.md) for the day of the month instead.

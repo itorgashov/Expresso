@@ -1,23 +1,25 @@
 # Query syntax
 
+This page defines the grammar of the `filter` and `sort` query strings: how to write a filter, sort related rows, and write literals of each type.
+
 ## Filter grammar
 
-A filter is a single, possibly nested, function call:
+A filter is one function call, which can contain more function calls:
 
 ```text
 functionName(arg1, arg2, ...)
 ```
 
-- The **root expression must be a boolean function** (e.g. `eq`, `and`, `startswith`, ...). `IFilterParser.Parse` throws `ArgumentException("A boolean expression is expected.")` if the parsed root is not boolean (see [docs/error-handling.md](error-handling.md)).
-- Arguments can be field names, quoted literals, unquoted numeric literals, or nested function calls — nesting is unrestricted (e.g. `eq(abs(age), 1)`, `and(gt(age,25), startswith(name,"Jo"))`).
-- Function names and field names are **case-insensitive** (`startswith`, `StartsWith`, `STARTSWITH` are equivalent).
-- Field names must match `^[a-zA-Z_][a-zA-Z0-9_]*$` and must appear in the field catalog you supply (see [docs/field-providers.md](field-providers.md)); anything else is an `ArgumentException: Illegal field name: '...'`.
+- The root must be a boolean function, such as `eq`, `and` or `startswith`. If it is not, `IFilterParser.Parse` throws `ArgumentException("A boolean expression is expected.")`. See [Error handling](error-handling.md).
+- An argument can be a field name, a quoted literal, an unquoted numeric literal, or another function call. You can nest as deeply as you like: `eq(abs(age), 1)` or `and(gt(age,25), startswith(name,"Jo"))`.
+- Function names and field names ignore case. `startswith`, `StartsWith` and `STARTSWITH` are the same.
+- A field name must match `^[a-zA-Z_][a-zA-Z0-9_]*$` and appear in the field catalog you supply (see [Field providers](field-providers.md)). Any other name throws `ArgumentException: Illegal field name: '...'`.
 
-Full function reference (every supported function, grouped by category): [docs/functions/README.md](functions/README.md).
+The [function reference](functions/README.md) lists every supported function by category.
 
 ## Collections
 
-Collections are quantified predicates over a related set, not extra scalar fields on the outer entity. Pass a `QueryModel` (with nested `CollectionModel`s) to `IFilterParser.Parse`. Inside `any(authors, …)`, identifiers resolve against the **authors** item catalog.
+A collection function tests a related set of rows, such as the authors of a book. Pass a `QueryModel` with nested `CollectionModel`s to `IFilterParser.Parse`. Inside `any(authors, …)`, names resolve against the authors item catalog.
 
 ```text
 any(authors, eq(displayname, "Leo Tolstoy"))
@@ -26,61 +28,61 @@ and(gt(year, 2020), any(authors, eq(displayname, "Leo Tolstoy")))
 any(authors, any(awards, eq(title, "Nobel Prize")))
 ```
 
-- `year` in the `and(…)` example stays on the outer `WHERE`; it is not pushed into the subquery.
-- `min`/`max` are overloaded: `min(price, rating)` is scalar `MinFunc`; `min(authors, dateofbirth)` is `CollectionMinFunc`. `sum`/`avg`/`count` are collection-only.
-- `any`/`all`/`none` are not valid sort keys. Collection aggregates (`count`, `min`, …) may be used in `sort=`.
+- In the `and(…)` example, `year` stays in the outer `WHERE`. It is not moved into the subquery.
+- `min` and `max` work on both scalars and collections. `min(price, rating)` returns the smaller of two values; `min(authors, dateofbirth)` returns the smallest value across a collection. `sum`, `avg` and `count` work on collections only.
+- `any`, `all` and `none` cannot be sort keys. Collection aggregates such as `count` and `min` can be used in `sort=`.
 
-See [docs/field-providers.md](field-providers.md) and [docs/functions/collection/any.md](functions/collection/any.md).
+See [Field providers](field-providers.md) and [any](functions/collection/any.md).
 
 ## Sort grammar
 
-A sort directive is a flat, comma-separated list of alternating field and direction tokens:
+A sort is a flat, comma-separated list of alternating field and direction tokens:
 
 ```text
 field1,dir1,field2,dir2,...
 ```
 
-Example:
+For example:
 
 ```text
 createdAt,desc,name,asc
 ```
 
-- `dir` is `asc` or `desc`, case-insensitive. Anything else throws `NotSupportedException`.
+- A direction is `asc` or `desc`, ignoring case. Any other value throws `NotSupportedException`.
 - An odd number of tokens, or an empty string, throws `ArgumentException`.
-- `ISortDirectiveParser.Parse(...)` returns a `SortDirective`; call `.RemoveDuplicates()` to drop repeated sort keys (first occurrence wins) before rendering — see [docs/getting-started.md](getting-started.md).
+- `ISortDirectiveParser.Parse` returns a `SortDirective`. Call `.RemoveDuplicates()` before rendering to drop repeated keys; the first one wins. See [Get started](getting-started.md).
 
-### Nested collection sort (`sortfor`)
+### Sort related rows with sortfor
 
-Use `sortfor(collectionPath, expression),dir` to sort related rows without adding parent sort keys. Path segments are collection names only (`authors`, `authors/awards`); no leading `/`.
+Use `sortfor(collectionPath, expression),dir` to order the rows of a related collection without adding a sort key to the parent. A path segment is a collection name, such as `authors` or `authors/awards`, with no leading `/`.
 
 ```text
 year,desc,sortfor(authors, lastname),asc,sortfor(authors/awards, year),desc
 ```
 
-- Parsed keys land in `SortDirective.Nested`; parent `Items` hold only outer-entity keys.
-- `sortfor` is rejected in `filter=` with a dedicated error. See [docs/functions/collection/sortfor.md](functions/collection/sortfor.md).
-- Boolean nested keys: `asc` puts `false` first; use `desc` for matches-first ordering.
+- The parser stores these keys in `SortDirective.Nested`. The parent `Items` hold only keys of the outer entity.
+- `sortfor` in `filter=` is rejected with its own error. See [sortfor](functions/collection/sortfor.md).
+- For a boolean nested key, `asc` puts `false` first. Use `desc` to list matches first.
 
 ## Literal syntax
 
 | Type | Syntax | Notes |
 |---|---|---|
-| `string` | `"text"` | Must be double-quoted. No escaped quotes inside the literal. |
-| `DateTime` | `"2021-01-01"` | Double-quoted; default ISO `yyyy-MM-dd` exact parse (invariant), then current-culture `TryParse` fallback. Overridable via `LiteralParseOptions` (see below). |
-| `Guid` | `"550e8400-e29b-41d4-a716-446655440000"` | Must be double-quoted; `Guid.TryParse` after stripping quotes. |
-| `TimeSpan` (time-of-day) | `"14:30:00"` or `"14:30"` | **All TFMs.** Clock time only; default invariant `hh:mm` / `hh:mm:ss` exact parse (no culture fallback). Overridable via `LiteralParseOptions`. |
-| `DateOnly` | `"2021-01-01"` | **net6.0 package TFM only.** Default ISO `yyyy-MM-dd` exact, then culture fallback. Overridable via `LiteralParseOptions`. |
-| `TimeOnly` | `"14:30:00"` or `"14:30"` | **net6.0 package TFM only.** Default `HH:mm:ss` / `HH:mm` exact, then culture fallback. Overridable via `LiteralParseOptions`. |
-| `int` / `byte` | `25` | Unquoted. Whichever of `byte`/`int` matches the target type (usually inferred from the paired field). |
-| `double` | `19.99` or `1e3` | Unquoted; a value is treated as a `double` if it contains `.`, `e`, or `E`. |
-| `bool` | *(not supported)* | There is no boolean literal syntax. |
+| `string` | `"text"` | Double quotes required. You cannot escape a quote inside the literal. |
+| `DateTime` | `"2021-01-01"` | Double-quoted. Parsed as ISO `yyyy-MM-dd` (invariant culture) first, then with the current culture. You can change this with `LiteralParseOptions`. |
+| `Guid` | `"550e8400-e29b-41d4-a716-446655440000"` | Double-quoted. |
+| `TimeSpan` (time of day) | `"14:30:00"` or `"14:30"` | Available on all target frameworks. Clock time only. Parsed as invariant `hh:mm` or `hh:mm:ss`, with no culture fallback. You can change this with `LiteralParseOptions`. |
+| `DateOnly` | `"2021-01-01"` | `net6.0` package only. Parsed as ISO `yyyy-MM-dd` first, then with the current culture. You can change this with `LiteralParseOptions`. |
+| `TimeOnly` | `"14:30:00"` or `"14:30"` | `net6.0` package only. Parsed as `HH:mm:ss` or `HH:mm` first, then with the current culture. You can change this with `LiteralParseOptions`. |
+| `int`, `byte` | `25` | Unquoted. The parser picks `byte` or `int` to match the target type, usually taken from the field it is compared with. |
+| `double` | `19.99` or `1e3` | Unquoted. A number is a `double` if it contains `.`, `e` or `E`. |
+| `bool` | not supported | There is no boolean literal. |
 
-Numeric literal type inference: when a literal is compared against a field or another literal, its target type is generally taken from the first operand's `ReturnType` (or an explicit target type for single-typed functions, e.g. `substring`'s 2nd/3rd arguments always coerce to `int`). See each function's page under [docs/functions/](functions/README.md) for the exact per-argument coercion.
+When you compare a literal with a field or another literal, the literal takes the type of the first operand. Some functions fix the type instead: the second and third arguments of `substring` are always `int`. Each [function page](functions/README.md) lists the type of every argument.
 
-### Configuring date/time literal parsing
+### Configure date and time parsing
 
-Use `LiteralParseOptions` (in `Expresso.Parsing`) to set `CultureName`, per-type format arrays (`DateTimeFormats`, `DateFormats`, `TimeFormats`, `TimeSpanFormats`), and `AllowCultureFallback`. When nothing is configured, the defaults in the table above apply.
+Use `LiteralParseOptions` in `Expresso.Parsing` to set the culture (`CultureName`), format patterns per type (`DateTimeFormats`, `DateFormats`, `TimeFormats`, `TimeSpanFormats`), and whether to fall back to the culture (`AllowCultureFallback`). Without options, the defaults in the table apply.
 
 ```csharp
 services.AddRequestParametersParsers(o =>
@@ -90,31 +92,27 @@ services.AddRequestParametersParsers(o =>
 });
 ```
 
-Bind from `IConfiguration` in your host (not inside the library):
+When you list several patterns, the first one that matches wins. To read the options from configuration, bind them in your host. The library does not depend on `IConfiguration`:
 
 ```csharp
 services.AddRequestParametersParsers(
     configuration.GetSection("Expresso:Parsing").Get<LiteralParseOptions>() ?? new());
 ```
 
-First matching format wins when multiple patterns are listed.
-
 ## Supported types
 
-**All TFMs:** `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`, `TimeSpan` (time-of-day only — not SQL intervals).
+- On all target frameworks: `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`, and `TimeSpan` (time of day only, not an interval).
+- On the `net6.0` package only: `DateOnly` and `TimeOnly`. They are not available when you reference the `netstandard2.0` build.
+- Not supported: `float` and `decimal`.
 
-**net6.0 package TFM only:** `DateOnly`, `TimeOnly` (not available when referencing `lib/netstandard2.0`).
+`DateTime`, `DateOnly`, `TimeOnly` and `TimeSpan` are not interchangeable in comparisons, and `TimeOnly` and `TimeSpan` are not interchangeable with each other. Convert with [`date()`](functions/datetime-getter/date.md) or [`time()`](functions/datetime-getter/time.md) when you need to compare across them.
 
-**Not supported:** `float`, `decimal`.
+## Operands that are not functions
 
-`DateTime`, `DateOnly`, `TimeOnly`, and `TimeSpan` are **not interchangeable** in comparisons — use [`date()`](functions/datetime-getter/date.md) / [`time()`](functions/datetime-getter/time.md) to convert in SQL when needed. `TimeOnly` and `TimeSpan` are also not interchangeable with each other.
+Three kinds of argument are not functions:
 
-## Field, collection, and literal operands
+- A field refers to an entry in the field catalog, such as `name` or `createdAt`. It resolves against the current `QueryModel`, or against the `(string, Type)[]` you pass to the parser.
+- A collection reference names a related collection, such as `authors` in `any(authors, …)`. It is valid only as the first argument of a collection function.
+- A literal is a constant parsed from the query string, as described above.
 
-Three non-function node types can appear as arguments:
-
-- **Field** — a reference to a catalog field, e.g. `name`, `createdAt`. Resolved against the current `QueryModel` (or the `(string, Type)[]` you pass to the parser).
-- **CollectionRef** — a reference to a nested collection, e.g. `authors` in `any(authors, …)`. Only valid as the first argument of collection functions.
-- **Literal** — a constant value parsed from the query string as described above.
-
-They are part of `Expresso.Core.CriteriaExpressions` but are not "functions" in the reference sense, so they don't have their own page under [docs/functions/](functions/README.md).
+They have no pages of their own in the [function reference](functions/README.md).

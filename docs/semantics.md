@@ -1,6 +1,6 @@
-# Semantics
+# Filter behavior and database differences
 
-This page explains what a filter or sort returns, and where the answer can depend on your database.
+A filter or sort returns the same rows whichever renderer you use, with a few results that belong to the database. This page explains NULL handling, value types and collection rules, and lists the cases where the answer depends on your engine.
 
 A filter means the same thing whether you render it to SQL, to a LINQ lambda for EF Core or EF6, or run it against a list in memory. NULL handling, type rules, rounding, and the empty-collection rules below hold everywhere. A small set of results belongs to the database and differs between engines; those are collected in [Where results depend on the database](#where-results-depend-on-the-database).
 
@@ -61,15 +61,15 @@ An item whose predicate is UNKNOWN is not a counterexample for `all`, and not a 
 
 ## Values and types
 
-Filters accept `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`, and `TimeSpan` (a time of day). `DateOnly` and `TimeOnly` work too when you use the net6.0 build of the packages. Literal syntax is in [docs/query-syntax.md](query-syntax.md).
+Filters accept `string`, `bool`, `byte`, `int`, `double`, `DateTime`, `Guid`, and `TimeSpan` (a time of day). `DateOnly` and `TimeOnly` work too when you use the net6.0 build of the packages. Literal syntax is in [Query syntax](query-syntax.md).
 
-- **Numeric promotion.** `byte` becomes `int`. If either side of an operation is `double`, both sides are `double`.
-- **Rounding.** `round` rounds a halfway value away from zero on every engine: `round(2.5)` is `3`, and `round(-2.5)` is `-3`.
-- **Integer division.** In a LINQ lambda (including EF Core, EF6, and in memory), dividing two integers truncates toward zero: `div(-7,2)` is `-3`. The SQL renderers emit `/`, and the engine decides the result; see [Where results depend on the database](#where-results-depend-on-the-database). To get a fractional result everywhere, use a `double` operand, such as `div(price,2.0)`.
+- Numeric promotion: `byte` becomes `int`. If either side of an operation is `double`, both sides are `double`.
+- Rounding: `round` rounds a halfway value away from zero on every engine: `round(2.5)` is `3`, and `round(-2.5)` is `-3`.
+- Integer division: in a LINQ lambda (including EF Core, EF6, and in memory), dividing two integers truncates toward zero: `div(-7,2)` is `-3`. The SQL renderers emit `/`, and the engine decides the result; see [Where results depend on the database](#where-results-depend-on-the-database). To get a fractional result everywhere, use a `double` operand, such as `div(price,2.0)`.
 
 ## Parameters
 
-A literal in the filter is never written into the SQL text. It is bound as a parameter, so a value cannot change the statement, and the database can reuse the query plan. The names you see in a log depend on the renderer: SQL uses `@prefix_0` (`:prefix_0` on Oracle, see [docs/rendering.md](rendering.md#parameters)), EF Core uses `@__Value_0`-style names, and EF6 uses `@p__linq__0`.
+A literal in the filter is never written into the SQL text. It is bound as a parameter, so a value cannot change the statement, and the database can reuse the query plan. The names you see in a log depend on the renderer: SQL uses `@prefix_0` (`:prefix_0` on Oracle, see [SQL rendering](rendering.md#parameters)), EF Core uses `@__Value_0`-style names, and EF6 uses `@p__linq__0`.
 
 ## Collections and sorting
 
@@ -112,14 +112,14 @@ One case still differs between SQL and EF on Oracle: `isnull(substring(name,1,0)
 
 ### Other engine notes
 
-- **DB2 `ORDER BY`.** DB2 cannot sort by a correlated subquery. Put such a sort key in the `SELECT` list and order by that column. See [docs/rendering.md](rendering.md).
-- **Oracle `DateOnly` and `TimeOnly` with EF Core.** The Oracle provider stores them as ISO text, so `date` and `time` produce text in that format.
+- DB2 `ORDER BY`: DB2 cannot sort by a correlated subquery. Put such a sort key in the `SELECT` list and order by that column. See [SQL rendering](rendering.md#collection-mapping).
+- Oracle `DateOnly` and `TimeOnly` with EF Core: the Oracle provider stores them as ISO text, so `date` and `time` produce text in that format.
 
 ## EF6 limits
 
-EF6 providers translate fewer functions than the other renderers. When a provider cannot produce the same result as the SQL renderer, Expresso throws `NotSupportedException` while building the lambda, with the reason in the message. It never returns an approximation. The list of functions per provider is in [docs/linq-rendering.md](linq-rendering.md#ef6-provider-limits).
+EF6 providers translate fewer functions than the other renderers. When a provider cannot produce the same result as the SQL renderer, Expresso throws `NotSupportedException` while building the lambda, with the reason in the message. It never returns an approximation. The functions affected per provider are listed in [LINQ rendering](linq-rendering.md#ef6-provider-limits).
 
 Two differences do not throw, so check them if you rely on those functions:
 
-- **`time()` precision.** On SQL Server, EF6 keeps milliseconds, while the SQL renderer keeps 100-nanosecond precision. On MySQL and MariaDB, EF6 drops fractional seconds.
-- **MySQL 8 time-of-day comparisons.** MySql.Data sends a `TimeSpan` parameter as `'0 hh:mm:ss.ffffff'`, so comparing a computed time with it matches no rows. This affects `time` and the time-of-day `addhours`, `addminutes`, and `addseconds`. MariaDB is not affected.
+- `time()` precision: on SQL Server, EF6 keeps milliseconds, while the SQL renderer keeps 100-nanosecond precision. On MySQL and MariaDB, EF6 drops fractional seconds.
+- MySQL 8 time-of-day comparisons: MySql.Data sends a `TimeSpan` parameter as `'0 hh:mm:ss.ffffff'`, so comparing a computed time with it matches no rows. This affects `time` and the time-of-day `addhours`, `addminutes`, and `addseconds`. MariaDB is not affected.

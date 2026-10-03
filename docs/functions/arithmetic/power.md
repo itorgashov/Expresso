@@ -11,7 +11,7 @@ power(argument1, argument2)
 Exactly 2 arguments. Alias: `pow` (identical behavior, same arity).
 
 - **Category:** Arithmetic
-- **Return type:** `double` (always — not the argument's original type)
+- **Return type:** `double` (always, not the argument's original type)
 
 ## Arguments
 
@@ -22,9 +22,11 @@ Exactly 2 arguments. Alias: `pow` (identical behavior, same arity).
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Power() function should have 2 arguments."` (applies to both `power` and the `pow` alias).
-- **Parser coercion:** each literal argument's type is inferred independently.
-- **IR construction** (`PowerFunc`, built via reflection): base `NumericArithFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", "argument1"|"argument2")` if either `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass a number of arguments other than 2, the parser throws `System.Exception` with the message `"Power() function should have 2 arguments."`. This applies to both `power` and the `pow` alias.
+- The parser infers the type of each literal argument independently.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not `byte`, `int`, or `double` throws `ArgumentException("Illegal argument type", "argument1")` or `ArgumentException("Illegal argument type", "argument2")`, depending on which argument is wrong.
+- When the parser builds the call, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -36,7 +38,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 POWER(argument1, argument2)
 ```
 
-Example: `eq(power(base,2),25)` renders as `(POWER([base], @wparam_0) = @wparam_1)` on SQL Server.
+SQL Server example: `eq(power(base,2),25)` renders as `(POWER([base], @wparam_0) = @wparam_1)`.
 
 ## LINQ rendering
 
@@ -80,6 +82,6 @@ Every EF6 provider supports `power`.
 
 ## Notes
 
-- Return type is always `double`, unlike [`add`](add.md)/[`sub`](sub.md)/[`mult`](mult.md)/[`div`](div.md), which copy `argument1`'s type.
-- A negative base with a non-integer exponent raises a SQL Server floating-point error (error 3623), same caveat as [`sqrt`](sqrt.md).
+- The return type is always `double`, unlike [`add`](add.md)/[`sub`](sub.md)/[`mult`](mult.md)/[`div`](div.md), which take `argument1`'s type.
+- A negative base with a non-integer exponent raises a SQL Server floating-point error (error 3623), the same caveat as [`sqrt`](sqrt.md).
 - See [`sqrt`](sqrt.md) for the square-root special case.

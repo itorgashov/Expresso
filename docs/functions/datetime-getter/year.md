@@ -1,6 +1,6 @@
 # `year`
 
-The calendar year component of a `DateTime` value.
+Returns the year of a date.
 
 ## Syntax
 
@@ -21,11 +21,10 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Year() function should have 1 argument."`
-- **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
-- **IR construction** (`YearFunc`, via base `DateTimeSingleArgIntFunction`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not one of the types in the table above → `ArgumentException`
+- If you pass any number of arguments other than 1, parsing fails with `System.Exception`: `"Year() function should have 1 argument."`
+- The parser converts a quoted date or time string to `DateTime`.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not listed in the Arguments table throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -37,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 YEAR(datetime)
 ```
 
-Example: `eq(year(createdat),2020)` renders as `(YEAR([created_at]) = @wparam_0)` on SQL Server.
+SQL Server example: `eq(year(createdat),2020)` renders as `(YEAR([created_at]) = @wparam_0)`.
 
 ### PostgreSQL
 

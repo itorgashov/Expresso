@@ -11,7 +11,7 @@ floor(argument)
 Exactly 1 argument.
 
 - **Category:** Arithmetic
-- **Return type:** `double` (always — not the argument's original type)
+- **Return type:** `double` (always, not the argument's original type)
 
 ## Arguments
 
@@ -21,9 +21,11 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Floor() function should have 1 argument."`
-- **Parser coercion:** a literal argument's type is inferred (`GetLiteralType`).
-- **IR construction** (`FloorFunc`, built via reflection): base `NumericSingleArgDoubleFunction`/`NumericSingleArgFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", nameof(argument))` if the `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass a number of arguments other than 1, the parser throws `System.Exception` with the message `"Floor() function should have 1 argument."`.
+- The parser infers the type of a literal argument.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not `byte`, `int`, or `double` throws `ArgumentException("Illegal argument type", "argument")`.
+- When the parser builds the call, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -35,7 +37,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 FLOOR(argument)
 ```
 
-Example: `eq(floor(price),19)` renders as `(FLOOR([price]) = @wparam_0)` on SQL Server.
+SQL Server example: `eq(floor(price),19)` renders as `(FLOOR([price]) = @wparam_0)`.
 
 ## LINQ rendering
 
@@ -79,5 +81,5 @@ Every EF6 provider supports `floor`.
 
 ## Notes
 
-- Unlike [`abs`](abs.md), the return type is always `double`, regardless of the argument's original type — contrast with `abs`, which copies the argument's type unchanged.
+- Unlike [`abs`](abs.md), which keeps the argument's type, `floor` always returns `double`, regardless of the argument's original type.
 - See [`ceiling`](ceiling.md) for rounding up, and [`round`](round.md) for rounding to a given number of digits.

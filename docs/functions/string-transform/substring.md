@@ -1,6 +1,6 @@
 # `substring`
 
-Extracts a substring starting at a given position, for a given length.
+Returns a substring that starts at a given 1-based position and has a given length.
 
 ## Syntax
 
@@ -23,17 +23,16 @@ Exactly 3 arguments. Alias: `substr` (identical behavior, same arity).
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 3` → `System.Exception`: `"Substring() function should have 3 arguments."` (applies to both `substring` and the `substr` alias).
-- **Parser coercion:** argument 1 coerced to `string`; arguments 2 and 3 coerced to `int` (not `byte`/`double`) if they are literal tokens.
-- **IR construction** (`SubStringFunc`):
-  - Any argument is `null` → `ArgumentNullException`
-  - `sourceString.ReturnType` is not `string` → `ArgumentException`
-  - `startIndex.ReturnType` or `length.ReturnType` is not `int` → `ArgumentException`
+- Passing any number of arguments other than 3 throws `System.Exception` with the message `"Substring() function should have 3 arguments."` This applies to both `substring` and the `substr` alias.
+- The first argument is treated as a `string` literal when it is a quoted string token. The second and third are treated as `int` literals (not `byte` or `double`) when they are literal tokens.
+- A `null` argument throws `ArgumentNullException`.
+- A first argument that does not return `string` throws `ArgumentException`.
+- A start index or length that does not return `int` throws `ArgumentException`.
 
 ## SQL rendering
 
 Quotes and bind names: [docs/rendering.md](../../rendering.md).
-`start` is SQL 1-based on every dialect (passed through, not converted to 0-based).
+`start` is 1-based on every dialect, as in SQL. Expresso passes it through without converting it to 0-based.
 
 ### SQL Server, MySQL / MariaDB
 
@@ -41,7 +40,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 SUBSTRING(text, start, length)
 ```
 
-Example: `eq(substring(name,1,3),"Mar")` renders as `(SUBSTRING([name], @wparam_0, @wparam_1) = @wparam_2)` on SQL Server.
+SQL Server example: `eq(substring(name,1,3),"Mar")` renders as `(SUBSTRING([name], @wparam_0, @wparam_1) = @wparam_2)`.
 
 ### PostgreSQL, Oracle, DB2
 
@@ -97,5 +96,5 @@ Every EF6 provider supports `substring`.
 
 ## Notes
 
-- **`start` follows SQL Server's native 1-based `SUBSTRING` convention** — it is passed through unchanged, *not* converted to 0-based. `substring(name,1,2)` extracts the first two characters, matching plain T-SQL. Contrast this with [`indexof`](../string-inspect/indexof.md), which *is* 0-based.
+- `start` follows SQL Server's native 1-based `SUBSTRING` convention. Expresso passes it through unchanged and does not convert it to 0-based, so `substring(name,1,2)` returns the first two characters, as in plain T-SQL. [`indexof`](../string-inspect/indexof.md), by contrast, is 0-based.
 - See [`left`](left.md) and [`right`](right.md) for fixed-anchor substrings.

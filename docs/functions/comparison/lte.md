@@ -1,6 +1,6 @@
 # `lte`
 
-Less-than-or-equal comparison.
+Returns true when the left operand is less than or equal to the right operand.
 
 ## Syntax
 
@@ -22,9 +22,10 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Lte() function should have 2 arguments."`
-- **Parser coercion:** literal type inferred from the first operand, applied to the second.
-- **IR construction** (`LteFunc`, built via reflection): `ArgumentNullException` / `ArgumentException` for `null`/incompatible/`bool`/`string` operands; wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass any number of arguments other than two, the parser throws `System.Exception` with the message `"Lte() function should have 2 arguments."`
+- The parser infers a literal's type from the first operand and applies it to the second.
+- If an operand is `null`, the call throws `ArgumentNullException`. If the operands are incompatible, or are `bool` or `string` values, it throws `ArgumentException`.
+- When the parser builds the function, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. The real error is in `InnerException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -36,7 +37,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (left <= right)
 ```
 
-Example: `lte(price,19.99)` renders as `([price] <= @wparam_0)` on SQL Server.
+SQL Server example: `lte(price,19.99)` renders as `([price] <= @wparam_0)`.
 
 ## LINQ rendering
 

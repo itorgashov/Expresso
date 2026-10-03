@@ -1,6 +1,6 @@
 # `hour`
 
-The hour component (0–23) of a `DateTime` value.
+Returns the hour (0–23) of a date and time or of a time of day.
 
 ## Syntax
 
@@ -21,11 +21,10 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Hour() function should have 1 argument."`
-- **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
-- **IR construction** (`HourFunc`, via base `DateTimeSingleArgIntFunction`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not an allowed time type → `ArgumentException`
+- If you pass any number of arguments other than 1, parsing fails with `System.Exception`: `"Hour() function should have 1 argument."`
+- The parser converts a quoted date or time string to `DateTime`.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not a date or time type listed in the Arguments table throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -37,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 DATEPART(hour, datetime)
 ```
 
-Example: `gte(hour(createdat),9)` renders as `(DATEPART(hour, [created_at]) >= @wparam_0)`.
+SQL Server example: `gte(hour(createdat),9)` renders as `(DATEPART(hour, [created_at]) >= @wparam_0)`.
 
 ### PostgreSQL
 
@@ -89,7 +88,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 DATEPART(hour, [w].[created_at])
 ```
 
-A time-of-day `TimeSpan` becomes `DATEPART(hour, [w].[Opens])` on SQL Server.
+On SQL Server, a time-of-day `TimeSpan` becomes `DATEPART(hour, [w].[Opens])`.
 
 ### MySQL / MariaDB, DB2
 

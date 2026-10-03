@@ -1,13 +1,13 @@
 # LINQ rendering
 
-Besides SQL text, Expresso can render a `FilterCriteria` / `SortDirective` as LINQ lambdas for `IQueryable<T>` (EF Core, EF6, other LINQ providers) and for in-memory collections. The lambdas follow the same rules as the SQL renderers: NULL logic, types and parameters. See [docs/semantics.md](semantics.md). Integration tests compare EF results with the ADO SQL renderer on every engine. Each [function page](functions/README.md) has LINQ, EF Core and EF6 sections.
+Expresso can render a filter and a sort as LINQ lambdas for `IQueryable<T>` (EF Core, EF6 or another LINQ provider) and for in-memory collections. The lambdas follow the same rules as the SQL renderers for NULL logic, types and parameters; see [Filter behavior and database differences](semantics.md). To set up a project, start with [Render to LINQ and EF](getting-started-linq.md). Each [function page](functions/README.md) has LINQ, EF Core and EF6 sections.
 
-## Which package
+## Choose a package
 
 | Package | Target | Use for |
 |---|---|---|
 | `Expresso.Rendering.Linq` | `netstandard2.0`, `net6.0` | Any `IQueryable<T>` provider (Queryable profile) and in-memory `IEnumerable<T>` (in-memory profile). |
-| `Expresso.Rendering.EntityFrameworkCore` | `net8.0` (EF Core 8+) | EF Core queries. Adds provider overrides so results match the SQL renderer of the same engine. |
+| `Expresso.Rendering.EntityFrameworkCore` | `net8.0` (EF Core 8+) | EF Core queries. Adds provider overrides so that results match the SQL renderer for the same engine. |
 | `Expresso.Rendering.EntityFramework` | `net48` (EF 6.5) | EF6 queries on .NET Framework. Adds provider overrides; functions a provider cannot render exactly throw. |
 
 Both EF packages depend on `Expresso.Rendering.Linq`. On .NET Framework, use the EF6 package for database queries and the Linq package for objects; the ADO dialect renderers work there too.
@@ -30,8 +30,8 @@ The field catalog used by the parser ([docs/field-providers.md](field-providers.
 
 ## Profiles
 
-- **Queryable** (`QueryableExpressionToLinqTransformer`) emits the BCL members that LINQ providers translate (`string.Substring`, `DateTime.Year`, `Enumerable.Any`, …). Use it with a LINQ provider that translates to SQL. It is not meant for LINQ to objects: for example, `left` becomes `Substring(0, n)`, which throws in memory when the string is shorter than `n`.
-- **In-memory** (`InMemoryExpressionToLinqTransformer`) follows PostgreSQL semantics through `ExpressoFunctions`, compares strings ordinally, and sorts with `InMemorySortComparer` (NULL last in ascending order).
+- The Queryable profile (`QueryableExpressionToLinqTransformer`) emits the BCL members that LINQ providers translate (`string.Substring`, `DateTime.Year`, `Enumerable.Any`, …). Use it with a LINQ provider that translates to SQL. It is not meant for LINQ to objects: for example, `left` becomes `Substring(0, n)`, which throws in memory when the string is shorter than `n`.
+- The in-memory profile (`InMemoryExpressionToLinqTransformer`) follows PostgreSQL semantics through `ExpressoFunctions`, compares strings ordinally, and sorts with `InMemorySortComparer` (NULL last in ascending order).
 
 ```csharp
 using Expresso.Rendering.Linq;
@@ -73,7 +73,7 @@ var query = db.Books
 ```
 
 - Supported providers: SQL Server, PostgreSQL (Npgsql), MySQL / MariaDB (Pomelo or Oracle's `MySql.EntityFrameworkCore`), SQLite, Oracle and DB2 (IBM). Other providers get the plain Queryable lambdas.
-- Overrides are `ExpressoDbFunctions` marker methods that `HasExpressoFunctions` maps to provider SQL. They exist only where the provider's own translation differs from the SQL renderer; each function page lists them.
+- Overrides are placeholder methods in `ExpressoDbFunctions` that `HasExpressoFunctions` maps to provider SQL. They exist only where the provider's own translation differs from the SQL renderer. Each function page lists them.
 - `IncludeSorted` needs each sorted collection mapped to a navigation property (`b => b.Authors`). Otherwise it throws `NotSupportedException`; order a child query with `OrderByNested` instead.
 - DI: `services.AddEfCoreExpressionTransformations<AppDbContext>()` registers a scoped transformer for that context's provider.
 

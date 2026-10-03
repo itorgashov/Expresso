@@ -1,6 +1,6 @@
 # `dayofweek`
 
-The day-of-week component of a `DateTime` value, normalized to match C#'s `DayOfWeek` enum (`Sunday = 0` … `Saturday = 6`).
+Returns the day of the week of a date, numbered like the C# `DayOfWeek` enum (`Sunday = 0` … `Saturday = 6`).
 
 ## Syntax
 
@@ -21,11 +21,10 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Dayofweek() function should have 1 argument."`
-- **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
-- **IR construction** (`DayOfWeekFunc`, via base `DateTimeSingleArgIntFunction`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not one of the types in the table above → `ArgumentException`
+- If you pass any number of arguments other than 1, parsing fails with `System.Exception`: `"Dayofweek() function should have 1 argument."`
+- The parser converts a quoted date or time string to `DateTime`.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not listed in the Arguments table throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -40,7 +39,7 @@ Session-independent via `@@DATEFIRST`:
 ((DATEPART(weekday, datetime) + @@DATEFIRST - 1) % 7)
 ```
 
-Example: `eq(dayofweek(createdat),0)` renders as `(((DATEPART(weekday, [created_at]) + @@DATEFIRST - 1) % 7) = @wparam_0)`.
+SQL Server example: `eq(dayofweek(createdat),0)` renders as `(((DATEPART(weekday, [created_at]) + @@DATEFIRST - 1) % 7) = @wparam_0)`.
 
 ### PostgreSQL
 
@@ -124,7 +123,7 @@ DAYOFWEEK(datetime) - 1
 
 ### All providers
 
-The transformer counts days from a known Sunday (1900-01-07) with the canonical `DbFunctions.DiffDays`, so the result does not depend on `DATEFIRST` or NLS settings. The outer `+ 7) % 7` keeps dates before 1900-01-07 non-negative. SQL Server, PostgreSQL and Oracle use this form:
+Expresso counts days from a known Sunday (1900-01-07) with the canonical `DbFunctions.DiffDays`, so the result does not depend on `DATEFIRST` or NLS settings. The outer `+ 7) % 7` keeps dates before 1900-01-07 non-negative. SQL Server, PostgreSQL and Oracle use this form:
 
 ```csharp
 ((DbFunctions.DiffDays(new DateTime(1900, 1, 7), datetime) % 7) + 7) % 7
@@ -148,5 +147,5 @@ Every EF6 provider supports `dayofweek`.
 
 ## Notes
 
-- SQL Server's native `DATEPART(weekday, ...)` is **session-dependent**: its numbering shifts with the `@@DATEFIRST` setting (which day is "day 1"). This formula normalizes that back to the fixed, session-independent C# convention (`Sunday=0` … `Saturday=6`) by reading `@@DATEFIRST` at query time — it is correct **regardless of the session's `DATEFIRST` value**, not just the SQL Server default of `7` (Sunday).
+- The native SQL Server `DATEPART(weekday, ...)` depends on the session. Its numbering shifts with the `@@DATEFIRST` setting, which decides which day is "day 1". Expresso reads `@@DATEFIRST` at query time and converts the result to the fixed C# convention (`Sunday=0` … `Saturday=6`). The result is correct for any `DATEFIRST` value, not only the SQL Server default of `7` (Sunday).
 - See [`day`](day.md) for day-of-month and [`dayofyear`](dayofyear.md) for day-of-year.

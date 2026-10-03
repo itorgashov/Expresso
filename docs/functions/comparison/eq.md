@@ -1,6 +1,6 @@
 # `eq`
 
-Equality comparison.
+Compares two values for equality and returns true when they are equal.
 
 ## Syntax
 
@@ -22,7 +22,7 @@ Exactly 2 arguments.
 
 ## Type compatibility rule
 
-`EqFunc` (like all comparison functions) first checks that the two operands form one of these compatible pairs:
+Like all comparison functions, `eq` accepts the two operands only when they form one of these compatible pairs:
 
 - both `bool`
 - both `string`
@@ -37,9 +37,11 @@ Any other pairing → `ArgumentException("Incompatible argument types")`.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Eq() function should have 2 arguments."`
-- **Parser coercion:** if the first argument is a quoted/unquoted literal token, its type is inferred (`GetLiteralType`); the second literal argument is then coerced to that same type. `Incompatible argument types: expected {type}, got {type}.` (`ArgumentException`) if a non-literal second argument's `ReturnType` still mismatches after coercion.
-- **IR construction** (`EqFunc`, built via reflection by the parser): `ArgumentNullException` for a `null` operand; `ArgumentException` for incompatible/disallowed types. Because the parser constructs comparison functions via `Activator.CreateInstance`, these surface as `System.Reflection.TargetInvocationException` with the real exception in `.InnerException` — see [docs/error-handling.md](../../error-handling.md).
+- If you pass any number of arguments other than two, the parser throws `System.Exception` with the message `"Eq() function should have 2 arguments."`
+- If the first argument is a literal (quoted or unquoted), the parser infers its type and converts the second argument to that type when the second argument is also a literal.
+- If the second argument is not a literal and its type still does not match after that, the call throws `ArgumentException`: `Incompatible argument types: expected {type}, got {type}.`
+- If an operand is `null`, the call throws `ArgumentNullException`. If the operand types are incompatible or not allowed, it throws `ArgumentException`.
+- When the parser builds the function, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. The real error is in `InnerException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -51,7 +53,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (left = right)
 ```
 
-Example: `eq(status,1)` renders as `([status] = @wparam_0)` on SQL Server.
+SQL Server example: `eq(status,1)` renders as `([status] = @wparam_0)`.
 
 ## LINQ rendering
 
@@ -99,4 +101,4 @@ Every EF6 provider supports `eq`, except that Oracle and SQLite cannot use a tim
 
 ## Notes
 
-- See [`neq`](neq.md) for the negated form, and [`gt`](gt.md)/[`gte`](gte.md)/[`lt`](lt.md)/[`lte`](lte.md) for ordering comparisons (which do **not** allow `bool`/`string` operands).
+- See [`neq`](neq.md) for the negated form, and [`gt`](gt.md)/[`gte`](gte.md)/[`lt`](lt.md)/[`lte`](lte.md) for ordering comparisons (which do not allow `bool` or `string` operands).

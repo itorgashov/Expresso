@@ -1,6 +1,6 @@
 # `date`
 
-Converts a value to a calendar date (day only). Conversion happens in SQL; no C# conversion is performed in the function itself.
+Converts a value to a calendar date (day only). The database does the conversion; the function itself performs no conversion in C#.
 
 ## Syntax
 
@@ -23,16 +23,15 @@ On **netstandard2.0**, only `DateTime` is accepted.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Date() function should have 1 argument."`
-- **Parser coercion:** quoted tokens become **string** literals (not parsed as `DateTime` in C#).
-- **IR construction** (`DateFunc`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not allowed → `ArgumentException`
+- If you pass any number of arguments other than 1, parsing fails with `System.Exception`: `"Date() function should have 1 argument."`
+- The parser treats a quoted value as a string literal. It does not parse it as a `DateTime` in C#.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not listed in the Arguments table throws `ArgumentException`.
 
 ## SQL rendering
 
 Quotes and bind names: [docs/rendering.md](../../rendering.md).
-Conversion happens in SQL; the function itself does not convert in C#.
+The database does the conversion; the function itself does not convert in C#.
 
 ### SQL Server, PostgreSQL, MySQL / MariaDB, DB2
 
@@ -40,7 +39,7 @@ Conversion happens in SQL; the function itself does not convert in C#.
 CAST(value AS date)
 ```
 
-Example: `eq(date(createdat),"2020-01-01")` renders as `(CAST([created_at] AS date) = @wparam_0)` on SQL Server (parameter is a `DateOnly` literal on net6.0).
+SQL Server example: `eq(date(createdat),"2020-01-01")` renders as `(CAST([created_at] AS date) = @wparam_0)`. On net6.0, the parameter is a `DateOnly` literal.
 
 ### SQLite
 
@@ -102,7 +101,7 @@ DATE(value)
 
 ### All providers
 
-`DbFunctions.TruncateTime(value)`. EF6 runs on net48, where `date` returns `DateTime`, so the comparison uses a `DateTime` parameter. On SQL Server:
+EF6 uses `DbFunctions.TruncateTime(value)`. EF6 runs on net48, where `date` returns `DateTime`, so the comparison uses a `DateTime` parameter. On SQL Server:
 
 ```sql
 cast(cast([Extent1].[created_at] as date) as datetime2)
@@ -116,5 +115,5 @@ SQLite throws `NotSupportedException`: "the provider does not translate Truncate
 
 ## Notes
 
-- On **net6.0**, compare `date(...)` results to `DateOnly` fields/literals, not raw `DateTime` fields. Use `eq(date(createdat), date(other))` or compare to a `DateOnly` literal.
-- Equivalent to comparing "same calendar day" when the underlying column is `datetime`/`datetime2`.
+- On net6.0, compare `date(...)` results to `DateOnly` fields or literals, not to raw `DateTime` fields. Use `eq(date(createdat), date(other))` or compare to a `DateOnly` literal.
+- When the underlying column is `datetime` or `datetime2`, this is equivalent to comparing "same calendar day".

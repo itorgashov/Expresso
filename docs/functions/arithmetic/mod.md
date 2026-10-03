@@ -1,6 +1,6 @@
 # `mod`
 
-Remainder of dividing `argument1` by `argument2` (`argument1 % argument2`).
+Returns the remainder of dividing `argument1` by `argument2` (`argument1 % argument2`).
 
 ## Syntax
 
@@ -22,9 +22,11 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Mod() function should have 2 arguments."`
-- **Parser coercion:** each literal argument's type is inferred independently.
-- **IR construction** (`ModFunc`, built via reflection): `ArgumentNullException` for a `null` argument; `ArgumentException("Illegal argument type", "argument1"|"argument2")` for a non-numeric `ReturnType`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass a number of arguments other than 2, the parser throws `System.Exception` with the message `"Mod() function should have 2 arguments."`.
+- The parser infers the type of each literal argument independently.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not `byte`, `int`, or `double` throws `ArgumentException("Illegal argument type", "argument1")` or `ArgumentException("Illegal argument type", "argument2")`, depending on which argument is wrong.
+- When the parser builds the call, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -36,7 +38,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (argument1 % argument2)
 ```
 
-Example: `eq(mod(status,2),0)` renders as `(([status] % @wparam_0) = @wparam_1)` on SQL Server.
+SQL Server example: `eq(mod(status,2),0)` renders as `(([status] % @wparam_0) = @wparam_1)`.
 
 ### Oracle, DB2
 
@@ -86,7 +88,7 @@ Every EF6 provider supports `mod`.
 
 ## Notes
 
-- SQL Server's `%` follows the sign of the dividend, matching C#'s `%` operator (e.g. `mod(-7,3)` is `-1`, not `2`).
-- `ReturnType` is copied from `argument1` only.
-- `argument2 = 0` raises a SQL Server divide-by-zero error at query execution time, same as [`div`](div.md).
+- SQL Server's `%` follows the sign of the dividend, matching C#'s `%` operator. For example, `mod(-7,3)` is `-1`, not `2`.
+- The return type comes from `argument1` only.
+- If `argument2` is `0`, SQL Server raises a divide-by-zero error when the query runs, the same as [`div`](div.md).
 - See [`div`](div.md) for integer/float division, and [`floor`](floor.md)/[`round`](round.md) for other numeric shaping functions.

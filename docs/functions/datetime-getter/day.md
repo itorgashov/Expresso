@@ -1,6 +1,6 @@
 # `day`
 
-The day-of-month component (1–31) of a `DateTime` value.
+Returns the day of the month (1–31) of a date.
 
 ## Syntax
 
@@ -21,11 +21,10 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Day() function should have 1 argument."`
-- **Parser coercion:** argument coerced to `DateTime` if a quoted date/time token.
-- **IR construction** (`DayFunc`, via base `DateTimeSingleArgIntFunction`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not one of the types in the table above → `ArgumentException`
+- If you pass any number of arguments other than 1, parsing fails with `System.Exception`: `"Day() function should have 1 argument."`
+- The parser converts a quoted date or time string to `DateTime`.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not listed in the Arguments table throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -37,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 DAY(datetime)
 ```
 
-Example: `eq(day(createdat),15)` renders as `(DAY([created_at]) = @wparam_0)` on SQL Server.
+SQL Server example: `eq(day(createdat),15)` renders as `(DAY([created_at]) = @wparam_0)`.
 
 ### PostgreSQL
 
@@ -99,4 +98,4 @@ Every EF6 provider supports `day`.
 
 ## Notes
 
-- Day of the **month**, not day of the year — see [`dayofyear`](dayofyear.md) for that, and [`dayofweek`](dayofweek.md) for the weekday.
+- This is the day of the month, not the day of the year. See [`dayofyear`](dayofyear.md) for the day of the year and [`dayofweek`](dayofweek.md) for the weekday.

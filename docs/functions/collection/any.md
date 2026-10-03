@@ -1,6 +1,6 @@
 # `any`
 
-True if the related collection has at least one item matching the optional predicate. The predicate is parsed in the **item** catalog (fields of one related row), not the outer entity.
+Returns true when a related collection has at least one item matching an optional condition. The condition is parsed against the item's fields (one related row), not the outer entity.
 
 ## Syntax
 
@@ -23,11 +23,11 @@ any(collection, predicate)
 
 ## Validation & exceptions
 
-- **Parser:** first argument is not a collection → `ArgumentException`: `"First argument of Any() must be a collection."`
-- **Parser:** unknown collection/field name → `ArgumentException`: `"Illegal field name: '...'"`
-- **IR construction** (`AnyFunc`): `collection` is `null` → `ArgumentNullException`; predicate present but not `bool` → `ArgumentException`. Constructed directly by the parser (not via reflection).
+- If the first argument is not a collection, parsing throws `ArgumentException`: `"First argument of Any() must be a collection."`
+- If a collection or field name is unknown, parsing throws `ArgumentException`: `"Illegal field name: '...'"`
+- A `null` collection throws `ArgumentNullException`. A predicate that is not `bool` throws `ArgumentException`.
 
-Not valid as a sort key (`ISortDirectiveParser` throws `ArgumentException`).
+You can't use `any` as a sort key. The sort parser throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -40,7 +40,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 EXISTS (SELECT 1 FROM {FromClause} WHERE {CorrelateSql} [AND predicate])
 ```
 
-Example: `any(authors, eq(displayname, "Leo Tolstoy"))` with the sample book mapping:
+SQL Server example: `any(authors, eq(displayname, "Leo Tolstoy"))` with the sample book mapping renders as:
 
 ```sql
 EXISTS (SELECT 1 FROM dbo.book_author AS ba INNER JOIN dbo.author AS a ON a.id = ba.author_id WHERE ba.book_id = b.id AND ([a].[display_name] = @wparam_0))
@@ -90,6 +90,6 @@ Every EF6 provider supports `any`.
 
 ## Notes
 
-- Inner identifiers do not see outer fields. Combine with an outer predicate: `and(gt(year, 2020), any(authors, eq(displayname, "Leo Tolstoy")))`.
+- Identifiers inside the condition can't see outer fields. To combine both, wrap them in an outer predicate: `and(gt(year, 2020), any(authors, eq(displayname, "Leo Tolstoy")))`.
 - Nested collections: `any(authors, any(awards, eq(name, "Nobel Prize")))`.
 - See [`all`](all.md), [`none`](none.md), and [`count`](count.md).

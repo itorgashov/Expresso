@@ -1,6 +1,6 @@
 # `addyears`
 
-Adds (or subtracts) a whole number of years to a `DateTime` value.
+Adds a number of years to a date. A negative amount subtracts years.
 
 ## Syntax
 
@@ -18,16 +18,15 @@ Exactly 2 arguments.
 | Position | Name | Required type |
 |---|---|---|
 | 1 | `dateTime` | `DateTime` or `DateOnly` (net6.0) |
-| 2 | `amount` | `int` — zero and negative values are allowed |
+| 2 | `amount` | `int` (zero and negative values are allowed) |
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Addyears() function should have 2 arguments."`
-- **Parser coercion:** argument 1 coerced to `DateTime` if a quoted date/time token; argument 2 coerced to `int` if a literal token.
-- **IR construction** (`AddYearsFunc`, via base `DateTimeAddFunction`):
-  - Either argument is `null` → `ArgumentNullException`
-  - `dateTime.ReturnType` is not one of the types in the table above → `ArgumentException`
-  - `amount.ReturnType` is not `int` → `ArgumentException` (a `byte` or `double` amount, e.g. a fractional literal, is rejected — only whole `int` amounts are supported)
+- If you pass any number of arguments other than 2, parsing fails with `System.Exception`: `"Addyears() function should have 2 arguments."`
+- The parser converts a quoted date or time string in the first argument to `DateTime`, and a literal in the second argument to `int`.
+- A `null` in either argument throws `ArgumentNullException`.
+- A first argument whose type is not listed in the Arguments table throws `ArgumentException`.
+- An `amount` that is not an `int` throws `ArgumentException`. A `byte` or `double` amount, such as a fractional literal, is rejected. Only whole `int` amounts are supported.
 
 ## SQL rendering
 
@@ -40,7 +39,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 DATEADD(year, amount, datetime)
 ```
 
-Example: `gt(addyears(createdat,1), dateTo)` renders as `(DATEADD(year, @wparam_0, [created_at]) > [date_to])`.
+SQL Server example: `gt(addyears(createdat,1), dateTo)` renders as `(DATEADD(year, @wparam_0, [created_at]) > [date_to])`.
 
 ### PostgreSQL
 
@@ -118,7 +117,7 @@ CAST( DATEADD (year, @p__linq__0, [Extent1].[created_at]) AS datetime2)
 
 ### Not supported
 
-The transformer throws `NotSupportedException` on these providers:
+Expresso throws `NotSupportedException` on these providers:
 
 - MySQL / MariaDB: "MySQL adds months only with INTERVAL syntax, which no store function can express".
 - Oracle: "the provider pastes the amount into an INTERVAL literal, so parameters fail (ORA-01867)".
@@ -126,6 +125,6 @@ The transformer throws `NotSupportedException` on these providers:
 
 ## Notes
 
-- **Negative and zero amounts are supported**: `addyears(createdat,-1)` subtracts a year; `addyears(createdat,0)` is a no-op equivalent to `createdat` itself. Negative offsets are passed through; no special rendering is needed.
-- Only whole years via `int`; there is no fractional/partial-year variant in v1.
+- Negative and zero amounts are supported. `addyears(createdat,-1)` subtracts a year, and `addyears(createdat,0)` returns `createdat` unchanged. Negative offsets are passed through, so no special rendering is needed.
+- You can add whole years only, as an `int`. v1 has no fractional or partial-year variant.
 - See [`addmonths`](addmonths.md), [`adddays`](adddays.md), [`addhours`](addhours.md), [`addminutes`](addminutes.md), [`addseconds`](addseconds.md) for the other date-arithmetic functions.

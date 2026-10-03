@@ -1,6 +1,6 @@
 # `replace`
 
-Replaces all occurrences of a substring within a string.
+Replaces every occurrence of a substring within a string with another string.
 
 ## Syntax
 
@@ -23,11 +23,10 @@ Exactly 3 arguments.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 3` → `System.Exception`: `"Replace() function should have 3 arguments."`
-- **Parser coercion:** all three arguments are coerced to `string` if they are quoted string tokens.
-- **IR construction** (`ReplaceFunc`):
-  - Any argument is `null` → `ArgumentNullException`
-  - Any argument's `ReturnType` is not `string` → `ArgumentException`
+- Passing any number of arguments other than 3 throws `System.Exception` with the message `"Replace() function should have 3 arguments."`
+- Quoted string tokens in any of the three arguments are treated as `string` literals.
+- A `null` argument throws `ArgumentNullException`.
+- An argument that does not return `string` throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -39,7 +38,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 REPLACE(text, oldValue, newValue)
 ```
 
-Example: `eq(replace(isbn,"-",""),"9780000000000")` renders as `(REPLACE([isbn], @wparam_0, @wparam_1) = @wparam_2)` on SQL Server. Replaces every occurrence.
+SQL Server example: `eq(replace(isbn,"-",""),"9780000000000")` renders as `(REPLACE([isbn], @wparam_0, @wparam_1) = @wparam_2)`. Every occurrence is replaced.
 
 ## LINQ rendering
 
@@ -83,4 +82,4 @@ Every EF6 provider supports `replace`.
 
 ## Notes
 
-- Replaces **every** occurrence of `oldValue`, matching SQL Server's `REPLACE` semantics.
+- `replace` replaces every occurrence of `oldValue`, matching SQL Server's `REPLACE` semantics.

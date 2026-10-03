@@ -1,6 +1,6 @@
 # `addmonths`
 
-Adds (or subtracts) a whole number of months to a `DateTime` value.
+Adds a number of months to a date. A negative amount subtracts months.
 
 ## Syntax
 
@@ -18,16 +18,15 @@ Exactly 2 arguments.
 | Position | Name | Required type |
 |---|---|---|
 | 1 | `dateTime` | `DateTime` or `DateOnly` (net6.0) |
-| 2 | `amount` | `int` — zero and negative values are allowed |
+| 2 | `amount` | `int` (zero and negative values are allowed) |
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Addmonths() function should have 2 arguments."`
-- **Parser coercion:** argument 1 coerced to `DateTime` if a quoted date/time token; argument 2 coerced to `int` if a literal token.
-- **IR construction** (`AddMonthsFunc`, via base `DateTimeAddFunction`):
-  - Either argument is `null` → `ArgumentNullException`
-  - `dateTime.ReturnType` is not one of the types in the table above → `ArgumentException`
-  - `amount.ReturnType` is not `int` → `ArgumentException`
+- If you pass any number of arguments other than 2, parsing fails with `System.Exception`: `"Addmonths() function should have 2 arguments."`
+- The parser converts a quoted date or time string in the first argument to `DateTime`, and a literal in the second argument to `int`.
+- A `null` in either argument throws `ArgumentNullException`.
+- A first argument whose type is not listed in the Arguments table throws `ArgumentException`.
+- An `amount` that is not an `int` throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -40,7 +39,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 DATEADD(month, amount, datetime)
 ```
 
-Example: `eq(addmonths(createdat,0), createdat)` renders as `(DATEADD(month, @wparam_0, [created_at]) = [created_at])`.
+SQL Server example: `eq(addmonths(createdat,0), createdat)` renders as `(DATEADD(month, @wparam_0, [created_at]) = [created_at])`.
 
 ### PostgreSQL
 
@@ -120,7 +119,7 @@ CAST( DATEADD (month, @p__linq__0, [Extent1].[created_at]) AS datetime2)
 
 ### Not supported
 
-The transformer throws `NotSupportedException` on these providers:
+Expresso throws `NotSupportedException` on these providers:
 
 - MySQL / MariaDB: "MySQL adds months only with INTERVAL syntax, which no store function can express".
 - Oracle: "the provider pastes the amount into an INTERVAL literal, so parameters fail (ORA-01867)".
@@ -128,6 +127,6 @@ The transformer throws `NotSupportedException` on these providers:
 
 ## Notes
 
-- **Negative and zero amounts are supported**: `addmonths(createdat,-3)` subtracts 3 months.
-- Month-end behavior (e.g. adding a month to January 31) follows SQL Server's native `DATEADD` rules, which match .NET's `DateTime.AddMonths` day-clamping behavior in the common case.
+- Negative and zero amounts are supported. `addmonths(createdat,-3)` subtracts 3 months.
+- Month-end behavior (for example, adding a month to January 31) follows the native SQL Server `DATEADD` rules. In the common case these match the day clamping of .NET's `DateTime.AddMonths`.
 - See [`addyears`](addyears.md) and [`adddays`](adddays.md) for related date-arithmetic functions.

@@ -2,68 +2,82 @@
 
 [GitHub repository](https://github.com/itorgashov/Expresso)
 
-Expresso is a small .NET library for **dynamic filtering and sorting**. A function-call query string is parsed into a validated expression tree, then rendered to parameterized SQL — a safer alternative to hand-rolling dynamic `WHERE` / `ORDER BY` string concatenation.
+Expresso is a .NET library for dynamic filtering and sorting. It parses a function-call query string into a validated expression tree, then renders the tree as parameterized SQL or as LINQ. It replaces hand-written `WHERE` and `ORDER BY` string concatenation, and piles of optional `Where` clauses, with one tested pipeline.
 
 ```text
-Query string → Expresso.Parsing → expression tree (Expresso.Core) → Expresso.Rendering.* dialect → SQL + parameters
+Query string → Expresso.Parsing → expression tree (Expresso.Core) ─┬→ SQL renderer (one per dialect) → SQL + parameters
+                                                                   └→ LINQ renderer (Linq, EF Core, EF6) → predicate + sort keys
 ```
 
-**Target frameworks:** `netstandard2.0` and `net6.0` (usable from .NET Framework 4.6.1+, .NET Standard 2.0 libraries, and .NET 6+).
+**Target frameworks:** `netstandard2.0` and `net6.0` for the core, parsing, SQL and LINQ packages (usable from .NET Framework 4.6.1+, .NET Standard 2.0 libraries and .NET 6+). The EF Core package targets `net8.0`, and the EF6 package targets `net48`.
 **License:** MIT.
+
+## Example
+
+A client sends a filter and a sort:
+
+```text
+gt(createdAt,"2021-01-01")
+createdAt,desc,name,asc
+```
+
+With a field map that sends `createdAt` to `p.created_at` and the parameter prefix `wparam`, each SQL renderer produces the same condition in its own dialect:
+
+| Dialect | Rendered filter |
+|---|---|
+| SQL Server | `([p].[created_at] > @wparam_0)` |
+| PostgreSQL | `("p"."created_at" > @wparam_0)` |
+| MySQL, MariaDB | `` (`p`.`created_at` > @wparam_0) `` |
+| Oracle | `("p"."created_at" > :wparam_0)` |
+
+The LINQ renderers produce a lambda instead, which EF Core or EF6 translates to SQL:
+
+```csharp
+e => e.CreatedAt > p0
+```
+
+The grammar, literal rules and supported types are in [Query syntax](docs/query-syntax.md).
 
 ## Packages
 
 | Package | Role |
 |---|---|
-| `Expresso.Core` | Expression tree, filter/sort models, field-catalog contract |
-| `Expresso.Parsing` | Query-string parsers + DI |
-| `Expresso.Rendering.Common` | Shared rendering contract and SQL walker |
-| `Expresso.Rendering.SqlServer` (and PostgreSql, Sqlite, MySql, Oracle, Db2) | Dialect `WHERE` / `ORDER BY` rendering + DI |
+| `Expresso.Core` | Expression tree, filter and sort models, field-catalog contract |
+| `Expresso.Parsing` | Query-string parsers and dependency injection |
+| `Expresso.Rendering.Common` | Shared SQL rendering contract |
+| `Expresso.Rendering.SqlServer`, `PostgreSql`, `Sqlite`, `MySql`, `Oracle`, `Db2` | `WHERE` and `ORDER BY` rendering for one dialect |
+| `Expresso.Rendering.Linq` | LINQ rendering for any `IQueryable<T>` provider and for in-memory collections |
+| `Expresso.Rendering.EntityFrameworkCore` | EF Core 8+ overrides and `IncludeSorted` |
+| `Expresso.Rendering.EntityFramework` | EF6 overrides |
 
-There is no metapackage — reference the packages you need. Database **drivers and native clients are not included** (DB2 needs IBM’s clidriver on the host). See [docs/packages.md](docs/packages.md) and [docs/rendering.md](docs/rendering.md).
-
-## Example
-
-Filter (boolean expression required):
-
-```text
-gt(createdAt,"2021-01-01")
-```
-
-With a field-to-column map `createdAt` → `p.created_at` and parameter prefix `wparam`, SQL Server rendering produces:
-
-```sql
-([p].[created_at] > @wparam_0)
-```
-
-Sort:
-
-```text
-createdAt,desc,name,asc
-```
-
-Full grammar, literal/quoting rules, and supported types: [docs/query-syntax.md](docs/query-syntax.md).
+There is no metapackage: reference the packages you need. Database drivers and native clients are not included (DB2 needs IBM's clidriver on the host). See [Packages](docs/packages.md).
 
 ## Documentation
 
-- [docs/overview.md](docs/overview.md) — what Expresso is for, use cases, and when not to use it
-- [docs/packages.md](docs/packages.md) — each NuGet package
-- [docs/rendering.md](docs/rendering.md) — dialect SQL differences
-- [docs/getting-started.md](docs/getting-started.md) — step-by-step: install, register, implement a field provider, parse, render, execute
-- [docs/query-syntax.md](docs/query-syntax.md) — filter/sort grammar, literals, supported types
-- [docs/field-providers.md](docs/field-providers.md) — `IRequestFieldsInfoProvider` / `QueryModel` explained
-- [docs/error-handling.md](docs/error-handling.md) — exceptions thrown by parsing and rendering
-- [docs/functions/README.md](docs/functions/README.md) — full function reference, one page per function, grouped by category
-- [docs/sample-app.md](docs/sample-app.md) — walkthrough of the sample Web API
+New to Expresso? Start with the [overview](docs/overview.md), then [Get started](docs/getting-started.md).
 
-## Sample
+- [Overview](docs/overview.md): what Expresso is for, use cases, and when not to use it
+- [Get started](docs/getting-started.md): install, register, describe fields, parse
+  - [Render to SQL](docs/getting-started-sql.md) for ADO.NET and Dapper
+  - [Render to LINQ and EF](docs/getting-started-linq.md) for EF Core, EF6 and in-memory collections
+- [Packages](docs/packages.md): each NuGet package and which ones you need
+- [Query syntax](docs/query-syntax.md): filter and sort grammar, literals, supported types
+- [Field providers](docs/field-providers.md): the field allow-list and query model
+- [SQL rendering](docs/rendering.md): quoting and parameters per dialect
+- [LINQ rendering](docs/linq-rendering.md): profiles, EF Core, EF6 and provider limits
+- [Filter behavior and database differences](docs/semantics.md): NULL handling, types and engine differences
+- [Error handling](docs/error-handling.md): exceptions from parsing and rendering
+- [Function reference](docs/functions/README.md): one page per function, grouped by category
+- [Sample app](docs/sample-app.md): a walkthrough of the sample Web API
 
-- [samples/Expresso.Sample.WebApi](samples/Expresso.Sample.WebApi) — .NET 10 ASP.NET Core host with Swagger
-- [samples/Expresso.Sample.WebApi.NetFx](samples/Expresso.Sample.WebApi.NetFx) — .NET Framework 4.8 OWIN + Web API 2 host
+## Samples
 
-Both share [samples/Expresso.Sample.Shared](samples/Expresso.Sample.Shared) (models, ADO.NET repositories, dialect SQL catalog). Each host has its own field/`QueryModel` catalog. Schema/seed: [samples/database](samples/database). See [docs/sample-app.md](docs/sample-app.md).
+- [samples/Expresso.Sample.WebApi](samples/Expresso.Sample.WebApi): .NET 10 ASP.NET Core host with Swagger
+- [samples/Expresso.Sample.WebApi.NetFx](samples/Expresso.Sample.WebApi.NetFx): .NET Framework 4.8 OWIN and Web API 2 host
 
-## Build
+Both share [samples/Expresso.Sample.Shared](samples/Expresso.Sample.Shared) (models, ADO.NET repositories, dialect SQL catalog). Each host has its own field catalog. The schema and seed data are in [samples/database](samples/database). See [Sample app](docs/sample-app.md).
+
+## Build from source
 
 ```powershell
 dotnet test .\Expresso.slnx -c Release -f net6.0 --filter "Category!=Integration"
@@ -71,4 +85,4 @@ dotnet test .\Expresso.slnx -c Release -f net48 --filter "Category!=Integration"
 dotnet pack .\Expresso.slnx -c Release -o .\artifacts
 ```
 
-Renderer integration tests skip unless `EXPRESSO_IT=1`. See [test/Rendering/Expresso.Rendering.Integration.Test/README.md](test/Rendering/Expresso.Rendering.Integration.Test/README.md).
+Tests that need a running database engine skip unless `EXPRESSO_IT=1`. See [test/Rendering/Expresso.Rendering.Integration.Test/README.md](test/Rendering/Expresso.Rendering.Integration.Test/README.md).

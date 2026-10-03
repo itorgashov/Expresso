@@ -1,6 +1,6 @@
 # `left`
 
-Returns the leftmost N characters of a string.
+Returns the leftmost characters of a string, up to the given length.
 
 ## Syntax
 
@@ -22,12 +22,11 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Left() function should have 2 arguments."`
-- **Parser coercion:** argument 1 coerced to `string`; argument 2 coerced to `int` if a literal token.
-- **IR construction** (`LeftFunc`):
-  - Either argument is `null` → `ArgumentNullException`
-  - `sourceString.ReturnType` is not `string` → `ArgumentException`
-  - `length.ReturnType` is not `int` → `ArgumentException`
+- Passing any number of arguments other than 2 throws `System.Exception` with the message `"Left() function should have 2 arguments."`
+- The first argument is treated as a `string` literal when it is a quoted string token. The second is treated as an `int` literal when it is a literal token.
+- A `null` argument throws `ArgumentNullException`.
+- A first argument that does not return `string` throws `ArgumentException`.
+- A second argument that does not return `int` throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -39,7 +38,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 LEFT(text, length)
 ```
 
-Example: `eq(left(isbn,3),"978")` renders as `(LEFT([isbn], @wparam_0) = @wparam_1)` on SQL Server.
+SQL Server example: `eq(left(isbn,3),"978")` renders as `(LEFT([isbn], @wparam_0) = @wparam_1)`.
 
 ### SQLite
 

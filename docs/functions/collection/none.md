@@ -1,6 +1,6 @@
 # `none`
 
-True if the related collection has no item matching the optional predicate. One argument means the collection is empty.
+Returns true when a related collection has no item matching an optional condition. With one argument, it returns true when the collection is empty.
 
 ## Syntax
 
@@ -23,10 +23,10 @@ none(collection, predicate)
 
 ## Validation & exceptions
 
-- **Parser:** first argument is not a collection → `ArgumentException`: `"First argument of None() must be a collection."`
-- **IR construction** (`NoneFunc`): same null/type rules as [`any`](any.md). Constructed directly by the parser.
+- If the first argument is not a collection, parsing throws `ArgumentException`: `"First argument of None() must be a collection."`
+- A `null` collection or a predicate that is not `bool` fails with the same exceptions as [`any`](any.md).
 
-Not valid as a sort key.
+You can't use `none` as a sort key.
 
 ## SQL rendering
 

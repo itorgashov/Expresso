@@ -1,6 +1,6 @@
 # `sign`
 
-Sign of a numeric argument: `-1` if negative, `0` if zero, `1` if positive.
+Returns the sign of a numeric argument: `-1` if negative, `0` if zero, `1` if positive.
 
 ## Syntax
 
@@ -11,7 +11,7 @@ sign(argument)
 Exactly 1 argument.
 
 - **Category:** Arithmetic
-- **Return type:** `int` (always — not the argument's original type)
+- **Return type:** `int` (always, not the argument's original type)
 
 ## Arguments
 
@@ -21,9 +21,11 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Sign() function should have 1 argument."`
-- **Parser coercion:** a literal argument's type is inferred (`GetLiteralType`).
-- **IR construction** (`SignFunc`, built via reflection): base `NumericSingleArgIntResultFunction`/`NumericSingleArgFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", nameof(argument))` if the `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass a number of arguments other than 1, the parser throws `System.Exception` with the message `"Sign() function should have 1 argument."`.
+- The parser infers the type of a literal argument.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not `byte`, `int`, or `double` throws `ArgumentException("Illegal argument type", "argument")`.
+- When the parser builds the call, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -35,7 +37,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 SIGN(argument)
 ```
 
-Example: `eq(sign(balance),-1)` renders as `(SIGN([balance]) = @wparam_0)` on SQL Server.
+SQL Server example: `eq(sign(balance),-1)` renders as `(SIGN([balance]) = @wparam_0)`.
 
 ## LINQ rendering
 
@@ -86,5 +88,5 @@ Every EF6 provider supports `sign`.
 
 ## Notes
 
-- Matches C#'s `Math.Sign`: return type is `int` with values `-1`/`0`/`1`, regardless of the argument's original type.
+- `sign` matches C#'s `Math.Sign`: the return type is `int` with values `-1`, `0`, or `1`, regardless of the argument's original type.
 - See [`abs`](abs.md) for the related unary numeric function.

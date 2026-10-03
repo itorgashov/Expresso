@@ -1,6 +1,6 @@
 # `indexof`
 
-0-based index of the first occurrence of a substring within a string, or `-1` if not found.
+Returns the 0-based index of the first occurrence of a substring within a string, or `-1` if the substring is not found.
 
 ## Syntax
 
@@ -22,16 +22,15 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Indexof() function should have 2 arguments."`
-- **Parser coercion:** both arguments coerced to `string` if they are quoted string tokens.
-- **IR construction** (`IndexOfFunc`):
-  - Either argument is `null` → `ArgumentNullException`
-  - Either argument's `ReturnType` is not `string` → `ArgumentException`
+- Passing any number of arguments other than 2 throws `System.Exception` with the message `"Indexof() function should have 2 arguments."`
+- Quoted string tokens in either argument are treated as `string` literals.
+- A `null` argument throws `ArgumentNullException`.
+- An argument that does not return `string` throws `ArgumentException`.
 
 ## SQL rendering
 
 Quotes and bind names: [docs/rendering.md](../../rendering.md).
-Result is **0-based** on every dialect (`-1` if not found), matching C# `string.IndexOf`. An empty `find` returns `0` (on Oracle `NULL`, because `''` is `NULL` there), and a `NULL` argument returns `NULL`. Contrast with [`substring`](../string-transform/substring.md), which stays 1-based.
+The result is 0-based on every dialect (`-1` if not found), matching C# `string.IndexOf`. An empty `find` returns `0` (on Oracle `NULL`, because `''` is `NULL` there), and a `NULL` argument returns `NULL`. Contrast with [`substring`](../string-transform/substring.md), which stays 1-based.
 
 ### SQL Server
 
@@ -41,7 +40,7 @@ Native `CHARINDEX` is 1-based and returns `0` both when `find` is missing and wh
 (CASE WHEN DATALENGTH(find) = 0 AND text IS NOT NULL THEN 0 ELSE CHARINDEX(find, text) - 1 END)
 ```
 
-Both arguments are rendered twice, so a literal `find` binds two parameters. Example: `eq(indexof(title,"War"),0)` renders as `((CASE WHEN DATALENGTH(@wparam_0) = 0 AND [title] IS NOT NULL THEN 0 ELSE CHARINDEX(@wparam_1, [title]) - 1 END) = @wparam_2)`.
+Both arguments are rendered twice, so a literal `find` binds two parameters. SQL Server example: `eq(indexof(title,"War"),0)` renders as `((CASE WHEN DATALENGTH(@wparam_0) = 0 AND [title] IS NOT NULL THEN 0 ELSE CHARINDEX(@wparam_1, [title]) - 1 END) = @wparam_2)`.
 
 ### PostgreSQL
 

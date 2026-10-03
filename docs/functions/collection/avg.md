@@ -1,6 +1,6 @@
 # `avg`
 
-Average of a numeric selector over a related collection. Collection-only — there is no scalar `avg`. Return type is always `double`.
+Returns the average of a numeric selector over a related collection, always as a `double`. `avg` works only on collections; there is no scalar `avg`.
 
 ## Syntax
 
@@ -22,9 +22,9 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser:** first argument is not a collection → `ArgumentException`: `"First argument of Avg() must be a collection."`
-- **Parser arity:** one argument → `System.Exception`: `"Avg() function should have 2 arguments."`
-- **IR construction** (`CollectionAvgFunc`): non-numeric selector → `ArgumentException("Illegal argument type", "selector")`. Constructed directly by the parser.
+- If the first argument is not a collection, parsing throws `ArgumentException`: `"First argument of Avg() must be a collection."`
+- If you pass only one argument, parsing throws `System.Exception`: `"Avg() function should have 2 arguments."`
+- A non-numeric selector throws `ArgumentException("Illegal argument type", "selector")`.
 
 ## SQL rendering
 
@@ -37,7 +37,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (SELECT AVG(selector) FROM {FromClause} WHERE {CorrelateSql})
 ```
 
-**DB2 / `ORDER BY`:** DB2 rejects correlated references in `ORDER BY` scalar subqueries (`SQL0206N`). This fragment is valid in `WHERE` and in a `SELECT` list. For a sort key, select it in a derived table (or extra SELECT column) and order by that alias. See [docs/rendering.md](../../rendering.md).
+DB2 rejects correlated references in `ORDER BY` scalar subqueries (`SQL0206N`). This fragment is valid in `WHERE` and in a `SELECT` list. For a sort key, select it in a derived table (or extra SELECT column) and order by that alias. See [docs/rendering.md](../../rendering.md).
 
 ## LINQ rendering
 
@@ -67,7 +67,7 @@ EF Core translates the Queryable lambda. On SQLite:
 
 ### SQL Server, DB2
 
-For an integer selector the transformer casts the average to `int?` (a plain override, not a marker), which truncates toward zero like the engine's integer `AVG`. A `double` selector is unchanged. On SQL Server:
+For an integer selector the transformer casts the average to `int?`, which truncates toward zero like the engine's integer `AVG`. A `double` selector is unchanged. On SQL Server:
 
 ```sql
 CAST(CAST((SELECT AVG(CAST([w1].[Score] AS float)) FROM [widget_tag] AS [w1] WHERE [w].[Id] = [w1].[WidgetId]) AS int) AS float) = @__Value_0

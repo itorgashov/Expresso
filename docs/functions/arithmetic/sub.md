@@ -1,6 +1,6 @@
 # `sub`
 
-Subtraction of two numeric arguments (`argument1 - argument2`).
+Subtracts `argument2` from `argument1` (`argument1 - argument2`).
 
 ## Syntax
 
@@ -22,9 +22,11 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Sub() function should have 2 arguments."`
-- **Parser coercion:** each literal argument's type is inferred independently.
-- **IR construction** (`SubFunc`, built via reflection): `ArgumentNullException` for a `null` argument; `ArgumentException("Illegal argument type", "argument1"|"argument2")` for a non-numeric `ReturnType`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass a number of arguments other than 2, the parser throws `System.Exception` with the message `"Sub() function should have 2 arguments."`.
+- The parser infers the type of each literal argument independently.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not `byte`, `int`, or `double` throws `ArgumentException("Illegal argument type", "argument1")` or `ArgumentException("Illegal argument type", "argument2")`, depending on which argument is wrong.
+- When the parser builds the call, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -36,7 +38,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (argument1 - argument2)
 ```
 
-Example: `sub(price,discount)` renders as `([price] - [discount])` on SQL Server. Date subtraction is not supported (`DateTime` is not an allowed argument type).
+SQL Server example: `sub(price,discount)` renders as `([price] - [discount])`. Date subtraction is not supported (`DateTime` is not an allowed argument type).
 
 ## LINQ rendering
 
@@ -48,7 +50,7 @@ Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logi
 argument1 - argument2
 ```
 
-A `byte` operand is widened to `int`, and when either operand is `double` both become `double`, so the value's type can differ from the IR `ReturnType`. The result is NULL when either argument is NULL. Example: `eq(sub(age,5),20)` builds `e => e.Age - p0 == p1`, where `age` is a non-nullable `int` column and `p0` and `p1` are captured parameters.
+A `byte` operand is widened to `int`, and when either operand is `double` both become `double`, so the value's type can differ from the declared return type. The result is NULL when either argument is NULL. Example: `eq(sub(age,5),20)` builds `e => e.Age - p0 == p1`, where `age` is a non-nullable `int` column and `p0` and `p1` are captured parameters.
 
 ### In-memory
 
@@ -80,6 +82,6 @@ Every EF6 provider supports `sub`.
 
 ## Notes
 
-- `ReturnType` is copied from `argument1` only.
+- The return type comes from `argument1` only.
 - See [`add`](add.md), [`mult`](mult.md), [`div`](div.md) for the other arithmetic operators.
 - See also [`mod`](mod.md), [`round`](round.md), [`floor`](floor.md), [`ceiling`](ceiling.md), [`sign`](sign.md), [`power`](power.md), [`sqrt`](sqrt.md), [`min`](min.md), [`max`](max.md) for the wider numeric function set.

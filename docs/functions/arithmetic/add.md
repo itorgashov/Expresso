@@ -1,6 +1,6 @@
 # `add`
 
-Addition of two numeric arguments.
+Adds two numeric arguments.
 
 ## Syntax
 
@@ -11,7 +11,7 @@ add(argument1, argument2)
 Exactly 2 arguments.
 
 - **Category:** Arithmetic
-- **Return type:** same as `argument1`'s type (`byte`, `int`, or `double` — **not** promoted based on `argument2`)
+- **Return type:** same as `argument1`'s type (`byte`, `int`, or `double`); **not** promoted based on `argument2`
 
 ## Arguments
 
@@ -22,9 +22,11 @@ Exactly 2 arguments.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 2` → `System.Exception`: `"Add() function should have 2 arguments."`
-- **Parser coercion:** each literal argument's type is inferred independently (`GetLiteralType`).
-- **IR construction** (`AddFunc`, built via reflection): base `NumericArithFunction` throws `ArgumentNullException` for a `null` argument, or `ArgumentException("Illegal argument type", "argument1"|"argument2")` if either `ReturnType` isn't `byte`/`int`/`double`. Surfaces wrapped in `TargetInvocationException` when thrown from the parser — see [docs/error-handling.md](../../error-handling.md).
+- If you pass a number of arguments other than 2, the parser throws `System.Exception` with the message `"Add() function should have 2 arguments."`.
+- The parser infers the type of each literal argument independently.
+- A `null` argument throws `ArgumentNullException`.
+- An argument whose type is not `byte`, `int`, or `double` throws `ArgumentException("Illegal argument type", "argument1")` or `ArgumentException("Illegal argument type", "argument2")`, depending on which argument is wrong.
+- When the parser builds the call, these exceptions arrive wrapped in `System.Reflection.TargetInvocationException`. See [docs/error-handling.md](../../error-handling.md).
 
 ## SQL rendering
 
@@ -36,7 +38,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (argument1 + argument2)
 ```
 
-Example: `gt(add(price,tax),100)` renders as `(([price] + [tax]) > @wparam_0)` on SQL Server.
+SQL Server example: `gt(add(price,tax),100)` renders as `(([price] + [tax]) > @wparam_0)`.
 
 ## LINQ rendering
 
@@ -48,7 +50,7 @@ Profiles and setup: [docs/linq-rendering.md](../../linq-rendering.md). Null logi
 argument1 + argument2
 ```
 
-A `byte` operand is widened to `int`, and when either operand is `double` both become `double`, so the value's type can differ from the IR `ReturnType`. The result is NULL when either argument is NULL. Example: `eq(add(age,10),40)` builds `e => e.Age + p0 == p1`, where `age` is a non-nullable `int` column and `p0` and `p1` are captured parameters.
+A `byte` operand is widened to `int`, and when either operand is `double` both become `double`, so the value's type can differ from the declared return type. The result is NULL when either argument is NULL. Example: `eq(add(age,10),40)` builds `e => e.Age + p0 == p1`, where `age` is a non-nullable `int` column and `p0` and `p1` are captured parameters.
 
 ### In-memory
 
@@ -80,5 +82,5 @@ Every EF6 provider supports `add`.
 
 ## Notes
 
-- `ReturnType` is copied from `argument1` only.
+- The return type comes from `argument1` only.
 - See [`sub`](sub.md), [`mult`](mult.md), [`div`](div.md) for the other arithmetic operators, [`abs`](abs.md) for the unary one, and [`mod`](mod.md), [`round`](round.md), [`floor`](floor.md), [`ceiling`](ceiling.md), [`sign`](sign.md), [`power`](power.md), [`sqrt`](sqrt.md), [`min`](min.md), [`max`](max.md) for the wider numeric function set.

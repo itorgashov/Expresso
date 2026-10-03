@@ -1,6 +1,6 @@
 # `isnull`
 
-True if the argument is `NULL`.
+Returns true when the argument is `NULL`.
 
 ## Syntax
 
@@ -21,11 +21,10 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"IsNull() function should have 1 argument."`
-- **Parser coercion:** **none** — unlike most other functions, `isnull`'s argument is *not* passed through literal coercion. In practice this means `isnull` is meant to be used with a field reference (e.g. `isnull(publisher)`), not a raw quoted literal.
-- **IR construction** (`IsNullFunc`):
-  - `argument` is `null` → `ArgumentNullException`
-  - `argument.ReturnType` is not one of the allowed types → `ArgumentException`
+- If you pass any number of arguments other than one, the parser throws `System.Exception` with the message `"IsNull() function should have 1 argument."`
+- Unlike most other functions, `isnull` does not convert its argument's literal type. Use it with a field reference, such as `isnull(publisher)`, and not with a raw quoted literal.
+- If the argument is `null`, the call throws `ArgumentNullException`.
+- If the argument's type is not one of the allowed types, the call throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -37,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 (expr IS NULL)
 ```
 
-Example: `isnull(isbn)` renders as `([isbn] IS NULL)` on SQL Server.
+SQL Server example: `isnull(isbn)` renders as `([isbn] IS NULL)`.
 
 ## LINQ rendering
 

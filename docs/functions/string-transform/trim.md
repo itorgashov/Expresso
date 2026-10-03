@@ -1,6 +1,6 @@
 # `trim`
 
-Trims leading and trailing whitespace from a string.
+Removes leading and trailing whitespace from a string.
 
 ## Syntax
 
@@ -21,11 +21,10 @@ Exactly 1 argument.
 
 ## Validation & exceptions
 
-- **Parser arity check:** argument count `!= 1` → `System.Exception`: `"Trim() function should have 1 argument."`
-- **Parser coercion:** argument coerced to `string` if a quoted string token.
-- **IR construction** (`TrimFunc`, via base `StringSingleArgFunction`):
-  - Argument is `null` → `ArgumentNullException`
-  - Argument's `ReturnType` is not `string` → `ArgumentException`
+- Passing any number of arguments other than 1 throws `System.Exception` with the message `"Trim() function should have 1 argument."`
+- A quoted string token is treated as a `string` literal.
+- A `null` argument throws `ArgumentNullException`.
+- An argument that does not return `string` throws `ArgumentException`.
 
 ## SQL rendering
 
@@ -37,7 +36,7 @@ Quotes and bind names: [docs/rendering.md](../../rendering.md).
 TRIM(text)
 ```
 
-Example: `eq(trim(name),"Ada")` renders as `(TRIM([name]) = @wparam_0)` on SQL Server.
+SQL Server example: `eq(trim(name),"Ada")` renders as `(TRIM([name]) = @wparam_0)`.
 
 ## LINQ rendering
 
@@ -81,4 +80,4 @@ Every EF6 provider supports `trim`.
 
 ## Notes
 
-- **Requires SQL Server 2017 or later** (`TRIM` as a built-in function). For older SQL Server versions, use [`ltrim`](ltrim.md) and [`rtrim`](rtrim.md) together instead, which have been available since early versions.
+- On SQL Server, `trim` requires SQL Server 2017 or later, because it uses the built-in `TRIM` function. On older versions, use [`ltrim`](ltrim.md) and [`rtrim`](rtrim.md) together instead. Both have been available since early versions.

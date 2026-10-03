@@ -1,10 +1,10 @@
 # Error handling
 
-Expresso validates aggressively and throws standard .NET exceptions rather than returning error codes. This page catalogs what to expect and catch. Function-specific validation is also listed on each function's own page under [docs/functions/](functions/README.md); this page covers the general picture.
+Expresso throws standard .NET exceptions when it rejects input, instead of returning error codes. This page lists which exceptions to expect from parsing, from building the expression tree, and from rendering, and what to catch where. Each [function page](functions/README.md) also lists the validation for that function.
 
 ## Recommended pattern
 
-At the API boundary, wrap parsing (and, if you like, rendering) in a broad `try/catch (Exception)` and return `400 Bad Request` — the query string came from the caller, so any exception here means it was malformed or referenced a disallowed field/type. This is what `samples/Expresso.Sample.WebApi`'s controllers do.
+At the API boundary, wrap parsing in a broad `try/catch (Exception)` and return `400 Bad Request`. The query string comes from the caller, so any exception here means it was malformed or referred to a field or type you do not allow. The controllers in `samples/Expresso.Sample.WebApi` do this.
 
 ```csharp
 try
@@ -17,55 +17,65 @@ catch (Exception ex)
 }
 ```
 
-A broad catch is deliberately recommended here because, as detailed below, arity/syntax errors from the parser are not consistently typed (some are plain `System.Exception`).
+Catch `Exception`, not only `ArgumentException`. Some parse errors, such as a wrong argument count, are thrown as plain `System.Exception`.
 
-## Parsing (`Expresso.Parsing`)
+## Parsing
+
+These exceptions come from `IFilterParser.Parse` and `ISortDirectiveParser.Parse`.
 
 | Situation | Exception |
 |---|---|
-| `query` or the field-catalog array / `QueryModel` is `null` | `ArgumentNullException` |
+| `query` or the field catalog (array or `QueryModel`) is `null` | `ArgumentNullException` |
 | Unexpected token, unknown function name, illegal field name, unterminated expression | `ArgumentException` |
-| A function is called with the wrong number of arguments | **`System.Exception`** (plain, not `ArgumentException`) — e.g. `"Eq() function should have 2 arguments."`, `"Startswith() function should have 2 arguments."` |
-| A literal can't be parsed as its target type (e.g. bad date, non-numeric text) | `ArgumentException` |
-| `IFilterParser.Parse` succeeds but the parsed root is not a boolean expression | `ArgumentException("A boolean expression is expected.")` |
-| `ISortDirectiveParser.Parse`: odd token count / empty directive | `ArgumentException` |
-| `ISortDirectiveParser.Parse`: `any`/`all`/`none` or a bare collection name used as a sort key | `ArgumentException` |
-| `ISortDirectiveParser.Parse`: invalid `sortfor` path or arity | `ArgumentException` |
-| `IFilterParser.Parse`: `sortfor(...)` in `filter=` | `ArgumentException`: `'sortfor' is only valid in a sort directive, not in a filter.'` |
-| `ISortDirectiveParser.Parse`: direction token is not `asc`/`desc` | `NotSupportedException` |
+| A function is called with the wrong number of arguments | `System.Exception`, for example `"Eq() function should have 2 arguments."` |
+| A literal cannot be read as its target type, such as a bad date or non-numeric text | `ArgumentException` |
+| The filter parses but its root is not a boolean expression | `ArgumentException("A boolean expression is expected.")` |
+| A sort has an odd number of tokens, or is empty | `ArgumentException` |
+| A sort uses `any`, `all`, `none` or a bare collection name as a key | `ArgumentException` |
+| A sort has an invalid `sortfor` path or argument count | `ArgumentException` |
+| A filter contains `sortfor(...)` | `ArgumentException`: `'sortfor' is only valid in a sort directive, not in a filter.` |
+| A sort direction is not `asc` or `desc` | `NotSupportedException` |
 
-**Note on arity errors:** these are intentionally documented as plain `System.Exception` because that is what the current implementation throws — this is a known inconsistency (most other validation uses `ArgumentException`/`ArgumentNullException`) rather than a documentation oversight. Catch `Exception`, not just `ArgumentException`, if you want to handle all parse failures uniformly.
+### Wrapped exceptions
 
-**Note on reflection wrapping:** comparison functions (`eq`, `neq`, `gt`, `gte`, `lt`, `lte`) and arithmetic functions (`abs`, `add`, `sub`, `mult`, `div`, `mod`, `floor`, `ceiling`/`ceil`, `sign`, `power`/`pow`, `sqrt`, `min`, `max`) are constructed by the parser via reflection (`Activator.CreateInstance`). If the expression-tree constructor itself rejects the arguments (see the next section), the resulting exception is wrapped in `System.Reflection.TargetInvocationException` — inspect `.InnerException` to get the real `ArgumentException`/`ArgumentNullException`. String functions, logical functions (`and`/`or`/`not`), `in`, `isnull`, DateTime functions, `round`, and collection functions (`any`/`all`/`none`/`count` and collection `min`/`max`/`sum`/`avg`) are constructed directly and do **not** get wrapped.
+For the comparison functions (`eq`, `neq`, `gt`, `gte`, `lt`, `lte`) and the arithmetic functions (`abs`, `add`, `sub`, `mult`, `div`, `mod`, `floor`, `ceiling`/`ceil`, `sign`, `power`/`pow`, `sqrt`, `min`, `max`), the parser creates the function through reflection. If the function rejects its arguments, the exception reaches you wrapped in `System.Reflection.TargetInvocationException`. Read `.InnerException` to get the real `ArgumentException` or `ArgumentNullException`.
 
-## Expression tree construction (`Expresso.Core`)
+The other functions are not wrapped: string, logical (`and`, `or`, `not`), `in`, `isnull`, date and time, `round`, and the collection functions (`any`, `all`, `none`, `count`, and collection `min`, `max`, `sum`, `avg`).
 
-Every function validates its own arguments in its constructor:
+If you catch `Exception` at the API boundary as recommended above, you do not need to unwrap anything: the message of the wrapper is generic, so log or return `ex.InnerException?.Message ?? ex.Message`.
+
+## Building the expression tree
+
+Every function validates its arguments when it is created:
 
 | Situation | Exception |
 |---|---|
 | A required argument is `null` | `ArgumentNullException` |
-| An argument's `ReturnType` doesn't match what the function requires | `ArgumentException` |
-| A variadic function (`and`, `or`, `in`, `concat`) is given fewer arguments than its minimum | `ArgumentException` |
+| An argument's type is not one the function accepts | `ArgumentException` |
+| A function that takes any number of arguments (`and`, `or`, `in`, `concat`) gets fewer than its minimum | `ArgumentException` |
 
-See each function's **Validation & exceptions** section under [docs/functions/](functions/README.md) for the exact allowed types and messages.
+The **Validation & exceptions** section of each function page lists the exact types and messages.
 
-## Rendering (`Expresso.Rendering.SqlServer`)
+## Rendering
+
+These exceptions come from the SQL renderers. They almost always point to a mistake in your code, not to bad user input.
 
 | Situation | Exception |
 |---|---|
-| `filterCriteria`, `sortDirective`, `fieldToColumnMap`, `mapping`, or `paramNamePrefix` is `null` | `ArgumentNullException` |
-| `filterCriteria.Expression` is `null` | `ArgumentException("The expression of the filter criteria is null.", nameof(filterCriteria))` |
-| `sortDirective.Items` is `null`/empty | `ArgumentException("Sort directive must contain at least one item", nameof(sortDirective))` |
-| `paramNamePrefix` doesn't match `^[A-Za-z][A-Za-z0-9_]*$` | `ArgumentException("Incorrect prefix for sql parameter names.")` |
-| A field referenced in the expression has no entry in `fieldToColumnMap` | `ArgumentException($"No mapping for the {field.Name} field")` |
-| A collection referenced in the expression has no entry in `SqlQueryMapping.Collections` | `ArgumentException($"No mapping for the {collection.Name} collection")` |
-| `any`/`all`/`none` used as an `ORDER BY` key | `ArgumentException` |
-| An unrecognized expression-tree node type is encountered (should not happen in normal use) | `NotSupportedException` |
+| `filterCriteria`, `sortDirective`, the field map, the mapping or `paramNamePrefix` is `null` | `ArgumentNullException` |
+| `filterCriteria.Expression` is `null` | `ArgumentException("The expression of the filter criteria is null.")` |
+| `sortDirective.Items` is empty | `ArgumentException("Sort directive must contain at least one item")` |
+| `paramNamePrefix` does not match `^[A-Za-z][A-Za-z0-9_]*$` | `ArgumentException("Incorrect prefix for sql parameter names.")` |
+| A field in the expression has no entry in the field map | `ArgumentException("No mapping for the {field} field")` |
+| A collection in the expression has no entry in `SqlQueryMapping.Collections` | `ArgumentException("No mapping for the {collection} collection")` |
+| `any`, `all` or `none` is used as an `ORDER BY` key | `ArgumentException` |
+| The expression contains a node the renderer does not know (not expected in normal use) | `NotSupportedException` |
 
-A missing field-to-column mapping should not normally occur if `fieldToColumnMap` / `SqlQueryMapping` is kept in sync with your allow-list — see [docs/field-providers.md](field-providers.md).
+A missing field mapping should not occur if your field map or `SqlQueryMapping` stays in sync with your allow-list. See [Field providers](field-providers.md).
 
-## Summary: what to catch where
+The LINQ renderers throw `ArgumentException` for an unmapped field or collection, and `NotSupportedException` where a provider cannot render a function exactly or `IncludeSorted` cannot use a collection. See [LINQ rendering](linq-rendering.md) and [EF6 limits](semantics.md#ef6-limits).
 
-- **Parsing layer** (presentation/API): catch broadly (`Exception`) around `IFilterParser.Parse` / `ISortDirectiveParser.Parse` calls and return `400`.
-- **Rendering layer** (data access): exceptions here almost always indicate a programming error (mismatched field-to-column map, bad prefix) rather than bad user input — treat them as `500`-worthy bugs to fix, not as request validation.
+## What to catch where
+
+- In the API layer, catch `Exception` around `IFilterParser.Parse` and `ISortDirectiveParser.Parse`, and return `400`.
+- In the data-access layer, treat rendering exceptions as bugs to fix and return `500`, not as request validation.
