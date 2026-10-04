@@ -36,5 +36,7 @@
     <Project Path="samples/Expresso.Sample.Shared/Expresso.Sample.Shared.csproj" />
     <Project Path="samples/Expresso.Sample.WebApi.NetFx/Expresso.Sample.WebApi.NetFx.csproj" />
     <Project Path="samples/Expresso.Sample.WebApi/Expresso.Sample.WebApi.csproj" />
+    <Project Path="samples/Expresso.Sample.WebApi.EfCore/Expresso.Sample.WebApi.EfCore.csproj" />
+    <Project Path="samples/Expresso.Sample.WebApi.NetFx.Ef6/Expresso.Sample.WebApi.NetFx.Ef6.csproj" />
   </Folder>
 </Solution>

@@ -72,10 +72,12 @@ New to Expresso? Start with the [overview](docs/overview.md), then [Get started]
 
 ## Samples
 
-- [samples/Expresso.Sample.WebApi](samples/Expresso.Sample.WebApi): .NET 10 ASP.NET Core host with Swagger
-- [samples/Expresso.Sample.WebApi.NetFx](samples/Expresso.Sample.WebApi.NetFx): .NET Framework 4.8 OWIN and Web API 2 host
+- [samples/Expresso.Sample.WebApi](samples/Expresso.Sample.WebApi): .NET 10 ASP.NET Core host with Swagger (ADO.NET)
+- [samples/Expresso.Sample.WebApi.NetFx](samples/Expresso.Sample.WebApi.NetFx): .NET Framework 4.8 OWIN and Web API 2 host (ADO.NET)
+- [samples/Expresso.Sample.WebApi.EfCore](samples/Expresso.Sample.WebApi.EfCore): .NET 10 ASP.NET Core host (EF Core 8 + LINQ renderers)
+- [samples/Expresso.Sample.WebApi.NetFx.Ef6](samples/Expresso.Sample.WebApi.NetFx.Ef6): .NET Framework 4.8 OWIN host (EF6 + LINQ renderers)
 
-Both share [samples/Expresso.Sample.Shared](samples/Expresso.Sample.Shared) (models, ADO.NET repositories, dialect SQL catalog). Each host has its own field catalog. The schema and seed data are in [samples/database](samples/database). See [Sample app](docs/sample-app.md).
+The ADO pair shares [samples/Expresso.Sample.Shared](samples/Expresso.Sample.Shared). The EF pair is standalone (same routes and `ExpressoSample:Engine`, no Shared reference). Schema and seed: [samples/database](samples/database). See [Sample app](docs/sample-app.md).
 
 ## Build from source
 

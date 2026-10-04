@@ -1,15 +1,15 @@
 # Sample app walkthrough
 
-The sample app is a pair of runnable Web APIs that show the SQL path end to end: parse a query string, render it with a dialect renderer, and run it with ADO.NET. Both hosts share the same data and filtering logic. For the LINQ and EF path, see [Render to LINQ and EF](getting-started-linq.md).
+The sample app is four runnable Web APIs on the same `Expresso_Sample` database: two **ADO.NET** hosts (SQL renderer → parameterized SQL) and two **EF** hosts (LINQ renderer → `IQueryable`). All use the same routes, `filter`/`sort` query strings, and `ExpressoSample:Engine` switch. This page focuses on the ADO pair; the EF pair is described in [Render to LINQ and EF](getting-started-linq.md) and each project's README.
 
+| Project | Path | Host | TFM |
+|---|---|---|---|
+| ADO Core | [Expresso.Sample.WebApi](../samples/Expresso.Sample.WebApi) | ASP.NET Core + Swagger | `net10` |
+| ADO net48 | [Expresso.Sample.WebApi.NetFx](../samples/Expresso.Sample.WebApi.NetFx) | OWIN + Web API 2 + Swagger | `net48` |
+| EF Core | [Expresso.Sample.WebApi.EfCore](../samples/Expresso.Sample.WebApi.EfCore) | ASP.NET Core + Swagger | `net10` |
+| EF6 | [Expresso.Sample.WebApi.NetFx.Ef6](../samples/Expresso.Sample.WebApi.NetFx.Ef6) | OWIN + Web API 2 + Swagger (`http://localhost:5081/`) | `net48` |
 
-
-| Project | Host | TFM |
-|---|---|---|
-| [samples/Expresso.Sample.WebApi](../samples/Expresso.Sample.WebApi) | ASP.NET Core + Swagger | `net10` |
-| [samples/Expresso.Sample.WebApi.NetFx](../samples/Expresso.Sample.WebApi.NetFx) | OWIN self-host + Web API 2 + Swagger | `net48` |
-
-Shared code lives in [samples/Expresso.Sample.Shared](../samples/Expresso.Sample.Shared) (`netstandard2.0`): models, ADO.NET repositories, `ISampleSql` dialect catalog, and `QueryParametersParser`. Each host has its own `IRequestFieldsInfoProvider` so the catalog CLR types match the Expresso TFM that host loads. Schema and seed scripts for every engine are under [samples/database](../samples/database). Hosts pick the engine with `ExpressoSample:Engine` in appsettings (default SQL Server) and open `ConnectionStrings:{Engine}` from the same file. The net48 host does not register Db2 (the sample uses `Net.IBM.Data.Db2` on the net10 host only; .NET Framework apps use IBM’s separate provider — see [Packages](packages.md#db2-and-net-framework)).
+The ADO hosts share [samples/Expresso.Sample.Shared](../samples/Expresso.Sample.Shared) (`netstandard2.0`): models, ADO.NET repositories, `ISampleSql` dialect catalog, and `QueryParametersParser`. The EF hosts do **not** reference Shared; each copies its own field catalog and `QueryParametersParser`. Every host has its own `IRequestFieldsInfoProvider` so CLR types match the TFM (`DateOnly`/`TimeOnly` on net10 EF Core; `DateTime`/`TimeSpan` on net48 EF6). Schema and seed scripts are under [samples/database](../samples/database). Set `ExpressoSample:Engine` in appsettings (default SQL Server) and `ConnectionStrings:{Engine}` via user secrets (same `UserSecretsId` on all four hosts). The ADO net48 host does not register Db2; the EF6 host refuses Db2 at startup; Db2 on net10 uses [Expresso.Sample.WebApi.EfCore](../samples/Expresso.Sample.WebApi.EfCore) (EF Core) or the ADO net10 host — see [Packages](packages.md#db2-and-net-framework).
 
 Each sample's README explains how to set up and run it. This page explains how the sample is structured and why.
 
