@@ -4,8 +4,23 @@ namespace Expresso.Rendering.Linq
     /// In-memory reference implementations with PostgreSQL semantics, used by <see cref="InMemoryExpressionToLinqTransformer"/>.
     /// Arguments are never NULL here: NULL propagation is handled by the transformer.
     /// </summary>
-    public static class ExpressoFunctions
+    public static partial class ExpressoFunctions
     {
+        /// <summary>PostgreSQL <c>sqrt</c>: a negative value is a domain error.</summary>
+        /// <exception cref="NotSupportedException"><paramref name="value"/> is negative.</exception>
+        public static double Sqrt(double value) =>
+            value < 0 ? throw new NotSupportedException("square root of a negative number") : Math.Sqrt(value);
+
+        /// <summary>PostgreSQL <c>/</c>: division by zero is an error (including IEEE infinity for <c>double</c>).</summary>
+        /// <exception cref="NotSupportedException"><paramref name="right"/> is zero.</exception>
+        public static double Divide(double left, double right) =>
+            right == 0 ? throw new NotSupportedException("division by zero") : left / right;
+
+        /// <summary>PostgreSQL <c>%</c>: modulo by zero is an error.</summary>
+        /// <exception cref="NotSupportedException"><paramref name="right"/> is zero.</exception>
+        public static double Modulo(double left, double right) =>
+            right == 0 ? throw new NotSupportedException("division by zero") : left % right;
+
         /// <summary>Rounds half away from zero at <paramref name="digits"/> decimal places (negative digits round left of the point).</summary>
         public static double Round(double value, int digits)
         {
@@ -39,22 +54,30 @@ namespace Expresso.Rendering.Linq
             }
 
             long from = Math.Max(start, 1);
-            long to = Math.Min((long)start + length, (long)source.Length + 1);
-            return to <= from ? string.Empty : source.Substring((int)from - 1, (int)(to - from));
+            long to = Math.Min((long)start + length, (long)Length(source) + 1);
+            if (to <= from)
+            {
+                return string.Empty;
+            }
+
+            var lengthPoints = (int)(to - from);
+            return SliceByCodePoints(source, (int)from - 1, lengthPoints);
         }
 
-        /// <summary>First <paramref name="length"/> characters; a negative length drops that many characters from the end.</summary>
+        /// <summary>First <paramref name="length"/> code points; a negative length drops that many from the end.</summary>
         public static string Left(string source, int length)
         {
-            var count = length >= 0 ? Math.Min(length, source.Length) : Math.Max(source.Length + length, 0);
-            return source.Substring(0, count);
+            var total = CodePointCount(source);
+            var count = length >= 0 ? Math.Min(length, total) : Math.Max(total + length, 0);
+            return SliceByCodePoints(source, 0, count);
         }
 
-        /// <summary>Last <paramref name="length"/> characters; a negative length drops that many characters from the start.</summary>
+        /// <summary>Last <paramref name="length"/> code points; a negative length drops that many from the start.</summary>
         public static string Right(string source, int length)
         {
-            var count = length >= 0 ? Math.Min(length, source.Length) : Math.Max(source.Length + length, 0);
-            return source.Substring(source.Length - count);
+            var total = CodePointCount(source);
+            var count = length >= 0 ? Math.Min(length, total) : Math.Max(total + length, 0);
+            return SliceByCodePoints(source, total - count, count);
         }
 
         /// <summary>SQL <c>TRIM</c>: removes leading and trailing spaces only.</summary>

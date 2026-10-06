@@ -82,7 +82,9 @@ EF Core translates the Queryable lambda. On SQL Server:
 DATEPART(year, [w].[created_at])
 ```
 
-No provider overrides.
+### Oracle
+
+A `DateOnly` stored as `DATE` uses `TO_NUMBER(TO_CHAR(date, 'YYYY'))`. Text storage (`NVARCHAR2`) throws `NotSupportedException`. Map the property to `DATE` (the sample converts `DateOnly` to `DateTime`).
 
 ## EF6 rendering
 

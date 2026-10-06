@@ -107,6 +107,10 @@ ADD_DAYS(ADD_MONTHS(datetime, amount), LEAST(0, DAY(datetime) - DAY(ADD_MONTHS(d
 
 `ADD_MONTHS` moves a month-end day to the new month end. The `LEAST` term takes those extra days back, so the result matches the DB2 renderer's `datetime + amount MONTHS`, which keeps the day and clamps it to the month end.
 
+### Oracle
+
+A `DateOnly` stored as `DATE` adds `NUMTOYMINTERVAL(amount, 'MONTH')`, the same interval the SQL renderer uses. `ADD_MONTHS` would pin a month-end day to the new month end. Text storage (`NVARCHAR2`) throws `NotSupportedException`.
+
 ## EF6 rendering
 
 ### All providers

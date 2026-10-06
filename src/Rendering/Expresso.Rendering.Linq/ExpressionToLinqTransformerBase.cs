@@ -104,6 +104,78 @@ namespace Expresso.Rendering.Linq
         protected static LinqNode Promote(LinqNode node) =>
             node.Type == typeof(byte) ? ConvertNode(node, typeof(int)) : node;
 
+        /// <summary>
+        /// When a SQL function can return NULL even though its arguments are not NULL (for example <c>sqrt</c> of a negative
+        /// value, or Oracle empty string), return a condition that is true when the computed <paramref name="value"/> is NULL.
+        /// </summary>
+        protected virtual Expression? ComputedNull(string function, IReadOnlyList<LinqNode> args, Expression value) => null;
+
+        /// <summary>Builds a literal node. An empty Oracle string is NULL only inside scalar functions, not LIKE patterns.</summary>
+        protected virtual LinqNode Literal(Literal node) => Parameter(node.Value);
+
+        /// <summary>True when <paramref name="expression"/> is a captured <c>""</c> literal.</summary>
+        protected static bool IsEmptyStringLiteral(Expression expression)
+        {
+            if (expression is not MemberExpression { Expression: ConstantExpression { Value: { } box } } member)
+            {
+                return false;
+            }
+
+            var field = box.GetType().GetField(member.Member.Name);
+            return field?.GetValue(box) is string text && text.Length == 0;
+        }
+
+        /// <summary>
+        /// <c>value IS NULL</c> so a provider that raises on the value still evaluates it inside <c>isnull</c>.
+        /// </summary>
+        protected static Expression ValueIsNull(Expression value)
+        {
+            var nullable = LinqEx.NullableType(value.Type);
+            var lifted = value.Type == nullable ? value : Expression.Convert(value, nullable);
+            return Expression.Equal(lifted, Expression.Constant(null, nullable));
+        }
+
+        /// <summary>
+        /// NULL state inherited from arguments. Oracle <c>replace</c> inherits only the source: a NULL search is a no-op
+        /// and a NULL replacement deletes matches.
+        /// </summary>
+        protected virtual Expression? NullFromArguments(string? function, IReadOnlyList<LinqNode> arguments) =>
+            LinqEx.AnyNull(arguments);
+
+        /// <summary>Combines argument NULL propagation with <see cref="ComputedNull"/>.</summary>
+        protected Expression? CombineIsNull(string? function, IReadOnlyList<LinqNode> args, Expression value, Expression? fromArgs)
+        {
+            var computed = function is null ? null : ComputedNull(function, args, value);
+            if (computed is ConstantExpression { Value: true })
+            {
+                return computed;
+            }
+
+            if (fromArgs is null && computed is null)
+            {
+                return null;
+            }
+
+            if (fromArgs is null)
+            {
+                return computed;
+            }
+
+            return computed is null ? fromArgs : Expression.OrElse(fromArgs, computed);
+        }
+
+        /// <summary>Applies <paramref name="compute"/>; NULL when any argument is NULL or <see cref="ComputedNull"/> holds.</summary>
+        protected LinqNode Propagate(Func<Expression[], Expression> compute, params LinqNode[] arguments) =>
+            Propagate(null, compute, arguments);
+
+        /// <summary>Applies <paramref name="compute"/> with optional <paramref name="function"/> for <see cref="ComputedNull"/>.</summary>
+        protected LinqNode Propagate(string? function, Func<Expression[], Expression> compute, params LinqNode[] arguments)
+        {
+            var values = arguments.Select(a => a.Value).ToArray();
+            var value = compute(values);
+            return LinqNode.Scalar(value, CombineIsNull(function, arguments, value, NullFromArguments(function, arguments)));
+        }
+
         private static bool IsNumeric(Type type) =>
             type == typeof(byte) || type == typeof(int) || type == typeof(double);
 
@@ -132,7 +204,7 @@ namespace Expresso.Rendering.Linq
                 : LinqNode.Scalar(body, Expression.Equal(body, Expression.Constant(null, body.Type)), body);
         }
 
-        LinqNode V.VisitLiteral(Literal node, LinqScope s) => Parameter(node.Value);
+        LinqNode V.VisitLiteral(Literal node, LinqScope s) => Literal(node);
 
         LinqNode V.VisitCollectionRef(CollectionRef node, LinqScope s) =>
             throw new NotSupportedException($"Expression type '{nameof(CollectionRef)}' is not supported.");

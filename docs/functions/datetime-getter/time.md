@@ -92,11 +92,10 @@ time(value)
 ### Oracle
 
 ```sql
-CASE WHEN TO_CHAR(value, 'FF7') = '0000000' THEN TO_CHAR(value, 'HH24:MI:SS')
-     ELSE TO_CHAR(value, 'HH24:MI:SS.FF7') END
+value - TRUNC(value)
 ```
 
-The Oracle EF Core provider stores `TimeOnly` as ISO text (`HH:mm:ss`, plus seven fraction digits only when they are not all zero), so the marker renders the same text; see [docs/semantics.md](../../semantics.md).
+The result is `INTERVAL DAY TO SECOND` and keeps fractional seconds, so `hour(time(createdat))` and `addseconds` on that result stay on an interval. A comparison with a `TimeOnly` literal binds the parameter as `TimeSpan`. A `TimeOnly` column mapped as text (`NVARCHAR2`) still throws `NotSupportedException`; map it to `INTERVAL DAY(0) TO SECOND(0)`. See [docs/semantics.md](../../semantics.md).
 
 ### DB2
 

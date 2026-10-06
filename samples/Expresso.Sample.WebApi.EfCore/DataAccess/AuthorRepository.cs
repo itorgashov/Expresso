@@ -1,5 +1,6 @@
 using Expresso.Core.Filtering;
 using Expresso.Core.Sorting;
+using Expresso.Rendering.EntityFrameworkCore;
 using Expresso.Rendering.Linq;
 using Expresso.Sample.WebApi.EfCore.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -29,28 +30,24 @@ public sealed class AuthorRepository : IRepository<Author>
             query = query.Where(_transformer, filterCriteria, BookLinqMappings.Authors);
         }
 
-        if (sortDirective is not null && sortDirective.Items.Count > 0)
-        {
-            query = query.OrderBy(_transformer, sortDirective, BookLinqMappings.Authors);
-        }
-        else
-        {
-            query = query.OrderBy(a => a.Id);
-        }
+        return await EfCoreListSort.ToSortedListAsync(
+            query,
+            sortDirective,
+            BookLinqMappings.Authors,
+            _transformer,
+            _db,
+            q => WithIncludes(q, sortDirective).AsSplitQuery(),
+            cancellationToken);
+    }
 
-        var authors = await query.Include(a => a.Awards).ToListAsync(cancellationToken);
-
+    private IQueryable<Author> WithIncludes(IQueryable<Author> query, SortDirective? sortDirective)
+    {
         if (sortDirective is not null && sortDirective.Nested.Count > 0)
         {
-            foreach (var author in authors)
-            {
-                author.Awards = author.Awards
-                    .OrderByNested(_transformer, sortDirective, BookLinqMappings.Awards, "awards")
-                    .ToList();
-            }
+            query = query.IncludeSorted(_transformer, sortDirective, BookLinqMappings.Authors);
         }
 
-        return authors;
+        return query.Include(a => a.Awards);
     }
 
     public async Task<Author?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>

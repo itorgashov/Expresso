@@ -66,7 +66,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 REPLACE([w].[Isbn], @__Value_0, @__Value_1)
 ```
 
-No provider overrides.
+On Oracle an empty string is NULL, and `REPLACE` gives the arguments different roles. An empty source makes the result NULL. An empty search leaves the source unchanged. An empty replacement deletes matches, and the result is NULL when that deletion leaves an empty string. `isnull(replace(name,"a",""))` and `eq(replace(name,"","x"),"Bob")` both keep `REPLACE` in the SQL.
 
 ## EF6 rendering
 
@@ -79,6 +79,8 @@ REPLACE([Extent1].[Isbn], @p__linq__0, @p__linq__1)
 ```
 
 Every EF6 provider supports `replace`.
+
+On Oracle the arguments have the same roles as in EF Core. NULL comes from the source, or from a result that `REPLACE` itself returns as NULL. A NULL search leaves the source unchanged, and a NULL replacement deletes matches. `isnull(replace("Bob",name,"x"))` is FALSE when `name` is NULL.
 
 ## Notes
 

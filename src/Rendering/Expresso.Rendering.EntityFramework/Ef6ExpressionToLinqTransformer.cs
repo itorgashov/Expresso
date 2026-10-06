@@ -10,7 +10,7 @@ namespace Expresso.Rendering.EntityFramework
     /// SQL renderer, use canonical <see cref="DbFunctions"/> or, where the provider lacks them, provider store functions.
     /// Functions a provider cannot render exactly throw <see cref="NotSupportedException"/> instead of approximating.
     /// </summary>
-    public class Ef6ExpressionToLinqTransformer : QueryableExpressionToLinqTransformer
+    public partial class Ef6ExpressionToLinqTransformer : QueryableExpressionToLinqTransformer
     {
         private const string NoTimeOfDay = "the provider has no time-of-day (Edm.Time) type";
         private static readonly Expression KnownSunday = Expression.Constant(new DateTime(1900, 1, 7), typeof(DateTime?));
@@ -107,16 +107,45 @@ namespace Expresso.Rendering.EntityFramework
         };
 
         /// <inheritdoc />
-        protected override Expression Left(Expression source, Expression length) =>
-            Provider == Ef6Provider.SqlServer
-                ? Expression.Call(DbFunction(nameof(DbFunctions.Left), typeof(string), typeof(long?)), source, Expression.Convert(length, typeof(long?)))
-                : base.Left(source, length);
+        protected override Expression Left(Expression source, Expression length) => Provider switch
+        {
+            Ef6Provider.SqlServer => Expression.Call(DbFunction(nameof(DbFunctions.Left), typeof(string), typeof(long?)), source, Expression.Convert(length, typeof(long?))),
+            Ef6Provider.PostgreSql => PostgreSqlLeft(source, length),
+            _ => base.Left(source, length),
+        };
 
-        /// <inheritdoc />
-        protected override Expression Right(Expression source, Expression length) =>
-            Provider == Ef6Provider.SqlServer
-                ? Expression.Call(DbFunction(nameof(DbFunctions.Right), typeof(string), typeof(long?)), source, Expression.Convert(length, typeof(long?)))
-                : base.Right(source, length);
+        /// <summary>
+        /// Npgsql EF6 renders <c>DbFunctions.Left/Right</c> as <c>substr</c> that rejects a negative length.
+        /// A non-negative length keeps the usual slice; a negative length drops characters from the other end.
+        /// </summary>
+        private static Expression PostgreSqlLeft(Expression source, Expression length)
+        {
+            var count = Expression.Property(source, nameof(string.Length));
+            var zero = Expression.Constant(0);
+            var take = Expression.Condition(
+                Expression.GreaterThanOrEqual(length, zero),
+                Expression.Condition(Expression.LessThan(count, length), count, length),
+                Expression.Condition(Expression.LessThanOrEqual(Expression.Add(count, length), zero), zero, Expression.Add(count, length)));
+            return Expression.Call(source, LinqEx.Method(typeof(string), nameof(string.Substring), typeof(int), typeof(int)), zero, take);
+        }
+
+        /// <inheritdoc cref="PostgreSqlLeft" />
+        private static Expression PostgreSqlRight(Expression source, Expression length)
+        {
+            var count = Expression.Property(source, nameof(string.Length));
+            var zero = Expression.Constant(0);
+            var substring = LinqEx.Method(typeof(string), nameof(string.Substring), typeof(int), typeof(int));
+            var positive = Expression.Condition(
+                Expression.LessThanOrEqual(count, length),
+                source,
+                Expression.Call(source, substring, Expression.Subtract(count, length), length));
+            var take = Expression.Add(count, length);
+            var negative = Expression.Condition(
+                Expression.LessThanOrEqual(take, zero),
+                Expression.Constant(string.Empty),
+                Expression.Call(source, substring, Expression.Subtract(zero, length), take));
+            return Expression.Condition(Expression.GreaterThanOrEqual(length, zero), positive, negative);
+        }
 
         /// <inheritdoc />
         protected override Expression Round(Expression value, Expression? digits) =>
@@ -175,7 +204,7 @@ namespace Expresso.Rendering.EntityFramework
         protected override LinqNode Concat(IReadOnlyList<LinqNode> arguments) => Provider switch
         {
             Ef6Provider.SqlServer or Ef6Provider.PostgreSql => ConcatNullAsEmpty(arguments),
-            Ef6Provider.Oracle => ConcatNullAsEmpty(arguments, nullWhenAllNull: true),
+            Ef6Provider.Oracle => OracleConcat(arguments),
             _ => base.Concat(arguments),
         };
 

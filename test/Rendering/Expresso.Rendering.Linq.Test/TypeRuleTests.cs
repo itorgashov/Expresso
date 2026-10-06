@@ -114,6 +114,19 @@ namespace Expresso.Rendering.Linq.Test
         }
 
         [Fact]
+        public void IsNull_OfDomainError_Throws()
+        {
+            // Scenario: PostgreSQL rejects negative sqrt and division by zero. isnull must not turn that into false.
+            var negative = new List<Row> { new() { Id = 1, Amount = -1 } };
+            var zero = new List<Row> { new() { Id = 1, Amount = 4 } };
+            Assert.Throws<NotSupportedException>(() => Ids(negative, new IsNullFunc(new SqrtFunc(Amount))));
+            Assert.Throws<NotSupportedException>(() => Ids(zero, new IsNullFunc(new DivFunc(Amount, L(0.0)))));
+
+            Assert.Empty(Ids(zero, new IsNullFunc(new SqrtFunc(Amount))));
+            Assert.Equal(new[] { 1 }, Ids(new List<Row> { new() { Id = 1, Amount = null } }, new IsNullFunc(new SqrtFunc(Amount))));
+        }
+
+        [Fact]
         public void LinqNode_ScalarNonBool_HasNoWhenTrue()
         {
             var node = LinqNode.Scalar(System.Linq.Expressions.Expression.Constant(1), null);

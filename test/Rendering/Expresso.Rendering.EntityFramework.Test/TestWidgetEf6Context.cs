@@ -1,8 +1,12 @@
 using System.Data.Common;
 using System.Data.Entity;
+using System.Data.Entity.Core.Common;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.SqlServer;
 using System.Data.SqlClient;
+using System.Data.SQLite;
+using System.Data.SQLite.EF6;
+using Npgsql;
 using Expresso.Core.Filtering;
 using Expresso.Core.Sorting;
 using Expresso.Rendering.Linq;
@@ -51,13 +55,27 @@ namespace Expresso.Rendering.EntityFramework.Test
         public TestEf6Configuration()
         {
             SetProviderServices(SqlProviderServices.ProviderInvariantName, SqlProviderServices.Instance);
+            SetProviderFactory("Npgsql", NpgsqlFactory.Instance);
+            SetProviderServices("Npgsql", NpgsqlServices.Instance);
+            var sqliteServices = (DbProviderServices)SQLiteProviderFactory.Instance.GetService(typeof(DbProviderServices));
+            SetProviderFactory("System.Data.SQLite", SQLiteFactory.Instance);
+            SetProviderFactory("System.Data.SQLite.EF6", SQLiteProviderFactory.Instance);
+            SetProviderServices("System.Data.SQLite", sqliteServices);
+            SetProviderServices("System.Data.SQLite.EF6", sqliteServices);
             SetManifestTokenResolver(new FixedManifestTokenResolver());
             SetDatabaseInitializer<TestWidgetEf6Context>(null);
+            SetDatabaseInitializer<PostgreSqlLeftRightContext>(null);
+            SetDatabaseInitializer<SqliteRightContext>(null);
         }
 
         private sealed class FixedManifestTokenResolver : IManifestTokenResolver
         {
-            public string ResolveManifestToken(DbConnection connection) => "2012";
+            public string ResolveManifestToken(DbConnection connection) => connection switch
+            {
+                NpgsqlConnection => "9.6",
+                SQLiteConnection => "3",
+                _ => "2012",
+            };
         }
     }
 }

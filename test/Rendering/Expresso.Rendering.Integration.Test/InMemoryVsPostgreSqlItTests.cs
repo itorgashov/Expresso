@@ -1,6 +1,7 @@
 using Expresso.Core.Filtering;
 using Expresso.Core.Sorting;
 using Expresso.Rendering.Linq;
+using Expresso.Rendering.TestCases;
 
 namespace Expresso.Rendering.Integration.Test
 {
@@ -46,7 +47,7 @@ namespace Expresso.Rendering.Integration.Test
         public void Differential_InMemoryMatchesPostgreSql(DifferentialCase testCase)
         {
             Skip.IfNot(IntegrationEnabled.IsOn, IntegrationEnabled.SkipReason);
-            AssertSame(testCase.Filter, testCase.Sort);
+            AssertSame(testCase.Filter, testCase.Sort, testCase.Rejection, testCase.UnsupportedReason, testCase.DatabaseCodes);
         }
 
         [SkippableTheory]
@@ -65,9 +66,17 @@ namespace Expresso.Rendering.Integration.Test
             AssertSame(testCase.Filter, testCase.Sort);
         }
 
-        private void AssertSame(FilterCriteria? filter, SortDirective? sort) =>
+        private void AssertSame(
+            FilterCriteria? filter,
+            SortDirective? sort,
+            DifferentialRejection rejection = DifferentialRejection.None,
+            string? unsupportedReason = null,
+            IReadOnlyList<string>? databaseCodes = null) =>
             DifferentialOutcome.AssertSame(
                 DifferentialOutcome.Of(() => _postgres.QueryWidgetIds(filter, sort)),
-                DifferentialOutcome.Of(() => _inMemory.QueryWidgetIds(filter, sort)));
+                DifferentialOutcome.Of(() => _inMemory.QueryWidgetIds(filter, sort)),
+                rejection,
+                unsupportedReason: unsupportedReason,
+                databaseCodes: databaseCodes);
     }
 }

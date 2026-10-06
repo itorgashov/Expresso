@@ -52,25 +52,24 @@ namespace Expresso.Rendering.Linq
         protected virtual Expression Sqrt(Expression value) =>
             Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Sqrt), typeof(double)), value);
 
-        /// <summary>Applies <paramref name="compute"/> to the non-null values; NULL when any argument is NULL.</summary>
-        protected static LinqNode Propagate(Func<Expression[], Expression> compute, params LinqNode[] arguments) =>
-            LinqNode.Scalar(compute(arguments.Select(a => a.Value).ToArray()), LinqEx.AnyNull(arguments));
+        private LinqNode Unary(AbstractFunction node, LinqScope s, Func<Expression, Expression> compute, Type? argumentType = null) =>
+            Unary(node, s, null!, compute, argumentType);
 
-        private LinqNode Unary(AbstractFunction node, LinqScope s, Func<Expression, Expression> compute, Type? argumentType = null)
+        private LinqNode Unary(AbstractFunction node, LinqScope s, string? function, Func<Expression, Expression> compute, Type? argumentType = null)
         {
             var arg = Visit(node.Arguments[0], s);
             arg = argumentType is null ? Promote(arg) : ConvertNode(arg, argumentType);
-            return Propagate(a => compute(a[0]), arg);
+            return Propagate(function, a => compute(a[0]), arg);
         }
 
-        private LinqNode Binary(NumericArithFunction node, LinqScope s, Func<Expression, Expression, Expression> compute, Type? argumentType = null)
+        private LinqNode Binary(NumericArithFunction node, LinqScope s, Func<Expression, Expression, Expression> compute, Type? argumentType = null, string? function = null)
         {
             var left = Visit(node.Arguments[0], s);
             var right = Visit(node.Arguments[1], s);
             (left, right) = argumentType is null
                 ? Promote(left, right)
                 : (ConvertNode(left, argumentType), ConvertNode(right, argumentType));
-            return Propagate(a => compute(a[0], a[1]), left, right);
+            return Propagate(function, a => compute(a[0], a[1]), left, right);
         }
 
         /// <summary>SQL <c>CASE WHEN a op b THEN a ELSE b END</c>: when the comparison is not TRUE the result is <c>b</c>.</summary>
@@ -86,13 +85,13 @@ namespace Expresso.Rendering.Linq
         LinqNode V.VisitAdd(AddFunc node, LinqScope s) => Binary(node, s, Add);
         LinqNode V.VisitSub(SubFunc node, LinqScope s) => Binary(node, s, Subtract);
         LinqNode V.VisitMult(MultFunc node, LinqScope s) => Binary(node, s, Multiply);
-        LinqNode V.VisitDiv(DivFunc node, LinqScope s) => Binary(node, s, Divide);
-        LinqNode V.VisitMod(ModFunc node, LinqScope s) => Binary(node, s, Modulo);
+        LinqNode V.VisitDiv(DivFunc node, LinqScope s) => Binary(node, s, Divide, function: "div");
+        LinqNode V.VisitMod(ModFunc node, LinqScope s) => Binary(node, s, Modulo, function: "mod");
         LinqNode V.VisitFloor(FloorFunc node, LinqScope s) => Unary(node, s, Floor, typeof(double));
         LinqNode V.VisitCeiling(CeilingFunc node, LinqScope s) => Unary(node, s, Ceiling, typeof(double));
         LinqNode V.VisitSign(SignFunc node, LinqScope s) => Unary(node, s, Sign);
-        LinqNode V.VisitPower(PowerFunc node, LinqScope s) => Binary(node, s, Power, typeof(double));
-        LinqNode V.VisitSqrt(SqrtFunc node, LinqScope s) => Unary(node, s, Sqrt, typeof(double));
+        LinqNode V.VisitPower(PowerFunc node, LinqScope s) => Binary(node, s, Power, typeof(double), function: "power");
+        LinqNode V.VisitSqrt(SqrtFunc node, LinqScope s) => Unary(node, s, "sqrt", Sqrt, typeof(double));
         LinqNode V.VisitMin(MinFunc node, LinqScope s) => Pick(node, ExpressionType.LessThan, s);
         LinqNode V.VisitMax(MaxFunc node, LinqScope s) => Pick(node, ExpressionType.GreaterThan, s);
 

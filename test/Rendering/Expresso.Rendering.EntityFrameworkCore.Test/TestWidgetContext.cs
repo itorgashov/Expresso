@@ -3,6 +3,7 @@ using Expresso.Core.Sorting;
 using Expresso.Rendering.Linq;
 using Expresso.Rendering.TestCases;
 using Microsoft.EntityFrameworkCore;
+using Oracle.EntityFrameworkCore;
 
 namespace Expresso.Rendering.EntityFrameworkCore.Test
 {
@@ -21,6 +22,9 @@ namespace Expresso.Rendering.EntityFrameworkCore.Test
 
         public static TestWidgetContext Sqlite() =>
             new(new DbContextOptionsBuilder<TestWidgetContext>().UseSqlite("Data Source=unused.db").Options);
+
+        public static TestWidgetContext Oracle() =>
+            new(new DbContextOptionsBuilder<TestWidgetContext>().UseOracle("User Id=unused;Password=unused;Data Source=unused").Options);
 
         /// <summary>SQL of <c>Widgets.Where(filter).Select(Id)</c> with the transformer for this context's provider.</summary>
         public string WhereSql(FilterCriteria filter)

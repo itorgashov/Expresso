@@ -80,7 +80,7 @@ These providers use the in-memory NULL-as-empty lambda, matching the SQL rendere
 COALESCE([w].[Firstname], N'') + COALESCE([w].[Lastname], N'') = @__Value_0
 ```
 
-On SQL Server and PostgreSQL the result is never NULL. On Oracle it is NULL when every argument is NULL, like Oracle `||`, so `isnull(concat(firstname,lastname))` builds `e => e.Firstname == null && e.Lastname == null`.
+On SQL Server and PostgreSQL the result is never NULL. On Oracle it is NULL when every argument is NULL or empty, like Oracle `||`. `isnull(concat(firstname,lastname))` builds `e => e.Firstname == null && e.Lastname == null`. `isnull(concat("",""))` is TRUE. `isnull(concat(name,""))` is TRUE only when `name` is NULL, and `eq(concat("a",""),"a")` is TRUE.
 
 ## EF6 rendering
 

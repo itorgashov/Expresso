@@ -29,6 +29,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Rendering\Expresso.Rendering.EntityFramework\Expresso.Rendering.EntityFramework.csproj" />
+    <ProjectReference Include="..\..\..\samples\Expresso.Sample.WebApi.NetFx.Ef6\Expresso.Sample.WebApi.NetFx.Ef6.csproj" />
+    <PackageReference Include="EntityFramework6.Npgsql" Version="6.4.3" />
+    <PackageReference Include="Npgsql" Version="6.0.11" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
+    <PackageReference Include="System.Data.SQLite.EF6" Version="1.0.119" />
     <ProjectReference Include="..\Expresso.Rendering.TestCases\Expresso.Rendering.TestCases.csproj" />
   </ItemGroup>
 

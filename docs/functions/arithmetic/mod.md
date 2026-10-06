@@ -60,7 +60,7 @@ A `byte` operand is widened to `int`, and when either operand is `double` both b
 
 ### In-memory
 
-Same as Queryable.
+Same as Queryable, except a zero divisor throws `NotSupportedException`. `isnull(mod(...))` throws as well.
 
 ## EF Core rendering
 
@@ -72,7 +72,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 [w].[Age] % @__Value_0
 ```
 
-No provider overrides.
+On SQLite and MySQL, a zero divisor is NULL, so `isnull(mod(...))` is TRUE. On SQL Server, PostgreSQL, Oracle and DB2, `isnull(mod(...))` keeps the remainder in the SQL so a zero divisor still raises. A call whose operands are all literals stays in SQL as well.
 
 ## EF6 rendering
 
@@ -84,7 +84,7 @@ EF6 translates the Queryable lambda. On SQL Server:
 ([Extent1].[Age] % @p__linq__0)
 ```
 
-Every EF6 provider supports `mod`.
+Every EF6 provider supports `mod`. `isnull(mod(...))` keeps the remainder on SQL Server, PostgreSQL, Oracle and DB2, and is TRUE for a zero divisor on SQLite and MySQL.
 
 ## Notes
 

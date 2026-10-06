@@ -42,7 +42,7 @@ This holds for every comparison (`gt`, `in`, `startswith`, `contains`, and the o
 
 ### Functions that return values
 
-A scalar function (`len`, `add`, `year`, and the rest) returns NULL when any argument is NULL. Two functions are the exception:
+A scalar function (`len`, `add`, `year`, and the rest) returns NULL when any argument is NULL. Some functions can also return NULL when arguments are non-NULL (for example `sqrt` of a negative value on SQLite). The in-memory profile counts string positions in Unicode code points (PostgreSQL `char_length` / `strpos` semantics), not UTF-16 code units.
 
 - `concat` treats NULL as an empty string on engines whose `CONCAT` does that. See [`concat`](functions/string-transform/concat.md).
 - Scalar `min(a, b)` and `max(a, b)` return `b` whenever the comparison is not TRUE. If `a` is NULL, the comparison is UNKNOWN, so `min(age,18)` is `18` for a row with no `age`, and so is `max(age,18)`. The result is NULL only when `b` is NULL.
@@ -106,14 +106,14 @@ SQLite is mixed. `startswith`, `endswith`, and `contains` use `LIKE` and ignore 
 
 ### Empty strings on Oracle
 
-Oracle stores an empty string as NULL. So an empty string literal, an empty `concat` result, and `indexof` with an empty search string are all NULL, where other engines return `0` for `indexof`.
+Oracle stores an empty string as NULL. An empty string literal used as a scalar argument, and `indexof` with an empty search string, are NULL, where other engines return `0` for `indexof`. `concat` is NULL only when every argument is NULL or empty, so `concat(name,"")` is NULL only when `name` is. `replace` is different: an empty search leaves the source unchanged, and an empty replacement deletes matches. The result is NULL when the source is NULL or the deletion leaves an empty string.
 
-One case still differs between SQL and EF on Oracle: `isnull(substring(name,1,0))` is TRUE in SQL for a non-NULL `name`, because the empty result becomes NULL. Through EF it is FALSE, because the lambda treats a string result as NULL only when an argument is NULL.
+An empty substring result is NULL. `isnull(substring(name,1,0))` is TRUE for a non-NULL `name` in SQL and in EF Core and EF6, because the rendered `SUBSTR` is checked for NULL.
 
 ### Other engine notes
 
 - DB2 `ORDER BY`: DB2 cannot sort by a correlated subquery. Put such a sort key in the `SELECT` list and order by that column. See [SQL rendering](rendering.md#collection-mapping).
-- Oracle `DateOnly` and `TimeOnly` with EF Core: the Oracle provider stores them as ISO text, so `date` and `time` produce text in that format.
+- Oracle `DateOnly` and `TimeOnly` with EF Core: map `DateOnly` to `DATE` and `TimeOnly` to `INTERVAL DAY TO SECOND`. Text storage (`NVARCHAR2`) throws `NotSupportedException` for calendar and clock functions on those columns. `date` of a `DateTime` is `TRUNC` (a `DATE`); `time` of a `DateTime` is `value - TRUNC(value)`, an `INTERVAL DAY TO SECOND` that keeps fractional seconds. Comparison parameters convert `DateOnly` to `DateTime` and `TimeOnly` to `TimeSpan`. `year(date(...))` and `hour(time(...))` stay on those types.
 
 ## EF6 limits
 

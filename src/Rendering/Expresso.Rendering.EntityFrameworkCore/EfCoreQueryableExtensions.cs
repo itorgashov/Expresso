@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using Expresso.Core.Sorting;
@@ -61,13 +62,15 @@ namespace Expresso.Rendering.EntityFrameworkCore
                 throw new ArgumentNullException(nameof(mapping));
             }
 
+            var navigationCache = new Dictionary<IncludeCacheKey, LambdaExpression>();
+
             foreach (var path in Paths(sort.Nested, mapping))
             {
                 object query = source;
                 Type? previousItem = null;
                 foreach (var (collection, directive) in path)
                 {
-                    var include = OrderedNavigation(transformer, collection, directive);
+                    var include = OrderedNavigation(transformer, collection, directive, navigationCache);
                     query = previousItem is null
                         ? Invoke(IncludeMethod.MakeGenericMethod(typeof(T), include.ReturnType), query, include)
                         : Invoke(ThenIncludeAfterCollection.MakeGenericMethod(typeof(T), previousItem, include.ReturnType), query, include);
@@ -111,8 +114,15 @@ namespace Expresso.Rendering.EntityFrameworkCore
         private static LambdaExpression OrderedNavigation(
             IExpressionToLinqTransformer transformer,
             LinqCollectionMapping collection,
-            SortDirective directive)
+            SortDirective directive,
+            Dictionary<IncludeCacheKey, LambdaExpression> cache)
         {
+            var key = new IncludeCacheKey(collection, directive);
+            if (cache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
             var navigation = collection.Navigation;
             var body = navigation.Body is UnaryExpression { NodeType: ExpressionType.Convert } convert ? convert.Operand : navigation.Body;
             if (body is not MemberExpression { Expression: ParameterExpression })
@@ -134,7 +144,29 @@ namespace Expresso.Rendering.EntityFrameworkCore
             }
 
             var delegateType = typeof(Func<,>).MakeGenericType(navigation.Parameters[0].Type, typeof(IEnumerable<>).MakeGenericType(itemType));
-            return Expression.Lambda(delegateType, ordered, navigation.Parameters);
+            var lambda = Expression.Lambda(delegateType, ordered, navigation.Parameters);
+            cache[key] = lambda;
+            return lambda;
+        }
+
+        /// <summary>One ordered navigation per collection and directive instance.</summary>
+        private readonly struct IncludeCacheKey : IEquatable<IncludeCacheKey>
+        {
+            public IncludeCacheKey(LinqCollectionMapping collection, SortDirective directive)
+            {
+                Collection = collection;
+                Directive = directive;
+            }
+
+            private LinqCollectionMapping Collection { get; }
+
+            private SortDirective Directive { get; }
+
+            public bool Equals(IncludeCacheKey other) => ReferenceEquals(Collection, other.Collection) && ReferenceEquals(Directive, other.Directive);
+
+            public override bool Equals(object? obj) => obj is IncludeCacheKey other && Equals(other);
+
+            public override int GetHashCode() => HashCode.Combine(RuntimeHelpers.GetHashCode(Collection), RuntimeHelpers.GetHashCode(Directive));
         }
 
         private static string MethodName(bool first, SortDirection direction) =>

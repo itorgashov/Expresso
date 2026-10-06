@@ -64,7 +64,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 UPPER([w].[Code])
 ```
 
-No provider overrides.
+A literal argument stays in `UPPER`, so the engine's case mapping applies. `eq(upper("ä"),"ä")` keeps `UPPER`.
 
 ## EF6 rendering
 

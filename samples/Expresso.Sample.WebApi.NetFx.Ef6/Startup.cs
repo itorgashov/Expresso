@@ -47,7 +47,8 @@ public sealed class Startup
     {
         services.AddSingleton(configuration);
         services.AddRequestParametersParsers();
-        services.AddSingleton<IRequestFieldsInfoProvider, RequestFieldsInfoProvider>();
+        var engine = SampleEngineParser.Parse(configuration["ExpressoSample:Engine"]);
+        services.AddSingleton<IRequestFieldsInfoProvider>(_ => new RequestFieldsInfoProvider(engine));
         SampleEngineSetup.AddSampleEngine(services, configuration);
         services.AddTransient<Controllers.BooksController>();
         services.AddTransient<Controllers.AuthorsController>();

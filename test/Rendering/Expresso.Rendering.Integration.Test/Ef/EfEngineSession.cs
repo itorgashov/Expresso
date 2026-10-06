@@ -57,7 +57,7 @@ namespace Expresso.Rendering.Integration.Test.Ef
             }
 
             return sort is not null && _liftSortKeys
-                ? LiftedSort.OrderedIds(query, transformer.BuildSortKeys(sort, _mapping))
+                ? query.OrderedKeys(transformer, sort, _mapping, w => w.Id)
                 : (sort is null ? query.OrderBy(w => w.Id) : query.OrderBy(transformer, sort, _mapping)).Select(w => w.Id);
         }
 

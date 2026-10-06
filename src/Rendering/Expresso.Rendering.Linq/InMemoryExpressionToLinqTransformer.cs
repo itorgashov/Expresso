@@ -12,6 +12,38 @@ namespace Expresso.Rendering.Linq
         private static readonly Expression Ordinal = Expression.Constant(StringComparison.Ordinal);
 
         /// <inheritdoc />
+        protected override Expression? ComputedNull(string function, IReadOnlyList<LinqNode> args, Expression value)
+        {
+            if (function == "sqrt")
+            {
+                return DomainError(Expression.LessThan(args[0].Value, Expression.Constant(0.0)), "negative square root");
+            }
+
+            if (function is "div" or "mod")
+            {
+                var zero = Expression.Constant(Convert.ChangeType(0, args[1].Type, System.Globalization.CultureInfo.InvariantCulture), args[1].Type);
+                return DomainError(Expression.Equal(args[1].Value, zero), "division by zero");
+            }
+
+            return null;
+        }
+
+        /// <inheritdoc />
+        protected override Expression Sqrt(Expression value) => Call(nameof(ExpressoFunctions.Sqrt), value);
+
+        /// <inheritdoc />
+        protected override Expression Divide(Expression left, Expression right) => ZeroGuard(base.Divide(left, right), right);
+
+        /// <inheritdoc />
+        protected override Expression Modulo(Expression left, Expression right) => ZeroGuard(base.Modulo(left, right), right);
+
+        /// <inheritdoc />
+        protected override Expression Length(Expression source) => Call(nameof(ExpressoFunctions.Length), source);
+
+        /// <inheritdoc />
+        protected override Expression IndexOf(Expression source, Expression find) => Call(nameof(ExpressoFunctions.IndexOf), source, find);
+
+        /// <inheritdoc />
         protected override Expression Round(Expression value, Expression? digits) =>
             Call(nameof(ExpressoFunctions.Round), value, digits ?? Expression.Constant(0));
 
@@ -64,10 +96,6 @@ namespace Expresso.Rendering.Linq
             Call(nameof(ExpressoFunctions.Replace), source, oldValue, newValue);
 
         /// <inheritdoc />
-        protected override Expression IndexOf(Expression source, Expression find) =>
-            Expression.Call(source, LinqEx.Method(S, nameof(string.IndexOf), S, typeof(StringComparison)), find, Ordinal);
-
-        /// <inheritdoc />
         protected override Expression DateAdd(LinqDatePart part, Expression value, Expression amount) =>
             value.Type == typeof(TimeSpan)
                 ? Call(nameof(ExpressoFunctions.AddTimeOfDay), value, TimeSpanOf(part, amount))
@@ -80,6 +108,27 @@ namespace Expresso.Rendering.Linq
         /// <inheritdoc />
         protected override Expression Max(Expression items, LambdaExpression selector) =>
             GenericCall(nameof(ExpressoFunctions.Max), items, selector);
+
+        /// <summary>
+        /// Evaluating the NULL condition throws when <paramref name="when"/> is true, so <c>isnull</c> of a domain error
+        /// rejects instead of returning false.
+        /// </summary>
+        private static Expression DomainError(Expression when, string message)
+        {
+            var fail = Expression.Throw(
+                Expression.New(typeof(NotSupportedException).GetConstructor(new[] { typeof(string) })!, Expression.Constant(message)),
+                typeof(bool));
+            return Expression.Condition(when, fail, Expression.Constant(false));
+        }
+
+        private static Expression ZeroGuard(Expression result, Expression right)
+        {
+            var zero = Expression.Constant(Convert.ChangeType(0, right.Type, System.Globalization.CultureInfo.InvariantCulture), right.Type);
+            var fail = Expression.Throw(
+                Expression.New(typeof(NotSupportedException).GetConstructor(new[] { typeof(string) })!, Expression.Constant("division by zero")),
+                result.Type);
+            return Expression.Condition(Expression.Equal(right, zero), fail, result);
+        }
 
         private static Expression Call(string name, params Expression[] arguments) =>
             Expression.Call(LinqEx.Method(typeof(ExpressoFunctions), name, arguments.Select(a => a.Type).ToArray()), arguments);

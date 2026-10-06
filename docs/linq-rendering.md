@@ -46,7 +46,7 @@ var inMemory = new InMemoryExpressionToLinqTransformer();
 var matches = list.Where(inMemory, filter, books).OrderBy(inMemory, sort, books);
 ```
 
-`BuildPredicate` and `BuildSortKeys` return the raw lambdas if you compose queries yourself. `OrderByNested(transformer, sort, itemMapping, "authors")` orders a child sequence by the `sortfor` directive at that path.
+`BuildPredicate` and `BuildSortKeys` return the raw lambdas if you compose queries yourself. `OrderByNested` on `IQueryable<T>` orders a child query by the `sortfor` directive at that path. The `IEnumerable<T>` overloads of `OrderBy` and `OrderByNested` compile the lambda and run it in memory: use `InMemoryExpressionToLinqTransformer`, not an EF Core or EF6 transformer (those emit provider-only functions).
 
 DI: `services.AddLinqExpressionTransformations()` registers the Queryable profile as `IExpressionToLinqTransformer` and the in-memory profile as its concrete type (both singletons).
 
@@ -75,6 +75,7 @@ var query = db.Books
 - Supported providers: SQL Server, PostgreSQL (Npgsql), MySQL / MariaDB (Pomelo or Oracle's `MySql.EntityFrameworkCore`), SQLite, Oracle and DB2 (IBM). Other providers get the plain Queryable lambdas.
 - Overrides are placeholder methods in `ExpressoDbFunctions` that `HasExpressoFunctions` maps to provider SQL. They exist only where the provider's own translation differs from the SQL renderer. Each function page lists them.
 - `IncludeSorted` needs each sorted collection mapped to a navigation property (`b => b.Authors`). Otherwise it throws `NotSupportedException`; order a child query with `OrderByNested` instead.
+- DB2 cannot correlate sort keys in `ORDER BY` (`SQL0206N`). Use `EfCoreLiftedSort.OrderedKeys` to project keys, order the outer query, then load entities by id and restore order (see the EF Core sample repositories).
 - DI: `services.AddEfCoreExpressionTransformations<AppDbContext>()` registers a scoped transformer for that context's provider.
 
 ## EF6

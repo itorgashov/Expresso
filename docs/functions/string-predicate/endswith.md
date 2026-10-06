@@ -89,7 +89,7 @@ EF Core translates the Queryable lambda. The parameter carries the escaped suffi
 [w].[Name] LIKE @__Value_0_endswith ESCAPE N'\'
 ```
 
-No provider overrides.
+When neither argument references the query row, the predicate is still `LIKE` with the same escaping. `endswith("bA","a")` is then decided by the engine's collation, not by CLR case rules.
 
 ## EF6 rendering
 

@@ -53,7 +53,7 @@ expr != null   // FALSE
 
 ### In-memory
 
-Same as Queryable. A computed argument follows the in-memory NULL rule, so `isnull(concat(name,notes))` builds `e => false`, because in-memory [`concat`](../string-transform/concat.md) treats NULL as an empty string.
+Same as Queryable. A computed argument follows the in-memory NULL rule, so `isnull(concat(name,notes))` builds `e => false`, because in-memory [`concat`](../string-transform/concat.md) treats NULL as an empty string. A negative [`sqrt`](../arithmetic/sqrt.md) and [`div`](../arithmetic/div.md) or [`mod`](../arithmetic/mod.md) by zero throw `NotSupportedException`, including inside `isnull`.
 
 ## EF Core rendering
 
@@ -65,7 +65,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 [w].[Notes] IS NULL
 ```
 
-No provider overrides for `isnull` itself. On SQL Server, PostgreSQL and Oracle the [`concat`](../string-transform/concat.md) override makes `isnull(concat(name,notes))` constant FALSE.
+No provider overrides for `isnull` itself. On SQL Server, PostgreSQL, Oracle and DB2, `isnull` of [`sqrt`](../arithmetic/sqrt.md), [`div`](../arithmetic/div.md) or [`mod`](../arithmetic/mod.md) keeps that call in the SQL (`CASE WHEN NULLIF(value, NULL) IS NULL`), so a negative root or a zero divisor still raises. On SQLite and MySQL those results are NULL, so `isnull` of them is TRUE. On SQL Server, PostgreSQL and Oracle the [`concat`](../string-transform/concat.md) override makes `isnull(concat(name,notes))` constant FALSE. On Oracle an empty string is NULL, so `isnull` of an all-empty `concat`, or of `len`, `lower` or `indexof` with an empty literal, is TRUE. `isnull(concat(name,""))` is TRUE only when `name` is NULL.
 
 ## EF6 rendering
 
@@ -77,7 +77,7 @@ EF6 translates the Queryable lambda. On SQL Server:
 [Extent1].[Notes] IS NULL
 ```
 
-As in EF Core, the `concat` override on SQL Server, PostgreSQL and Oracle makes `isnull(concat(name,notes))` constant FALSE.
+As in EF Core, `isnull` of `sqrt`, `div` and `mod` keeps the call on SQL Server (and compares the nullable result with NULL), while SQLite and MySQL treat the bad value as NULL. The `concat` override on SQL Server, PostgreSQL and Oracle makes `isnull(concat(name,notes))` constant FALSE. On Oracle an empty string literal makes `isnull` of an all-empty `concat`, or of `len`, `lower` or `indexof`, TRUE. `isnull(concat(name,""))` is TRUE only when `name` is NULL.
 
 Every EF6 provider supports `isnull`, except that Oracle and SQLite cannot use a time-of-day `TimeSpan` argument: the provider has no time-of-day (Edm.Time) type.
 

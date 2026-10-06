@@ -78,7 +78,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 SUBSTRING([w].[Isbn], 0 + 1, @__Value_0)
 ```
 
-No provider overrides.
+When every argument is a literal, the call stays in SQL (`LEFT` on PostgreSQL, otherwise `SUBSTRING`/`SUBSTR`/`substr`) so a length past the end is clamped by the engine. A length that references a row still uses the provider's usual translation.
 
 ## EF6 rendering
 

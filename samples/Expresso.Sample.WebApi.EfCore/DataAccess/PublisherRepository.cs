@@ -29,16 +29,14 @@ public sealed class PublisherRepository : IRepository<Publisher>
             query = query.Where(_transformer, filterCriteria, BookLinqMappings.Publishers);
         }
 
-        if (sortDirective is not null && sortDirective.Items.Count > 0)
-        {
-            query = query.OrderBy(_transformer, sortDirective, BookLinqMappings.Publishers);
-        }
-        else
-        {
-            query = query.OrderBy(p => p.Id);
-        }
-
-        return await query.ToListAsync(cancellationToken);
+        return await EfCoreListSort.ToSortedListAsync(
+            query,
+            sortDirective,
+            BookLinqMappings.Publishers,
+            _transformer,
+            _db,
+            q => q,
+            cancellationToken);
     }
 
     public async Task<Publisher?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>

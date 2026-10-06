@@ -44,7 +44,8 @@ namespace Expresso.Rendering.Linq
 
         /// <summary>
         /// Orders in memory by the parent keys of <paramref name="sort"/> with <see cref="InMemorySortComparer"/>
-        /// (NULL last ascending, ordinal strings).
+        /// (NULL last ascending, ordinal strings). Use <see cref="InMemoryExpressionToLinqTransformer"/>; EF Core and EF6
+        /// transformers emit SQL-only functions that cannot run after <see cref="Enumerable.OrderBy{TSource,TKey}(IEnumerable{TSource}, Func{TSource, TKey})"/> compiles the lambda.
         /// </summary>
         public static IOrderedEnumerable<T> OrderBy<T>(
             this IEnumerable<T> source,
@@ -70,8 +71,9 @@ namespace Expresso.Rendering.Linq
         }
 
         /// <summary>
-        /// Orders child items by the nested <c>sortfor</c> directive at <paramref name="path"/>; returns
-        /// <paramref name="items"/> unchanged when there is none.
+        /// Orders child items in memory by the nested <c>sortfor</c> directive at <paramref name="path"/>; returns
+        /// <paramref name="items"/> unchanged when there is none. Requires <see cref="InMemoryExpressionToLinqTransformer"/>.
+        /// For database-backed collections use the <see cref="OrderByNested{TItem}(IQueryable{TItem}, IExpressionToLinqTransformer, SortDirective?, LinqQueryMapping{TItem}, string[])"/> overload or EF Core <c>IncludeSorted</c>.
         /// </summary>
         public static IEnumerable<TItem> OrderByNested<TItem>(
             this IEnumerable<TItem> items,

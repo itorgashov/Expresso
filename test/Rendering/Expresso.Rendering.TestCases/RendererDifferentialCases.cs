@@ -5,12 +5,35 @@ using Expresso.Core.Sorting;
 
 namespace Expresso.Rendering.TestCases
 {
+    /// <summary>How a differential case may fail on an engine that rejects the function.</summary>
+    public enum DifferentialRejection
+    {
+        /// <summary>Both sides must return the same id list.</summary>
+        None,
+
+        /// <summary>
+        /// Equal id lists match. A database error matches only when its code is one of the case's expected codes,
+        /// and the other side is that same error or a <see cref="NotSupportedException"/> whose message contains the case's reason.
+        /// </summary>
+        Domain,
+    }
+
     /// <summary>Edge case without a fixed expectation: every renderer on an engine must agree with that engine's ADO result.</summary>
     /// <param name="Id">Case id.</param>
     /// <param name="Filter">Filter, or <see langword="null"/> for all rows.</param>
     /// <param name="Sort">Sort, or <see langword="null"/> for id order.</param>
     /// <param name="DependsOnCollation">Result depends on the database collation (not comparable with ordinal in-memory order).</param>
-    public sealed record DifferentialCase(string Id, FilterCriteria? Filter, SortDirective? Sort = null, bool DependsOnCollation = false)
+    /// <param name="Rejection">How a domain error may differ between the reference engine and the candidate.</param>
+    /// <param name="UnsupportedReason">Text the in-memory <see cref="NotSupportedException"/> must contain when <paramref name="Rejection"/> is <see cref="DifferentialRejection.Domain"/>.</param>
+    /// <param name="DatabaseCodes">Fragments of the reference engine's native error code that count as this case's domain error.</param>
+    public sealed record DifferentialCase(
+        string Id,
+        FilterCriteria? Filter,
+        SortDirective? Sort = null,
+        bool DependsOnCollation = false,
+        DifferentialRejection Rejection = DifferentialRejection.None,
+        string? UnsupportedReason = null,
+        IReadOnlyList<string>? DatabaseCodes = null)
     {
         public override string ToString() => Id;
     }
@@ -72,6 +95,13 @@ namespace Expresso.Rendering.TestCases
                 new("sort-len-notes-asc", null, Sort((new LenFunc(notes), SortDirection.Ascending), (name, SortDirection.Ascending))),
                 new("sort-len-notes-desc", null, Sort((new LenFunc(notes), SortDirection.Descending), (name, SortDirection.Ascending))),
                 new("sort-div", null, Sort((new DivFunc(age, L(4)), SortDirection.Ascending), (name, SortDirection.Descending))),
+                new("isnull-sqrt-neg", F(new IsNullFunc(new SqrtFunc(new SubFunc(amount, L(1000.0))))), Rejection: DifferentialRejection.Domain, UnsupportedReason: "negative square root", DatabaseCodes: new[] { "2201F", "3623", "1428", "22003" }),
+                new("isnull-div-zero", F(new IsNullFunc(new DivFunc(amount, L(0.0)))), Rejection: DifferentialRejection.Domain, UnsupportedReason: "division by zero", DatabaseCodes: new[] { "22012", "8134", "1476" }),
+                new("isnull-substring-zero", F(new IsNullFunc(new SubStringFunc(name, L(0), L(0))))),
+                new("isnull-left-zero", F(new IsNullFunc(new LeftFunc(name, L(0))))),
+                new("right-trailing", F(Eq(new RightFunc(new ConcatFunc(new List<AbstractExpression> { name, L("  ") }), L(3)), "e  "))),
+                new("left-neg-two", F(Eq(new LeftFunc(name, L(-2)), "Ali"))),
+                new("right-neg-two", F(Eq(new RightFunc(name, L(-2)), "ce"))),
             };
         }
 

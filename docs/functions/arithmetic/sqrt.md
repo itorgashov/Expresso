@@ -54,7 +54,7 @@ A `byte` or `int` argument is converted to `double` first. The result is NULL wh
 
 ### In-memory
 
-Same as Queryable. A negative argument yields `NaN` in memory, while SQL Server raises error 3623. What other engines return depends on the engine; see [docs/semantics.md](../../semantics.md).
+Same as Queryable, except a negative argument throws `NotSupportedException`. `isnull(sqrt(...))` throws as well.
 
 ## EF Core rendering
 
@@ -66,7 +66,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 SQRT(CAST([w].[Age] AS float))
 ```
 
-No provider overrides.
+On SQLite and MySQL a negative argument is NULL, so `isnull(sqrt(...))` is TRUE. On SQL Server, PostgreSQL, Oracle and DB2, `isnull(sqrt(...))` keeps `SQRT` in the SQL so a negative argument still raises. A literal argument stays inside `SQRT` as well.
 
 ## EF6 rendering
 
@@ -81,6 +81,8 @@ EF6 has no canonical square root, so each supported provider calls its store `SQ
 ```sql
 SQRT(CAST([Extent1].[Age] AS float))
 ```
+
+`isnull(sqrt(...))` on SQL Server compares the nullable `SQRT` with NULL, so a negative argument still raises. On SQLite and MySQL a negative argument is NULL.
 
 ### Not supported
 

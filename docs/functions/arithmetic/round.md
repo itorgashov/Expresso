@@ -99,6 +99,8 @@ ROUND(argument::numeric, digits)
 ROUND(argument, digits)
 ```
 
+On SQL Server, MySQL / MariaDB, SQLite and Oracle, a call whose operands do not reference the query row also stays in `ROUND`, including a precision outside 0–15. `eq(round(2.5),3.0)` keeps `ROUND`.
+
 ## EF6 rendering
 
 ### All providers

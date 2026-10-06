@@ -106,6 +106,10 @@ For a time-of-day `TimeSpan` only, `ExpressoDbFunctions.Hour`:
 CAST(strftime('%H', datetime) AS INTEGER)
 ```
 
+### Oracle
+
+A `TimeOnly` stored as `INTERVAL DAY TO SECOND` takes the hour field of `TO_CHAR` of that interval and multiplies it by `-1` when the text starts with `-`, so a negative interval keeps a negative hour. A `DATE` or `TIMESTAMP` column uses `TO_NUMBER(TO_CHAR(value, 'HH24'))` instead. The same marker throws `NotSupportedException` when Oracle EF stores the value as text (`NVARCHAR2`). Map a `TimeOnly` property to `INTERVAL DAY(0) TO SECOND(0)` (the sample converts `TimeOnly` to `TimeSpan`).
+
 ## EF6 rendering
 
 ### All providers

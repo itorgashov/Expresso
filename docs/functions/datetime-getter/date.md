@@ -84,10 +84,10 @@ CAST([w].[created_at] AS date)
 `ExpressoDbFunctions.Date`:
 
 ```sql
-TO_CHAR(TRUNC(value), 'YYYY-MM-DD')
+TRUNC(value)
 ```
 
-The Oracle EF Core provider stores `DateOnly` as ISO text, so the marker renders the same text the parameter carries; see [docs/semantics.md](../../semantics.md).
+The result is a `DATE`, so `year(date(createdat))` stays on a date. A comparison with a `DateOnly` literal binds the parameter as `DateTime`. A `DateOnly` column mapped as text (`NVARCHAR2`) still throws `NotSupportedException`; map it to `DATE`. See [docs/semantics.md](../../semantics.md).
 
 ### DB2
 

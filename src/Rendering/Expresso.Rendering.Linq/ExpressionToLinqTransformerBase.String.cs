@@ -46,15 +46,32 @@ namespace Expresso.Rendering.Linq
             Propagate(a => a.Aggregate(ConcatPair), arguments.ToArray());
 
         /// <summary>
-        /// <c>concat</c> with NULL arguments as empty strings. The result is never NULL (SQL Server / PostgreSQL <c>CONCAT</c>),
-        /// or with <paramref name="nullWhenAllNull"/> NULL exactly when every argument is NULL (Oracle <c>||</c>).
+        /// Oracle <c>||</c>: an empty string is a NULL operand. The result is NULL only when every operand is NULL.
         /// </summary>
-        protected static LinqNode ConcatNullAsEmpty(IReadOnlyList<LinqNode> arguments, bool nullWhenAllNull = false) =>
+        protected static LinqNode OracleConcat(IReadOnlyList<LinqNode> arguments)
+        {
+            var concatenated = ConcatNullAsEmpty(arguments);
+            Expression? allNull = LinqEx.True;
+            foreach (var argument in arguments)
+            {
+                var operandNull = IsEmptyStringLiteral(argument.Value) ? LinqEx.True : argument.IsNull;
+                if (operandNull is null)
+                {
+                    allNull = null;
+                    break;
+                }
+
+                allNull = LinqEx.AndAlso(allNull, operandNull);
+            }
+
+            return LinqNode.Scalar(concatenated.Value, allNull);
+        }
+
+        /// <summary><c>concat</c> with NULL arguments as empty strings. The result value is never NULL.</summary>
+        protected static LinqNode ConcatNullAsEmpty(IReadOnlyList<LinqNode> arguments) =>
             LinqNode.Scalar(
                 arguments.Select(a => (Expression)Expression.Coalesce(a.ToNullable(), Expression.Constant(string.Empty))).Aggregate(ConcatPair),
-                nullWhenAllNull && arguments.All(a => a.IsNull is not null)
-                    ? arguments.Select(a => a.IsNull!).Aggregate(Expression.AndAlso)
-                    : null);
+                null);
 
         private static Expression ConcatPair(Expression left, Expression right) =>
             Expression.Call(LinqEx.Method(S, nameof(string.Concat), S, S), left, right);
@@ -101,23 +118,26 @@ namespace Expresso.Rendering.Linq
             return Test(test(source.Value, pattern.Value), source, pattern);
         }
 
-        private LinqNode StringCall(AbstractFunction node, LinqScope s, Func<Expression[], Expression> compute) =>
-            Propagate(compute, VisitAll(node.Arguments, s).ToArray());
+        private LinqNode StringCall(AbstractFunction node, LinqScope s, string function, Func<Expression[], Expression> compute)
+        {
+            var args = VisitAll(node.Arguments, s).ToArray();
+            return Propagate(function, compute, args);
+        }
 
         LinqNode V.VisitStrStartswith(StrStartswithFunc node, LinqScope s) => LikeTest(node, s, StartsWith);
         LinqNode V.VisitStrEndswith(StrEndswithFunc node, LinqScope s) => LikeTest(node, s, EndsWith);
         LinqNode V.VisitStrContains(StrContainsFunc node, LinqScope s) => LikeTest(node, s, Contains);
-        LinqNode V.VisitSubString(SubStringFunc node, LinqScope s) => StringCall(node, s, a => Substring(a[0], a[1], a[2]));
-        LinqNode V.VisitLeft(LeftFunc node, LinqScope s) => StringCall(node, s, a => Left(a[0], a[1]));
-        LinqNode V.VisitRight(RightFunc node, LinqScope s) => StringCall(node, s, a => Right(a[0], a[1]));
+        LinqNode V.VisitSubString(SubStringFunc node, LinqScope s) => StringCall(node, s, "substring", a => Substring(a[0], a[1], a[2]));
+        LinqNode V.VisitLeft(LeftFunc node, LinqScope s) => StringCall(node, s, "left", a => Left(a[0], a[1]));
+        LinqNode V.VisitRight(RightFunc node, LinqScope s) => StringCall(node, s, "right", a => Right(a[0], a[1]));
         LinqNode V.VisitConcat(ConcatFunc node, LinqScope s) => Concat(VisitAll(node.Arguments, s));
-        LinqNode V.VisitLower(LowerFunc node, LinqScope s) => StringCall(node, s, a => Lower(a[0]));
-        LinqNode V.VisitUpper(UpperFunc node, LinqScope s) => StringCall(node, s, a => Upper(a[0]));
-        LinqNode V.VisitTrim(TrimFunc node, LinqScope s) => StringCall(node, s, a => Trim(a[0]));
-        LinqNode V.VisitLTrim(LTrimFunc node, LinqScope s) => StringCall(node, s, a => LTrim(a[0]));
-        LinqNode V.VisitRTrim(RTrimFunc node, LinqScope s) => StringCall(node, s, a => RTrim(a[0]));
-        LinqNode V.VisitReplace(ReplaceFunc node, LinqScope s) => StringCall(node, s, a => Replace(a[0], a[1], a[2]));
-        LinqNode V.VisitLen(LenFunc node, LinqScope s) => StringCall(node, s, a => Length(a[0]));
-        LinqNode V.VisitIndexOf(IndexOfFunc node, LinqScope s) => StringCall(node, s, a => IndexOf(a[0], a[1]));
+        LinqNode V.VisitLower(LowerFunc node, LinqScope s) => StringCall(node, s, "lower", a => Lower(a[0]));
+        LinqNode V.VisitUpper(UpperFunc node, LinqScope s) => StringCall(node, s, "upper", a => Upper(a[0]));
+        LinqNode V.VisitTrim(TrimFunc node, LinqScope s) => StringCall(node, s, "trim", a => Trim(a[0]));
+        LinqNode V.VisitLTrim(LTrimFunc node, LinqScope s) => StringCall(node, s, "ltrim", a => LTrim(a[0]));
+        LinqNode V.VisitRTrim(RTrimFunc node, LinqScope s) => StringCall(node, s, "rtrim", a => RTrim(a[0]));
+        LinqNode V.VisitReplace(ReplaceFunc node, LinqScope s) => StringCall(node, s, "replace", a => Replace(a[0], a[1], a[2]));
+        LinqNode V.VisitLen(LenFunc node, LinqScope s) => StringCall(node, s, "len", a => Length(a[0]));
+        LinqNode V.VisitIndexOf(IndexOfFunc node, LinqScope s) => StringCall(node, s, "indexof", a => IndexOf(a[0], a[1]));
     }
 }

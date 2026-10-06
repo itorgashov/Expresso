@@ -64,7 +64,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 LTRIM([w].[Name])
 ```
 
-No provider overrides.
+A literal argument stays in `LTRIM`. SQL removes spaces only, so a leading tab is kept. On Oracle, `isnull` of that call checks `LTRIM` and is FALSE.
 
 ## EF6 rendering
 

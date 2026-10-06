@@ -42,9 +42,19 @@ public sealed class PublisherRepository : IRepository<Publisher>
             query = query.OrderBy(p => p.Id);
         }
 
-        return await query.ToListAsync(cancellationToken);
+        var list = await query.ToListAsync(cancellationToken);
+        PublisherTimes.Apply(_db, list);
+        return list;
     }
 
-    public async Task<Publisher?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
-        await _db.Publishers.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    public async Task<Publisher?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var publisher = await _db.Publishers.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        if (publisher is not null)
+        {
+            PublisherTimes.Apply(_db, new[] { publisher });
+        }
+
+        return publisher;
+    }
 }

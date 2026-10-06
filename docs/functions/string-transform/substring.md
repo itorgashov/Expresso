@@ -80,7 +80,7 @@ EF Core translates the Queryable lambda. When `start` is a parameter, EF Core co
 SUBSTRING([w].[Name], @__p_0 + 1, @__Value_1)
 ```
 
-No provider overrides.
+When every argument is a literal, the call stays in SQL (`SUBSTRING`, `SUBSTR`, or `substr`) so a length past the end is clamped by the engine. A start or length that references a row still uses the provider's usual translation.
 
 ## EF6 rendering
 

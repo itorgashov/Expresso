@@ -1,8 +1,18 @@
 #if NETFRAMEWORK
 namespace Expresso.Rendering.Integration.Test.Ef6
 {
+    /// <summary>Kind of documented EF6 gap: the exception type <see cref="Ef6EngineItTests"/> expects.</summary>
+    public enum Ef6GapKind
+    {
+        /// <summary>The renderer must throw <see cref="NotSupportedException"/>.</summary>
+        Unsupported,
+
+        /// <summary>The database rejects the query with <see cref="System.Data.Common.DbException"/>.</summary>
+        Database,
+    }
+
     /// <summary>A case an EF6 provider cannot render exactly: it must fail loudly, or (<paramref name="Throws"/> false) it silently diverges.</summary>
-    public sealed record Ef6Gap(string Reason, bool Throws = true);
+    public sealed record Ef6Gap(string Reason, bool Throws = true, Ef6GapKind Kind = Ef6GapKind.Unsupported);
 
     /// <summary>Documented EF6 provider gaps by case id (catalog and differential ids share one namespace).</summary>
     internal static class Ef6ProviderGaps
@@ -19,8 +29,8 @@ namespace Expresso.Rendering.Integration.Test.Ef6
         public static readonly IReadOnlyDictionary<string, Ef6Gap> None = new Dictionary<string, Ef6Gap>();
 
         public static readonly IReadOnlyDictionary<string, Ef6Gap> PostgreSql = Build(
-            (new[] { "round", "round-digits", "round-half", "round-half-digits" }, new Ef6Gap("EF6 cannot cast to numeric; double precision rounds half to even")),
-            (new[] { "sqrt" }, new Ef6Gap("the provider exposes no store functions")));
+            (new[] { "round", "round-digits", "round-half", "round-half-digits" }, new Ef6Gap("EF6 cannot cast to numeric, and PostgreSQL rounds double precision half to even")),
+            (new[] { "sqrt", "isnull-sqrt-neg" }, new Ef6Gap("the provider exposes no store functions")));
 
         public static readonly IReadOnlyDictionary<string, Ef6Gap> MariaDb = Build(MonthAdds);
 
@@ -33,8 +43,10 @@ namespace Expresso.Rendering.Integration.Test.Ef6
         public static readonly IReadOnlyDictionary<string, Ef6Gap> Oracle = Build(
             (TimeOfDayCases, new Ef6Gap("the provider has no time-of-day (Edm.Time) type")),
             (DateAddCases, new Ef6Gap("the provider pastes the amount into an INTERVAL literal, so parameters fail (ORA-01867)")),
-            (new[] { "concat", "concat-null-eq" }, new Ef6Gap("EF6's concat null guard emits N'' (ORA-12704 on VARCHAR2 columns)")),
-            (new[] { "sqrt" }, new Ef6Gap("the provider manifest has no SQRT")));
+            (new[] { "concat", "concat-null-eq" }, new Ef6Gap(
+                "EF6's concat null guard emits N'' (ORA-12704 on VARCHAR2 columns)",
+                Kind: Ef6GapKind.Database)),
+            (new[] { "sqrt", "isnull-sqrt-neg" }, new Ef6Gap("the provider manifest has no SQRT")));
 
         public static readonly IReadOnlyDictionary<string, Ef6Gap> Sqlite = Build(
             (TimeOfDayCases, new Ef6Gap("the provider has no time-of-day (Edm.Time) type")),

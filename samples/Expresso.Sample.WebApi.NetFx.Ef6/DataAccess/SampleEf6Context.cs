@@ -52,15 +52,28 @@ public sealed class SampleEf6Context : DbContext, IDbModelCacheKeyProvider
             publisher.Ignore(p => p.OpensAt);
             publisher.Ignore(p => p.ClosesAt);
         }
-        else
+
+        if (provider == Ef6Provider.Sqlite)
+        {
+            publisher.Property(p => p.OpensAtText).HasColumnName("opens_at");
+            publisher.Property(p => p.ClosesAtText).HasColumnName("closes_at");
+        }
+        else if (provider is not Ef6Provider.Oracle)
         {
             publisher.Property(p => p.OpensAt).HasColumnName("opens_at");
             publisher.Property(p => p.ClosesAt).HasColumnName("closes_at");
+            publisher.Ignore(p => p.OpensAtText);
+            publisher.Ignore(p => p.ClosesAtText);
             if (provider == Ef6Provider.PostgreSql)
             {
                 publisher.Property(p => p.OpensAt).HasColumnType("time");
                 publisher.Property(p => p.ClosesAt).HasColumnType("time");
             }
+        }
+        else
+        {
+            publisher.Ignore(p => p.OpensAtText);
+            publisher.Ignore(p => p.ClosesAtText);
         }
 
         var author = modelBuilder.Entity<Author>().ToTable("author");

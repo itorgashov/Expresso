@@ -30,26 +30,27 @@ public sealed class BookRepository : IRepository<Book>
             query = query.Where(_transformer, filterCriteria, BookLinqMappings.Books);
         }
 
-        if (sortDirective is not null && sortDirective.Items.Count > 0)
-        {
-            query = query.OrderBy(_transformer, sortDirective, BookLinqMappings.Books);
-        }
-        else
-        {
-            query = query.OrderBy(b => b.Id);
-        }
+        return await EfCoreListSort.ToSortedListAsync(
+            query,
+            sortDirective,
+            BookLinqMappings.Books,
+            _transformer,
+            _db,
+            q => WithIncludes(q, sortDirective).AsSplitQuery(),
+            cancellationToken);
+    }
 
+    private IQueryable<Book> WithIncludes(IQueryable<Book> query, SortDirective? sortDirective)
+    {
         if (sortDirective is not null && sortDirective.Nested.Count > 0)
         {
             query = query.IncludeSorted(_transformer, sortDirective, BookLinqMappings.Books);
         }
 
-        query = query
+        return query
             .Include(b => b.Publisher)
             .Include(b => b.Authors)
             .ThenInclude(a => a.Awards);
-
-        return await query.AsSplitQuery().ToListAsync(cancellationToken);
     }
 
     public async Task<Book?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>

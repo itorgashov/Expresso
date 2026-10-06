@@ -48,7 +48,7 @@ public sealed class BookRepository : IRepository<Book>
 
         if (sortDirective is not null && sortDirective.Nested.Count > 0)
         {
-            ApplyNestedSort(books, sortDirective);
+            await NestedSortLoader.ApplyBookNestedSortAsync(_db, _transformer, sortDirective, books, cancellationToken);
         }
 
         return books;
@@ -60,21 +60,4 @@ public sealed class BookRepository : IRepository<Book>
             .Include("Authors.Awards")
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
-    private void ApplyNestedSort(List<Book> books, SortDirective sortDirective)
-    {
-        foreach (var book in books)
-        {
-            var authors = book.Authors
-                .OrderByNested(_transformer, sortDirective, BookLinqMappings.Authors, "authors")
-                .ToList();
-            foreach (var author in authors)
-            {
-                author.Awards = author.Awards
-                    .OrderByNested(_transformer, sortDirective, BookLinqMappings.Awards, "authors", "awards")
-                    .ToList();
-            }
-
-            book.Authors = authors;
-        }
-    }
 }

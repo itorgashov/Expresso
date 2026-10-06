@@ -91,7 +91,7 @@ EF Core translates the Queryable lambda. The parameter carries the escaped subst
 
 ### SQLite
 
-EF Core's own translation is `instr(text, substring) > 0`, which is case-sensitive, while the SQL renderer's `LIKE` ignores ASCII case. The override calls `EF.Functions.Like(text, "%" + escaped + "%", "\")`, where `escaped` doubles `\` and escapes `%` and `_` in the same order as the SQL renderer. A literal substring becomes one parameter holding the escaped pattern (`contains(title,"100%")` binds `'%100\%%'`):
+EF Core's own translation is `instr(text, substring) > 0`, which is case-sensitive, while the SQL renderer's `LIKE` ignores ASCII case. The override calls `EF.Functions.Like(text, "%" + escaped + "%", "\")`, where `escaped` doubles `\` and escapes `%` and `_` in the same order as the SQL renderer. A literal pair on every provider uses that same `LIKE`, so `contains("Ab","a")` is not decided by the CLR. A literal substring becomes one parameter holding the escaped pattern (`contains(title,"100%")` binds `'%100\%%'`):
 
 ```sql
 "w"."Title" IS NOT NULL AND "w"."Title" LIKE @__Concat_1 ESCAPE '\'

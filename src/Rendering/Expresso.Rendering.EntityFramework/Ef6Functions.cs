@@ -23,6 +23,10 @@ namespace Expresso.Rendering.EntityFramework
         [DbFunction("SQLite", "DATEPART")]
         public static int? SqliteDatePart(string part, DateTime? value) => throw NotInMemory();
 
+        /// <summary><c>substr(text, start)</c>. A negative start counts from the end, matching SQLite <c>right</c>.</summary>
+        [DbFunction("SQLite", "SUBSTR")]
+        public static string SqliteSubstr(string value, long? start) => throw NotInMemory();
+
         [DbFunction("MySql", "SQRT")]
         public static double? MySqlSqrt(double? value) => throw NotInMemory();
 

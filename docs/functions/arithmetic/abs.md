@@ -65,7 +65,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 ABS([w].[Amount])
 ```
 
-No provider overrides.
+A literal argument stays in `ABS`, including the minimum `int`, so command generation does not overflow in the CLR.
 
 ## EF6 rendering
 

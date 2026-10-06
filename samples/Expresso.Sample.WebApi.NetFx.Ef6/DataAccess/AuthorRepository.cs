@@ -42,19 +42,14 @@ public sealed class AuthorRepository : IRepository<Author>
             query = query.OrderBy(a => a.Id);
         }
 
-        var authors = await query.Include(a => a.Awards).ToListAsync(cancellationToken);
-
         if (sortDirective is not null && sortDirective.Nested.Count > 0)
         {
-            foreach (var author in authors)
-            {
-                author.Awards = author.Awards
-                    .OrderByNested(_transformer, sortDirective, BookLinqMappings.Awards, "awards")
-                    .ToList();
-            }
+            var authors = await query.ToListAsync(cancellationToken);
+            await NestedSortLoader.AttachSortedAwardsAsync(_db, _transformer, sortDirective, authors, cancellationToken, "awards");
+            return authors;
         }
 
-        return authors;
+        return await query.Include(a => a.Awards).ToListAsync(cancellationToken);
     }
 
     public async Task<Author?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>

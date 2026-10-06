@@ -72,22 +72,31 @@ The result is NULL when `text` or `length` is NULL. Example: `eq(right(isbn,1),"
 
 ## EF Core rendering
 
-### All providers
+### SQL Server and PostgreSQL
 
-EF Core translates the Queryable lambda. On SQL Server:
+`RIGHT(text, length)` for a field or a literal length:
 
 ```sql
-CASE WHEN CAST(LEN([w].[Isbn]) AS int) <= @n THEN [w].[Isbn]
-     ELSE SUBSTRING([w].[Isbn], (CAST(LEN([w].[Isbn]) AS int) - @n) + 1, @n) END
+RIGHT([w].[Isbn], @n)
 ```
 
-No provider overrides.
+### SQLite
+
+`substr(text, -(length))` for a field or a literal length, including zero and negative lengths:
+
+```sql
+substr([w].[Name], -@n)
+```
+
+### MySQL / MariaDB and DB2
+
+`RIGHT(text, length)` when neither operand references the query row, for example `right("abc",2)`. A column operand, including `right(name,2)`, uses the Queryable `CASE` / `SUBSTRING` form.
+
+### Oracle
+
+`SUBSTR(text, GREATEST(LENGTH(text) - length + 1, 1))` when neither operand references the query row, for example `right("abc",2)`. A column operand, including `right(name,2)`, uses the Queryable form.
 
 ## EF6 rendering
-
-### All providers
-
-EF6 translates the Queryable lambda with the canonical `Length` and `Substring` functions.
 
 ### SQL Server
 
@@ -96,6 +105,18 @@ EF6 translates the Queryable lambda with the canonical `Length` and `Substring` 
 ```sql
 RIGHT([Extent1].[Isbn], @p__linq__0)
 ```
+
+### PostgreSQL
+
+A `CASE` on `substr` that keeps the length non-negative. A negative length drops characters from the start.
+
+### SQLite
+
+`substr(text, -(length))`, including zero and negative lengths.
+
+### Other providers
+
+The Queryable `Length` and `Substring` form.
 
 Every EF6 provider supports `right`.
 

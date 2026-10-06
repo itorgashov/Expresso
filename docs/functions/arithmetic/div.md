@@ -56,7 +56,7 @@ The integer `/` in SQL depends on the engine, while the lambda always means trun
 
 ### In-memory
 
-Same as Queryable.
+Same as Queryable, except division by zero throws `NotSupportedException`. `isnull(div(...))` throws as well.
 
 ## EF Core rendering
 
@@ -68,7 +68,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 [w].[Age] / @__Value_0
 ```
 
-No provider overrides.
+On SQLite and MySQL, division by zero is NULL, so `isnull(div(...))` is TRUE. On SQL Server, PostgreSQL, Oracle and DB2, `isnull(div(...))` keeps the division in the SQL so a zero divisor still raises. A call whose operands are all literals stays in SQL as well, so `eq(div(1.0,0.0),0.0)` still divides in the engine.
 
 ## EF6 rendering
 
@@ -80,7 +80,7 @@ EF6 translates the Queryable lambda. On SQL Server:
 ([Extent1].[Age] / @p__linq__0)
 ```
 
-Every EF6 provider supports `div`.
+Every EF6 provider supports `div`. `isnull(div(...))` keeps the division on SQL Server, PostgreSQL, Oracle and DB2, and is TRUE for a zero divisor on SQLite and MySQL.
 
 ## Notes
 

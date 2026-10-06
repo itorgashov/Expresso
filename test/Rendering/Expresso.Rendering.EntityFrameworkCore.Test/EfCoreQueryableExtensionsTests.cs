@@ -2,6 +2,7 @@ using Expresso.Core.CriteriaExpressions;
 using Expresso.Core.Sorting;
 using Expresso.Rendering.Linq;
 using Expresso.Rendering.TestCases;
+using Microsoft.EntityFrameworkCore;
 
 namespace Expresso.Rendering.EntityFrameworkCore.Test
 {
@@ -82,6 +83,77 @@ namespace Expresso.Rendering.EntityFrameworkCore.Test
         }
 
         [Fact]
+        public void OrderByKeys_RestoresMaterializedOrder()
+        {
+            var items = new[] { new Widget { Id = 2 }, new Widget { Id = 1 } };
+
+            var ordered = EfCoreLiftedSort.OrderByKeys(new[] { 1, 2 }, items, w => w.Id);
+
+            Assert.Equal(new[] { 1, 2 }, ordered.Select(w => w.Id));
+        }
+
+        [Fact]
+        public void IncludeSorted_LiteralAncestorKey_IsSharedAcrossSiblingBranches()
+        {
+            // Scenario: children ordered by score+1, with sibling a and b both ordered by value.
+            // The ancestor OrderBy must be one expression (EF rejects two filters on the same navigation),
+            // and both grandchild navigations must appear.
+            using var context = new BranchContext();
+            var leaves = Sort((new Field("value", typeof(int)), SortDirection.Ascending));
+            var children = new SortDirective(
+                new[] { new SortDirectiveItem { Expression = new AddFunc(new Field("score", typeof(int), "children"), new Literal(1)), Direction = SortDirection.Ascending } },
+                new[] { new CollectionSort("a", leaves), new CollectionSort("b", leaves) });
+            var leafMapping = new LinqQueryMapping<BranchLeaf>().Field("value", l => l.Value);
+            var mapping = new LinqQueryMapping<BranchRoot>().Collection(
+                "children",
+                r => r.Children,
+                new LinqQueryMapping<BranchChild>()
+                    .Field("score", c => c.Score)
+                    .Collection("a", c => c.A, leafMapping)
+                    .Collection("b", c => c.B, leafMapping));
+            var transformer = new EfCoreExpressionToLinqTransformer(context.Database.ProviderName);
+
+            var sql = context.Roots.IncludeSorted(transformer, Nested(("children", children)), mapping).ToQueryString();
+
+            Assert.Contains("Score", sql);
+            Assert.Contains("AId", sql);
+            Assert.Contains("BId", sql);
+        }
+
+        [Fact]
+        public void IncludeSorted_SiblingNavigations_DoNotShareOneLambda()
+        {
+            using var context = new TwinContext();
+            var shared = Sort((new Field("value", typeof(int)), SortDirection.Ascending));
+            var root = new SortDirective(
+                Array.Empty<SortDirectiveItem>(),
+                new[] { new CollectionSort("a", shared), new CollectionSort("b", shared) });
+            var mapping = new LinqQueryMapping<TwinParent>()
+                .Collection("a", p => p.A, new LinqQueryMapping<TwinLeaf>().Field("value", l => l.Value))
+                .Collection("b", p => p.B, new LinqQueryMapping<TwinLeaf>().Field("value", l => l.Value));
+            var transformer = new EfCoreExpressionToLinqTransformer(context.Database.ProviderName);
+
+            var sql = context.Parents.IncludeSorted(transformer, root, mapping).ToQueryString();
+
+            Assert.Contains("AId", sql);
+            Assert.Contains("BId", sql);
+        }
+
+        [Fact]
+        public void IncludeSorted_SiblingPaths_ReuseSharedDirective()
+        {
+            var shared = new SortDirective(Sort((Label, SortDirection.Ascending)).Items, Array.Empty<CollectionSort>());
+            var root = new SortDirective(
+                Array.Empty<SortDirectiveItem>(),
+                new[] { new CollectionSort("tags", shared), new CollectionSort("tags", shared) });
+            using var context = TestWidgetContext.Sqlite();
+
+            var sql = context.IncludeSql(root);
+
+            Assert.Contains("ORDER BY \"w\".\"Id\", \"w0\".\"Label\"", sql);
+        }
+
+        [Fact]
         public void IncludeSorted_ComputedNavigation_ThrowsWithGuidance()
         {
             using var context = TestWidgetContext.Sqlite();
@@ -111,5 +183,97 @@ namespace Expresso.Rendering.EntityFrameworkCore.Test
 
         private static SortDirective Nested(params (string Name, SortDirective Directive)[] nested) =>
             new(Array.Empty<SortDirectiveItem>(), nested.Select(n => new CollectionSort(n.Name, n.Directive)).ToList());
+
+        private sealed class BranchRoot
+        {
+            public int Id { get; set; }
+
+            public List<BranchChild> Children { get; set; } = new();
+        }
+
+        private sealed class BranchChild
+        {
+            public int Id { get; set; }
+
+            public int RootId { get; set; }
+
+            public int Score { get; set; }
+
+            public List<BranchLeaf> A { get; set; } = new();
+
+            public List<BranchLeaf> B { get; set; } = new();
+        }
+
+        private sealed class BranchLeaf
+        {
+            public int Id { get; set; }
+
+            public int Value { get; set; }
+
+            public int AId { get; set; }
+
+            public int BId { get; set; }
+        }
+
+        private sealed class BranchContext : DbContext
+        {
+            public BranchContext()
+                : base(new DbContextOptionsBuilder<BranchContext>().UseSqlite("Data Source=unused.db").Options)
+            {
+            }
+
+            public DbSet<BranchRoot> Roots => Set<BranchRoot>();
+
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
+            {
+                modelBuilder.HasExpressoFunctions(Database.ProviderName);
+                modelBuilder.Entity<BranchRoot>(e => e.HasMany(r => r.Children).WithOne().HasForeignKey(c => c.RootId));
+                modelBuilder.Entity<BranchChild>(e =>
+                {
+                    e.HasMany(c => c.A).WithOne().HasForeignKey(l => l.AId);
+                    e.HasMany(c => c.B).WithOne().HasForeignKey(l => l.BId);
+                });
+            }
+        }
+
+        private sealed class TwinLeaf
+        {
+            public int Id { get; set; }
+
+            public int Value { get; set; }
+
+            public int AId { get; set; }
+
+            public int BId { get; set; }
+        }
+
+        private sealed class TwinParent
+        {
+            public int Id { get; set; }
+
+            public List<TwinLeaf> A { get; set; } = new();
+
+            public List<TwinLeaf> B { get; set; } = new();
+        }
+
+        private sealed class TwinContext : DbContext
+        {
+            public TwinContext()
+                : base(new DbContextOptionsBuilder<TwinContext>().UseSqlite("Data Source=unused.db").Options)
+            {
+            }
+
+            public DbSet<TwinParent> Parents => Set<TwinParent>();
+
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
+            {
+                modelBuilder.HasExpressoFunctions(Database.ProviderName);
+                modelBuilder.Entity<TwinParent>(e =>
+                {
+                    e.HasMany(p => p.A).WithOne().HasForeignKey(l => l.AId);
+                    e.HasMany(p => p.B).WithOne().HasForeignKey(l => l.BId);
+                });
+            }
+        }
     }
 }

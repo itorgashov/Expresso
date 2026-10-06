@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using Expresso.Core.Filtering;
+using Expresso.Sample.WebApi.NetFx.Ef6.DataAccess;
 
 namespace Expresso.Sample.WebApi.NetFx.Ef6.Filtering;
 
@@ -43,7 +45,7 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         ("year", typeof(int)),
     };
 
-    private static readonly (string, Type)[] PublisherFields =
+    private static readonly (string, Type)[] PublisherFieldsAll =
     {
         ("name", typeof(string)),
         ("country", typeof(string)),
@@ -51,6 +53,15 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         ("opens", typeof(TimeSpan)),
         ("closes", typeof(TimeSpan)),
     };
+
+    private readonly (string, Type)[] _publisherFields;
+
+    public RequestFieldsInfoProvider(SampleEngine engine)
+    {
+        _publisherFields = engine is SampleEngine.Oracle or SampleEngine.Sqlite
+            ? PublisherFieldsAll.Where(f => f.Item1 is not "opens" and not "closes").ToArray()
+            : PublisherFieldsAll;
+    }
 
     private static readonly CollectionModel[] AuthorAwardCollections =
     {
@@ -70,7 +81,7 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         {
             "book" => BookFilterFields,
             "author" => AuthorFields,
-            "publisher" => PublisherFields,
+            "publisher" => _publisherFields,
             _ => Array.Empty<(string, Type)>(),
         };
 
@@ -79,7 +90,7 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         {
             "book" => BookSortFields,
             "author" => AuthorFields,
-            "publisher" => PublisherFields,
+            "publisher" => _publisherFields,
             _ => Array.Empty<(string, Type)>(),
         };
 
@@ -88,7 +99,7 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         {
             "book" => new QueryModel(BookFilterFields, BookAuthorCollections),
             "author" => new QueryModel(AuthorFields, AuthorAwardCollections),
-            "publisher" => new QueryModel(PublisherFields),
+            "publisher" => new QueryModel(_publisherFields),
             _ => QueryModel.Empty,
         };
 
@@ -97,7 +108,7 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
         {
             "book" => new QueryModel(BookSortFields, BookAuthorCollections),
             "author" => new QueryModel(AuthorFields, AuthorAwardCollections),
-            "publisher" => new QueryModel(PublisherFields),
+            "publisher" => new QueryModel(_publisherFields),
             _ => QueryModel.Empty,
         };
 }

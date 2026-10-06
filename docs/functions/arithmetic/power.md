@@ -60,13 +60,13 @@ Same as Queryable.
 
 ### All providers
 
-EF Core translates the Queryable lambda. On SQL Server:
+On SQL Server:
 
 ```sql
 POWER(CAST([w].[Age] AS float), @__p_0)
 ```
 
-No provider overrides.
+The call is `POWER` on every provider, including a column base. `isnull(power(...))` keeps that call inside `NULLIF`, including on SQLite and MySQL and for a non-nullable base, so a domain result is not folded to false. A literal call stays inside `POWER` as well.
 
 ## EF6 rendering
 
@@ -77,6 +77,8 @@ EF6 translates the Queryable lambda with the canonical `Power` function. On SQL 
 ```sql
 POWER(CAST([Extent1].[Age] AS float), @p__linq__0)
 ```
+
+`isnull(power(...))` compares that `POWER` result with NULL, so the call is not folded to false.
 
 Every EF6 provider supports `power`.
 

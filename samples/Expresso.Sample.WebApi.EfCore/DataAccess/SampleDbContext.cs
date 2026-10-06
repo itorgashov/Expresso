@@ -44,6 +44,16 @@ public sealed class SampleDbContext : DbContext
                 e.Property(p => p.OpensAt).HasColumnType("time");
                 e.Property(p => p.ClosesAt).HasColumnType("time");
             }
+
+            if (provider == EfCoreProvider.Oracle)
+            {
+                e.Property(p => p.OpensAt)
+                    .HasConversion(v => v.ToTimeSpan(), v => TimeOnly.FromTimeSpan(v))
+                    .HasColumnType("INTERVAL DAY(0) TO SECOND(0)");
+                e.Property(p => p.ClosesAt)
+                    .HasConversion(v => v.ToTimeSpan(), v => TimeOnly.FromTimeSpan(v))
+                    .HasColumnType("INTERVAL DAY(0) TO SECOND(0)");
+            }
         });
 
         modelBuilder.Entity<Author>(e =>
@@ -56,6 +66,15 @@ public sealed class SampleDbContext : DbContext
             e.Property(a => a.DisplayName).HasColumnName("display_name");
             e.Property(a => a.DateOfBirth).HasColumnName("date_of_birth");
             e.Property(a => a.CreatedAt).HasColumnName("created_at");
+            if (provider == EfCoreProvider.Oracle)
+            {
+                e.Property(a => a.DateOfBirth)
+                    .HasConversion(
+                        d => d.HasValue ? d.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null,
+                        dt => dt.HasValue ? DateOnly.FromDateTime(dt.Value) : (DateOnly?)null)
+                    .HasColumnType("DATE");
+            }
+
             if (provider == EfCoreProvider.PostgreSql)
             {
                 e.Property(a => a.CreatedAt).HasColumnType("timestamp without time zone");

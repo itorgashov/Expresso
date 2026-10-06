@@ -37,6 +37,27 @@ namespace Expresso.Rendering.Linq.Test
             Assert.Throws<ArgumentException>(() => ExpressoFunctions.Substring("abc", 1, -1));
 
         [Theory]
+        [InlineData("😀a", 1, 100, "😀a")]
+        [InlineData("😀a", 3, 1, "")]
+        [InlineData("a😀b", 2, 2, "😀b")]
+        public void Substring_CodePointBounds_DoNotThrow(string source, int start, int length, string expected) =>
+            Assert.Equal(expected, ExpressoFunctions.Substring(source, start, length));
+
+        [Fact]
+        public void Sqrt_Negative_IsDomainError() =>
+            Assert.Throws<NotSupportedException>(() => ExpressoFunctions.Sqrt(-1));
+
+        [Fact]
+        public void LengthAndIndexOf_UseCodePointsForSurrogates()
+        {
+            const string text = "a😀b";
+            Assert.Equal(3, ExpressoFunctions.Length(text));
+            Assert.Equal(1, ExpressoFunctions.IndexOf(text, "😀"));
+            Assert.Equal("a😀", ExpressoFunctions.Left(text, 2));
+            Assert.Equal("😀b", ExpressoFunctions.Right(text, 2));
+        }
+
+        [Theory]
         [InlineData("abcde", 2, "ab", "de")]
         [InlineData("abcde", 9, "abcde", "abcde")]
         [InlineData("abcde", -2, "abc", "cde")]

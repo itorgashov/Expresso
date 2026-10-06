@@ -24,7 +24,13 @@ namespace Expresso.Rendering.Integration.Test.Ef
             Skip.IfNot(IntegrationEnabled.IsOn, IntegrationEnabled.SkipReason);
             var ado = DifferentialOutcome.Of(() => AdoSession.QueryWidgetIds(testCase.Filter, testCase.Sort));
             var ef = DifferentialOutcome.Of(() => Session.QueryWidgetIds(testCase.Filter, testCase.Sort));
-            DifferentialOutcome.AssertSame(ado, ef, () => ((EfEngineSession)Session).Sql(testCase.Filter, testCase.Sort));
+            DifferentialOutcome.AssertSame(
+                ado,
+                ef,
+                testCase.Rejection,
+                () => ((EfEngineSession)Session).Sql(testCase.Filter, testCase.Sort),
+                testCase.UnsupportedReason,
+                testCase.DatabaseCodes);
         }
 
         [SkippableTheory]

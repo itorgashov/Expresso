@@ -121,6 +121,10 @@ For a time-of-day `TimeSpan`, `ExpressoDbFunctions.AddSeconds`:
 datetime(datetime, printf('%d seconds', amount))
 ```
 
+### Oracle
+
+A `TimeOnly` stored as `INTERVAL DAY TO SECOND` adds `NUMTODSINTERVAL(amount, 'SECOND')`. Text storage (`NVARCHAR2`) throws `NotSupportedException`.
+
 ### DB2
 
 `ExpressoDbFunctions.AddSeconds` is `ADD_SECONDS(datetime, amount)` on a `DateTime`. DB2 has no `ADD_SECONDS` for `time`, so a time-of-day `TimeSpan` goes through a timestamp:

@@ -16,6 +16,8 @@ Set `ExpressoSample:Engine` and `ConnectionStrings:{Engine}` (user secrets). Sup
 
 **Db2 is not supported** on this host (no EF6 provider). Startup fails with a clear message if `Engine` is `Db2`; use [Expresso.Sample.WebApi.EfCore](../Expresso.Sample.WebApi.EfCore) instead.
 
+On **Oracle** and **SQLite**, `opens` and `closes` are not filter or sort fields (EF6 has no time-of-day store type for those columns). List and single-publisher responses still return the stored times: SQLite reads the text columns, and Oracle reads `INTERVAL` columns with a quoted `EXTRACT` query.
+
 ## Run
 
 ```powershell

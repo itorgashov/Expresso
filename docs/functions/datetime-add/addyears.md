@@ -105,6 +105,10 @@ DATEADD(year, CAST(@__Value_0 AS int), [w].[created_at])
 ADD_YEARS(datetime, amount)
 ```
 
+### Oracle
+
+A `DateOnly` stored as `DATE` adds `NUMTOYMINTERVAL(amount, 'YEAR')`, the same interval the SQL renderer uses. Adding twelve months with `ADD_MONTHS` would move a leap day differently. Text storage (`NVARCHAR2`) throws `NotSupportedException`.
+
 ## EF6 rendering
 
 ### All providers

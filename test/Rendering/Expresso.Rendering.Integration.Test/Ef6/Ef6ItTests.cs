@@ -33,7 +33,13 @@ namespace Expresso.Rendering.Integration.Test.Ef6
 
             var ado = DifferentialOutcome.Of(() => AdoSession.QueryWidgetIds(testCase.Filter, testCase.Sort));
             var ef6 = DifferentialOutcome.Of(() => Session.QueryWidgetIds(testCase.Filter, testCase.Sort));
-            DifferentialOutcome.AssertSame(ado, ef6, () => ((Ef6EngineSession)Session).Sql(testCase.Filter, testCase.Sort));
+            DifferentialOutcome.AssertSame(
+                ado,
+                ef6,
+                testCase.Rejection,
+                () => ((Ef6EngineSession)Session).Sql(testCase.Filter, testCase.Sort),
+                testCase.UnsupportedReason,
+                testCase.DatabaseCodes);
         }
 
         protected override void AssertOutcome<T>(string caseId, IReadOnlyList<T> expected, Func<IReadOnlyList<T>> query)
@@ -53,7 +59,9 @@ namespace Expresso.Rendering.Integration.Test.Ef6
             }
 
             Skip.IfNot(gap.Throws, "Known silent EF6 divergence: " + gap.Reason);
-            Assert.True(Record.Exception(query) is not null, $"'{caseId}' is a documented gap ({gap.Reason}) but ran; update Ef6ProviderGaps.");
+            var ex = Record.Exception(query);
+            Assert.NotNull(ex);
+            Ef6GapAssertions.Assert(gap, ex!);
             return true;
         }
     }

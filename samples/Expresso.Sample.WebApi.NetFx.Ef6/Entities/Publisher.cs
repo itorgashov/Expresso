@@ -17,5 +17,9 @@ public sealed class Publisher
 
     public TimeSpan ClosesAt { get; set; }
 
+    public string? OpensAtText { get; set; }
+
+    public string? ClosesAtText { get; set; }
+
     public ICollection<Book> Books { get; set; } = new List<Book>();
 }
