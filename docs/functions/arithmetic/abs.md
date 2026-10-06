@@ -53,7 +53,7 @@ A `byte` argument is widened to `int` first. The result is NULL when `argument` 
 
 ### In-memory
 
-Same as Queryable.
+`Math.Abs` for `double`. For `int`, `ExpressoFunctions.Abs` throws `NotSupportedException` (`integer out of range`) when the argument is the minimum `int`, including when `isnull` consumes the call.
 
 ## EF Core rendering
 
@@ -65,13 +65,13 @@ EF Core translates the Queryable lambda. On SQL Server:
 ABS([w].[Amount])
 ```
 
-A literal argument stays in `ABS`, including the minimum `int`, so command generation does not overflow in the CLR.
+A literal argument stays in `ABS`, including the minimum `int`, so command generation does not overflow in the CLR. `isnull(abs(...))` of an `int` keeps `ABS` inside the null check, so an overflow is raised by the engine instead of the predicate becoming false. SQLite evaluates that `ABS` and does not overflow.
 
 ## EF6 rendering
 
 ### All providers
 
-EF6 translates the Queryable lambda with the canonical `Abs` function. On SQL Server:
+An `int` argument uses the canonical `Abs` function, including a literal minimum `int`. `isnull` of that call compares `ABS` with NULL. On SQL Server:
 
 ```sql
 ABS([Extent1].[Amount])

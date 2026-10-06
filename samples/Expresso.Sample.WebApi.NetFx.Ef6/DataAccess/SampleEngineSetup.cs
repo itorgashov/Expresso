@@ -31,7 +31,7 @@ public static class SampleEngineSetup
             RequireConnectionString(configuration, configuredEngine),
             mariaDb);
         var invariant = ProviderInvariantName(engine);
-        var schema = engine == SampleEngine.SqlServer ? "dbo" : null;
+        var schema = SchemaFor(engine, connectionString);
 
         services.AddEf6ExpressionTransformations(invariant);
         services.AddScoped<SampleEf6Context>(_ => CreateContext(engine, connectionString, schema));
@@ -54,6 +54,35 @@ public static class SampleEngineSetup
         };
 
         return new SampleEf6Context(connection, schema);
+    }
+
+    private static string? SchemaFor(SampleEngine engine, string connectionString)
+    {
+        if (engine == SampleEngine.SqlServer)
+        {
+            return "dbo";
+        }
+
+        if (engine == SampleEngine.PostgreSql)
+        {
+            // With no schema, the Npgsql EF6 provider qualifies every table as "dbo".
+            return "public";
+        }
+
+        if (engine != SampleEngine.Oracle)
+        {
+            return null;
+        }
+
+        // With no schema, the Oracle EF6 provider qualifies every table as "dbo".
+        var user = new OracleConnectionStringBuilder(connectionString).UserID;
+        if (string.IsNullOrWhiteSpace(user))
+        {
+            throw new InvalidOperationException(
+                "The Oracle connection string must include User Id. EF6 qualifies tables with that schema.");
+        }
+
+        return user.ToUpperInvariant();
     }
 
     private static string ProviderInvariantName(SampleEngine engine) => engine switch

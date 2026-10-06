@@ -59,19 +59,23 @@ Same as Queryable.
 
 ### All providers
 
-EF Core translates the Queryable lambda. On SQL Server:
+EF Core translates the Queryable lambda. A `double` argument stays `FLOOR` of that value. On SQL Server an `int` argument stays `int`, so `div(floor(power(age,1)),2)` divides the integer `FLOOR` before any float cast:
+
+```sql
+FLOOR(POWER([w].[Age], @exponent)) / @divisor
+```
+
+A `double` column is unchanged:
 
 ```sql
 FLOOR([w].[Amount])
 ```
 
-No provider overrides.
-
 ## EF6 rendering
 
 ### All providers
 
-EF6 translates the Queryable lambda with the canonical `Floor` function. On SQL Server:
+EF6 translates the Queryable lambda with the canonical `Floor` function. On SQL Server an `int` argument uses store `FLOOR` and the result stays `int`, including inside a later division. A `double` column is unchanged:
 
 ```sql
 FLOOR([Extent1].[Amount])
@@ -81,5 +85,5 @@ Every EF6 provider supports `floor`.
 
 ## Notes
 
-- Unlike [`abs`](abs.md), which keeps the argument's type, `floor` always returns `double`, regardless of the argument's original type.
+- Unlike [`abs`](abs.md), which keeps the argument's type, the public result of `floor` is `double`. On SQL Server the store type stays `int` until a `double` consumer, so a later division still truncates.
 - See [`ceiling`](ceiling.md) for rounding up, and [`round`](round.md) for rounding to a given number of digits.

@@ -54,7 +54,7 @@ A `byte` operand is widened to `int`, and when either operand is `double` both b
 
 ### In-memory
 
-Same as Queryable.
+`ExpressoFunctions.Multiply` follows PostgreSQL. An `int` product outside the 32-bit range, a finite `double` product that overflows, and a finite `double` product that underflows to zero throw `NotSupportedException`. `isnull(mult(...))` evaluates the call.
 
 ## EF Core rendering
 
@@ -66,7 +66,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 [w].[Age] * @__Value_0
 ```
 
-No provider overrides.
+A call whose operands are all literals stays in SQL (`*`). `isnull(mult(...))` keeps the multiplication.
 
 ## EF6 rendering
 

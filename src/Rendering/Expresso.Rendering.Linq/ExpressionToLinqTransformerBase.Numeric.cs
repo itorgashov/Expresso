@@ -26,27 +26,45 @@ namespace Expresso.Rendering.Linq
         /// <summary><c>mod</c> over promoted operands.</summary>
         protected virtual Expression Modulo(Expression left, Expression right) => Expression.Modulo(left, right);
 
-        /// <summary><c>floor</c> over a <c>double</c> value. Default <c>Math.Floor</c>.</summary>
+        /// <summary>
+        /// <c>floor</c>. The argument keeps its numeric type so SQL Server can return <c>int</c>.
+        /// Default converts to <c>double</c> and calls <c>Math.Floor</c>.
+        /// </summary>
         protected virtual Expression Floor(Expression value) =>
-            Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Floor), typeof(double)), value);
+            Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Floor), typeof(double)), LinqEx.ConvertTo(value, typeof(double)));
 
-        /// <summary><c>ceiling</c> over a <c>double</c> value. Default <c>Math.Ceiling</c>.</summary>
+        /// <summary>
+        /// <c>ceiling</c>. The argument keeps its numeric type so SQL Server can return <c>int</c>.
+        /// Default converts to <c>double</c> and calls <c>Math.Ceiling</c>.
+        /// </summary>
         protected virtual Expression Ceiling(Expression value) =>
-            Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Ceiling), typeof(double)), value);
+            Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Ceiling), typeof(double)), LinqEx.ConvertTo(value, typeof(double)));
 
-        /// <summary><c>round</c> over a <c>double</c> value and optional <c>int</c> digits. Default <c>Math.Round</c> (the provider rounds like SQL <c>ROUND</c>).</summary>
-        protected virtual Expression Round(Expression value, Expression? digits) =>
-            digits is null
-                ? Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Round), typeof(double)), value)
-                : Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Round), typeof(double), typeof(int)), value, digits);
+        /// <summary>
+        /// <c>round</c>. The value keeps its numeric type so SQL Server can return <c>int</c>.
+        /// Default converts to <c>double</c> and calls <c>Math.Round</c>.
+        /// </summary>
+        protected virtual Expression Round(Expression value, Expression? digits)
+        {
+            var number = LinqEx.ConvertTo(value, typeof(double));
+            return digits is null
+                ? Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Round), typeof(double)), number)
+                : Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Round), typeof(double), typeof(int)), number, digits);
+        }
 
         /// <summary><c>sign</c> over an <c>int</c> or <c>double</c> value. Default <c>Math.Sign</c>.</summary>
         protected virtual Expression Sign(Expression value) =>
             Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Sign), value.Type), value);
 
-        /// <summary><c>power</c> over <c>double</c> operands. Default <c>Math.Pow</c>.</summary>
+        /// <summary>
+        /// <c>power</c>. Arguments keep their original numeric types so a provider can preserve an integer base.
+        /// Default converts both to <c>double</c> and calls <c>Math.Pow</c>.
+        /// </summary>
         protected virtual Expression Power(Expression left, Expression right) =>
-            Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Pow), typeof(double), typeof(double)), left, right);
+            Expression.Call(
+                LinqEx.Method(typeof(Math), nameof(Math.Pow), typeof(double), typeof(double)),
+                LinqEx.ConvertTo(left, typeof(double)),
+                LinqEx.ConvertTo(right, typeof(double)));
 
         /// <summary><c>sqrt</c> over a <c>double</c> value. Default <c>Math.Sqrt</c>.</summary>
         protected virtual Expression Sqrt(Expression value) =>
@@ -81,30 +99,35 @@ namespace Expresso.Rendering.Linq
             return LinqNode.Scalar(Expression.Condition(chooseLeft, left.Value, right.Value), isNull);
         }
 
-        LinqNode V.VisitAbs(AbsFunc node, LinqScope s) => Unary(node, s, Abs);
-        LinqNode V.VisitAdd(AddFunc node, LinqScope s) => Binary(node, s, Add);
-        LinqNode V.VisitSub(SubFunc node, LinqScope s) => Binary(node, s, Subtract);
-        LinqNode V.VisitMult(MultFunc node, LinqScope s) => Binary(node, s, Multiply);
+        LinqNode V.VisitAbs(AbsFunc node, LinqScope s) => Unary(node, s, "abs", Abs);
+        LinqNode V.VisitAdd(AddFunc node, LinqScope s) => Binary(node, s, Add, function: "add");
+        LinqNode V.VisitSub(SubFunc node, LinqScope s) => Binary(node, s, Subtract, function: "sub");
+        LinqNode V.VisitMult(MultFunc node, LinqScope s) => Binary(node, s, Multiply, function: "mult");
         LinqNode V.VisitDiv(DivFunc node, LinqScope s) => Binary(node, s, Divide, function: "div");
         LinqNode V.VisitMod(ModFunc node, LinqScope s) => Binary(node, s, Modulo, function: "mod");
-        LinqNode V.VisitFloor(FloorFunc node, LinqScope s) => Unary(node, s, Floor, typeof(double));
-        LinqNode V.VisitCeiling(CeilingFunc node, LinqScope s) => Unary(node, s, Ceiling, typeof(double));
+        LinqNode V.VisitFloor(FloorFunc node, LinqScope s) => Unary(node, s, Floor);
+        LinqNode V.VisitCeiling(CeilingFunc node, LinqScope s) => Unary(node, s, Ceiling);
         LinqNode V.VisitSign(SignFunc node, LinqScope s) => Unary(node, s, Sign);
-        LinqNode V.VisitPower(PowerFunc node, LinqScope s) => Binary(node, s, Power, typeof(double), function: "power");
+        LinqNode V.VisitPower(PowerFunc node, LinqScope s)
+        {
+            var left = Visit(node.Arguments[0], s);
+            var right = Visit(node.Arguments[1], s);
+            return Propagate("power", a => Power(a[0], a[1]), left, right);
+        }
         LinqNode V.VisitSqrt(SqrtFunc node, LinqScope s) => Unary(node, s, "sqrt", Sqrt, typeof(double));
         LinqNode V.VisitMin(MinFunc node, LinqScope s) => Pick(node, ExpressionType.LessThan, s);
         LinqNode V.VisitMax(MaxFunc node, LinqScope s) => Pick(node, ExpressionType.GreaterThan, s);
 
         LinqNode V.VisitRound(RoundFunc node, LinqScope s)
         {
-            var value = ConvertNode(Visit(node.Arguments[0], s), typeof(double));
+            var value = Promote(Visit(node.Arguments[0], s));
             if (node.Arguments.Count == 1)
             {
-                return Propagate(a => Round(a[0], null), value);
+                return Propagate("round", a => Round(a[0], null), value);
             }
 
             var digits = Visit(node.Arguments[1], s);
-            return Propagate(a => Round(a[0], a[1]), value, digits);
+            return Propagate("round", a => Round(a[0], a[1]), value, digits);
         }
     }
 }

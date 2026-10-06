@@ -112,7 +112,7 @@ namespace Expresso.Rendering.EntityFrameworkCore
                 date => date.ToDateTime(TimeOnly.MinValue),
                 dateTime => DateOnly.FromDateTime(dateTime)));
         private static readonly RelationalTypeMapping OracleInterval = new TimeSpanTypeMapping("INTERVAL DAY(0) TO SECOND(0)", System.Data.DbType.Time);
-        private static readonly RelationalTypeMapping OracleTimeOnly = new TimeSpanTypeMapping("INTERVAL DAY(0) TO SECOND(9)", System.Data.DbType.Time).Clone(
+        private static readonly RelationalTypeMapping OracleTimeOnly = new OracleIntervalMapping("INTERVAL DAY(0) TO SECOND(9)").Clone(
             clrType: typeof(TimeOnly),
             converter: new ValueConverter<TimeOnly, TimeSpan>(
                 time => time.ToTimeSpan(),
@@ -152,7 +152,10 @@ namespace Expresso.Rendering.EntityFrameworkCore
                 .Concat(DomainNullEntries(() => SqlServerBool, () => SqlServerInt))
                 .Concat(LiteralEntries("SUBSTRING"))
                 .Concat(StringLiteralEntries("LEN"))
-                .Concat(NumericLiteralEntries(round: true));
+                .Concat(NumericLiteralEntries(round: true))
+                .Concat(ArithmeticLiteralEntries())
+                .Concat(SqlServerIntegerPower())
+                .Concat(SqlServerIntegerRound());
         }
 
         private static IEnumerable<(string Marker, Type Value, Translation Translation)> MySqlEntries() =>
@@ -174,7 +177,8 @@ namespace Expresso.Rendering.EntityFrameworkCore
                     "CHAR_LENGTH",
                     indexOf: a => MinusOne(Function("LOCATE", typeof(int), a[1], a[0])),
                     right: a => Function("RIGHT", typeof(string), a[0], a[1])))
-                .Concat(NumericLiteralEntries(round: true));
+                .Concat(NumericLiteralEntries(round: true))
+                .Concat(ArithmeticLiteralEntries());
 
         private static IEnumerable<(string Marker, Type Value, Translation Translation)> SqliteEntries()
         {
@@ -194,7 +198,8 @@ namespace Expresso.Rendering.EntityFrameworkCore
                 .Concat(DomainNullEntries(() => SqliteBool, () => SqliteInt))
                 .Concat(LiteralEntries("substr", sqrt: false))
                 .Concat(StringLiteralEntries("length", indexOf: a => MinusOne(Function("instr", typeof(int), a[0], a[1]))))
-                .Concat(NumericLiteralEntries(round: true));
+                .Concat(NumericLiteralEntries(round: true))
+                .Concat(ArithmeticLiteralEntries());
         }
 
         private static IEnumerable<(string Marker, Type Value, Translation Translation)> OracleEntries()
@@ -219,7 +224,8 @@ namespace Expresso.Rendering.EntityFrameworkCore
                 .Concat(DomainNullEntries(() => OracleBool, () => OracleNumber))
                 .Concat(LiteralEntries("SUBSTR"))
                 .Concat(StringLiteralEntries("LENGTH", right: a => OracleLiteralRight(a[0], a[1])))
-                .Concat(NumericLiteralEntries(round: true));
+                .Concat(NumericLiteralEntries(round: true, power: a => OracleNumberPower(a[0], a[1])))
+                .Concat(ArithmeticLiteralEntries());
         }
 
         private static IEnumerable<(string Marker, Type Value, Translation Translation)> Db2Entries()
@@ -255,7 +261,8 @@ namespace Expresso.Rendering.EntityFrameworkCore
                 .Concat(DomainNullEntries(() => Db2Bool, () => Db2Int))
                 .Concat(LiteralEntries("SUBSTR"))
                 .Concat(StringLiteralEntries("LENGTH", right: a => Function("RIGHT", typeof(string), a[0], a[1])))
-                .Concat(NumericLiteralEntries(round: false));
+                .Concat(NumericLiteralEntries(round: false))
+                .Concat(ArithmeticLiteralEntries());
         }
 
         private static IEnumerable<(string Marker, Type Value, Translation Translation)> MirrorDateOnly(

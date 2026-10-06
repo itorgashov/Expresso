@@ -147,12 +147,6 @@ namespace Expresso.Rendering.EntityFramework
             return Expression.Condition(Expression.GreaterThanOrEqual(length, zero), positive, negative);
         }
 
-        /// <inheritdoc />
-        protected override Expression Round(Expression value, Expression? digits) =>
-            Provider == Ef6Provider.PostgreSql
-                ? throw Unsupported("round", "EF6 cannot cast to numeric, and PostgreSQL rounds double precision half to even")
-                : base.Round(value, digits);
-
         /// <summary><c>CASE WHEN x &gt; 0 THEN 1 WHEN x &lt; 0 THEN -1 ELSE 0 END</c> (no canonical <c>SIGN</c>).</summary>
         protected override Expression Sign(Expression value)
         {

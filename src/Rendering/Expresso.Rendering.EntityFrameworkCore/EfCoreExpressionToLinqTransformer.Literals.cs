@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Expresso.Rendering.Linq;
 
 namespace Expresso.Rendering.EntityFrameworkCore
 {
@@ -49,8 +50,44 @@ namespace Expresso.Rendering.EntityFrameworkCore
             LiteralCall(nameof(ExpressoDbFunctions.SqlRTrim), source) ?? base.RTrim(source);
 
         /// <inheritdoc />
-        protected override Expression Power(Expression left, Expression right) =>
-            Marker(nameof(ExpressoDbFunctions.SqlPower), left, right) ?? base.Power(left, right);
+        protected override Expression Add(Expression left, Expression right) =>
+            LiteralCall(nameof(ExpressoDbFunctions.SqlAdd), left, right) ?? base.Add(left, right);
+
+        /// <inheritdoc />
+        protected override Expression Subtract(Expression left, Expression right) =>
+            LiteralCall(nameof(ExpressoDbFunctions.SqlSubtract), left, right) ?? base.Subtract(left, right);
+
+        /// <inheritdoc />
+        protected override Expression Multiply(Expression left, Expression right) =>
+            LiteralCall(nameof(ExpressoDbFunctions.SqlMultiply), left, right) ?? base.Multiply(left, right);
+
+        /// <inheritdoc />
+        protected override Expression Power(Expression left, Expression right)
+        {
+            if (Provider == EfCoreProvider.SqlServer && (left.Type == typeof(int) || left.Type == typeof(byte)))
+            {
+                if (right.Type == typeof(int) || right.Type == typeof(byte))
+                {
+                    var integerExponent = right.Type == typeof(byte) ? LinqEx.ConvertTo(right, typeof(int)) : right;
+                    var integerPower = Marker(nameof(ExpressoDbFunctions.SqlPowerInt), left, integerExponent);
+                    if (integerPower is not null)
+                    {
+                        return integerPower;
+                    }
+                }
+
+                var exponent = LinqEx.ConvertTo(right, typeof(double));
+                var integerBase = Marker(nameof(ExpressoDbFunctions.SqlPower), left, exponent);
+                if (integerBase is not null)
+                {
+                    return integerBase;
+                }
+            }
+
+            var floatingExponent = LinqEx.ConvertTo(right, typeof(double));
+            var baseValue = LinqEx.ConvertTo(left, typeof(double));
+            return Marker(nameof(ExpressoDbFunctions.SqlPower), baseValue, floatingExponent) ?? base.Power(baseValue, floatingExponent);
+        }
 
         /// <inheritdoc />
         protected override Expression Abs(Expression value) =>

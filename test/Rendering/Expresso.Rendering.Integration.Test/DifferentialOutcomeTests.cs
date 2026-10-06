@@ -117,6 +117,14 @@ namespace Expresso.Rendering.Integration.Test
             Assert.Throws<InvalidOperationException>(() => DifferentialOutcome.Of(() => throw new InvalidOperationException("translated")));
 
         [Fact]
+        public void NativeCode_UsesDb2ErrorSqlStateWhenTheExceptionStateIsEmpty()
+        {
+            var code = DifferentialOutcome.NativeCode(new ErrorsException());
+
+            Assert.Equal("SQLState:22012", code);
+        }
+
+        [Fact]
         public void NativeCode_UsesSqliteErrorCode()
         {
             var code = DifferentialOutcome.NativeCode(new SqliteCodeException(14));
@@ -129,6 +137,18 @@ namespace Expresso.Rendering.Integration.Test
             public SqliteCodeException(int code) => SqliteErrorCode = code;
 
             public int SqliteErrorCode { get; }
+        }
+
+        private sealed class ErrorsException : DbException
+        {
+            public new string SqlState => string.Empty;
+
+            public object[] Errors { get; } = { new StateError() };
+
+            private sealed class StateError
+            {
+                public string SQLState => "22012";
+            }
         }
     }
 }

@@ -76,10 +76,38 @@ namespace Expresso.Rendering.Integration.Test
         /// <summary>Provider-specific code of a <see cref="DbException"/> (SQLite code, SQL Server number, SQLSTATE).</summary>
         public static string NativeCode(DbException exception)
         {
-            var type = exception.GetType();
-            foreach (var name in new[] { "SqliteErrorCode", "Number", "SqlState", "Code" })
+            var direct = ReadCode(exception);
+            if (direct is not null)
             {
-                if (type.GetProperty(name)?.GetValue(exception) is { } value)
+                return direct;
+            }
+
+            // DB2 leaves <c>SqlState</c> empty and stores the SQLSTATE on the first error.
+            if (exception.GetType().GetProperty("Errors")?.GetValue(exception) is System.Collections.IEnumerable errors)
+            {
+                foreach (var error in errors)
+                {
+                    if (error is null)
+                    {
+                        continue;
+                    }
+
+                    var nested = ReadCode(error);
+                    if (nested is not null)
+                    {
+                        return nested;
+                    }
+                }
+            }
+
+            return "ErrorCode:" + exception.ErrorCode;
+        }
+
+        private static string? ReadCode(object source)
+        {
+            foreach (var name in new[] { "SqliteErrorCode", "Number", "SqlState", "SQLState", "NativeError", "Code" })
+            {
+                if (source.GetType().GetProperty(name)?.GetValue(source) is { } value)
                 {
                     var text = value.ToString();
                     if (!string.IsNullOrEmpty(text) && text != "0")
@@ -89,7 +117,7 @@ namespace Expresso.Rendering.Integration.Test
                 }
             }
 
-            return "ErrorCode:" + exception.ErrorCode;
+            return null;
         }
 
         private static string? Classify(Exception ex)

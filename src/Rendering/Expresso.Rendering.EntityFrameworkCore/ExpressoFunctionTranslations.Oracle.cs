@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -111,6 +113,23 @@ namespace Expresso.Rendering.EntityFrameworkCore
                 : OracleInterval;
         }
 
+        /// <summary>
+        /// <c>POWER</c> where double literals bind as <c>NUMBER</c>. ADO binds a <c>double</c> parameter as
+        /// <c>OracleDbType.Double</c> (NUMBER), so <c>POWER(2, 1024)</c> raises ORA-01426. EF would otherwise emit
+        /// <c>BINARY_DOUBLE</c> and return infinity. A <c>BINARY_DOUBLE</c> column stays a binary double: Oracle
+        /// promotes <c>POWER(BINARY_DOUBLE, NUMBER)</c> to binary double, which matches ADO for column math.
+        /// </summary>
+        private static SqlExpression OracleNumberPower(SqlExpression left, SqlExpression right)
+        {
+            var number = new DecimalTypeMapping("NUMBER");
+            return Function("POWER", typeof(double), number, AsOracleNumberLiteral(left, number), AsOracleNumberLiteral(right, number));
+        }
+
+        private static SqlExpression AsOracleNumberLiteral(SqlExpression expression, DecimalTypeMapping number) =>
+            expression is SqlConstantExpression or SqlParameterExpression
+                ? Cast(expression, typeof(decimal), number)
+                : expression;
+
         /// <summary><c>SUBSTR(s, GREATEST(LENGTH(s) - n + 1, 1))</c>, matching the ADO renderer.</summary>
         private static SqlExpression OracleLiteralRight(SqlExpression value, SqlExpression length)
         {
@@ -148,6 +167,38 @@ namespace Expresso.Rendering.EntityFrameworkCore
             {
                 throw new NotSupportedException(
                     "Oracle DateOnly/TimeOnly text storage (" + store + ") is not supported. Map DateOnly to DATE and TimeOnly to INTERVAL DAY TO SECOND.");
+            }
+        }
+
+        /// <summary>
+        /// Interval mapping that binds as <c>INTERVAL DAY TO SECOND</c>. Setting <c>DbType.Time</c> on an
+        /// <c>OracleParameter</c> throws ORA-50028 because that provider type is not a valid Oracle bind.
+        /// </summary>
+        private sealed class OracleIntervalMapping : TimeSpanTypeMapping
+        {
+            public OracleIntervalMapping(string storeType)
+                : base(storeType, System.Data.DbType.Object)
+            {
+            }
+
+            private OracleIntervalMapping(RelationalTypeMappingParameters parameters)
+                : base(parameters)
+            {
+            }
+
+            protected override RelationalTypeMapping Clone(RelationalTypeMappingParameters parameters) =>
+                new OracleIntervalMapping(parameters);
+
+            protected override void ConfigureParameter(DbParameter parameter)
+            {
+                var oracleDbType = parameter.GetType().GetProperty("OracleDbType");
+                if (oracleDbType is null)
+                {
+                    base.ConfigureParameter(parameter);
+                    return;
+                }
+
+                oracleDbType.SetValue(parameter, Enum.Parse(oracleDbType.PropertyType, "IntervalDS"));
             }
         }
     }

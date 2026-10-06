@@ -19,7 +19,7 @@ namespace Expresso.Rendering.EntityFramework
                     : ValueIsNull(value);
             }
 
-            if (function == "power")
+            if (function == "power" || (function == "abs" && value.Type == typeof(int)))
             {
                 return ValueIsNull(value);
             }
@@ -40,6 +40,26 @@ namespace Expresso.Rendering.EntityFramework
             if (Provider == Ef6Provider.Oracle && OracleEmptyStringFunctions.Contains(function) && value.Type == typeof(string))
             {
                 return Expression.Equal(value, Expression.Constant(null, typeof(string)));
+            }
+
+            if (function == "substring" && Provider != Ef6Provider.Oracle)
+            {
+                return ValueIsNull(value);
+            }
+
+            if (function is "add" or "sub" or "mult")
+            {
+                return ValueIsNull(value);
+            }
+
+            if (Provider == Ef6Provider.SqlServer && function is "left" or "right")
+            {
+                return ValueIsNull(value);
+            }
+
+            if (Provider == Ef6Provider.SqlServer && function == "round" && value.Type == typeof(int))
+            {
+                return ValueIsNull(value);
             }
 
             return base.ComputedNull(function, args, value);

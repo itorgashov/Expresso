@@ -111,6 +111,9 @@ namespace Expresso.Rendering.EntityFrameworkCore
         /// <inheritdoc cref="IsDomainNull(double)"/>
         public static bool IsDomainNull(int value) => throw NotInMemory(nameof(IsDomainNull));
 
+        /// <inheritdoc cref="IsDomainNull(double)"/>
+        public static bool IsDomainNull(string value) => throw NotInMemory(nameof(IsDomainNull));
+
         /// <summary><c>sqrt</c> kept in SQL when every operand is a literal.</summary>
         public static double Sqrt(double value) => throw NotInMemory(nameof(Sqrt));
 
@@ -159,8 +162,47 @@ namespace Expresso.Rendering.EntityFrameworkCore
         /// <summary><c>round</c> kept in SQL when every operand is a literal. The engine accepts precision outside 0–15.</summary>
         public static double SqlRound(double value, int digits) => throw NotInMemory(nameof(SqlRound));
 
-        /// <summary><c>power</c> kept in SQL when every operand is a literal.</summary>
+        /// <summary>SQL Server <c>FLOOR</c> of an <c>int</c>. The result stays <c>int</c> for a later integer operation.</summary>
+        public static int SqlFloor(int value) => throw NotInMemory(nameof(SqlFloor));
+
+        /// <summary>SQL Server <c>CEILING</c> of an <c>int</c>. The result stays <c>int</c> for a later integer operation.</summary>
+        public static int SqlCeiling(int value) => throw NotInMemory(nameof(SqlCeiling));
+
+        /// <summary>SQL Server <c>ROUND</c> of an <c>int</c>. The result stays <c>int</c> for a later integer operation.</summary>
+        public static int SqlRoundInt(int value, int digits) => throw NotInMemory(nameof(SqlRoundInt));
+
+        /// <summary><c>power</c> kept in SQL. A <c>double</c> base uses floating-point <c>POWER</c>.</summary>
         public static double SqlPower(double left, double right) => throw NotInMemory(nameof(SqlPower));
+
+        /// <summary>SQL Server <c>POWER</c> of an <c>int</c> base. The result stays <c>int</c> for a later integer operation.</summary>
+        public static int SqlPower(int left, double right) => throw NotInMemory(nameof(SqlPower));
+
+        /// <summary>SQL Server <c>POWER</c> of a <c>byte</c> base. SQL Server returns <c>int</c>.</summary>
+        public static int SqlPower(byte left, double right) => throw NotInMemory(nameof(SqlPower));
+
+        /// <summary>SQL Server <c>POWER</c> of an <c>int</c> base and an <c>int</c> exponent.</summary>
+        public static int SqlPowerInt(int left, int right) => throw NotInMemory(nameof(SqlPowerInt));
+
+        /// <summary>SQL Server <c>POWER</c> of a <c>byte</c> base and an <c>int</c> exponent.</summary>
+        public static int SqlPowerInt(byte left, int right) => throw NotInMemory(nameof(SqlPowerInt));
+
+        /// <summary>Literal <c>+</c> kept in SQL so the engine, not the CLR, applies its numeric range.</summary>
+        public static int SqlAdd(int left, int right) => throw NotInMemory(nameof(SqlAdd));
+
+        /// <inheritdoc cref="SqlAdd(int, int)"/>
+        public static double SqlAdd(double left, double right) => throw NotInMemory(nameof(SqlAdd));
+
+        /// <summary>Literal <c>-</c> kept in SQL so the engine, not the CLR, applies its numeric range.</summary>
+        public static int SqlSubtract(int left, int right) => throw NotInMemory(nameof(SqlSubtract));
+
+        /// <inheritdoc cref="SqlSubtract(int, int)"/>
+        public static double SqlSubtract(double left, double right) => throw NotInMemory(nameof(SqlSubtract));
+
+        /// <summary>Literal <c>*</c> kept in SQL so the engine, not the CLR, applies its numeric range.</summary>
+        public static int SqlMultiply(int left, int right) => throw NotInMemory(nameof(SqlMultiply));
+
+        /// <inheritdoc cref="SqlMultiply(int, int)"/>
+        public static double SqlMultiply(double left, double right) => throw NotInMemory(nameof(SqlMultiply));
 
         /// <summary><c>abs</c> kept in SQL when the argument is a literal, including the minimum <c>int</c>.</summary>
         public static int SqlAbs(int value) => throw NotInMemory(nameof(SqlAbs));

@@ -30,7 +30,7 @@ Exactly 2 arguments.
 ## SQL rendering
 
 Quotes and bind names: [docs/rendering.md](../../rendering.md).
-Expresso escapes wildcards in a string literal pattern (`\`, then `%`, then `_`, in that order) in C# before binding, on every dialect.
+Expresso escapes wildcards in a string literal pattern (`\`, then `%`, then `_`, in that order) in C# before binding, on every dialect. SQL Server also escapes `[`, so a bracket is a literal character rather than a character class.
 For a literal suffix, it prepends `%`: `endswith(name,"hn")` binds `"%hn"`.
 
 ### SQL Server, PostgreSQL, SQLite, Oracle, DB2
@@ -45,7 +45,7 @@ Non-literal suffix:
 
 ```sql
 -- SQL Server
-(text LIKE ('%' + REPLACE(REPLACE(REPLACE(suffix, '\', '\\'), '%', '\%'), '_', '\_')) ESCAPE '\')
+(text LIKE ('%' + REPLACE(REPLACE(REPLACE(REPLACE(suffix, '\', '\\'), '%', '\%'), '_', '\_'), '[', '\[')) ESCAPE '\')
 
 -- PostgreSQL, SQLite, Oracle, DB2
 (text LIKE ('%' || REPLACE(REPLACE(REPLACE(suffix, '\', '\\'), '%', '\%'), '_', '\_')) ESCAPE '\')

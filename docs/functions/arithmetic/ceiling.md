@@ -65,19 +65,17 @@ Same as Queryable.
 
 ### All providers
 
-EF Core translates the Queryable lambda. On SQL Server:
+EF Core translates the Queryable lambda. A `double` argument stays `CEILING` of that value. On SQL Server an `int` argument stays `int`, so a later division truncates. `div(ceiling(power(age,1)),2)` is integer division. A `double` column is unchanged:
 
 ```sql
 CEILING([w].[Amount])
 ```
 
-No provider overrides.
-
 ## EF6 rendering
 
 ### All providers
 
-EF6 translates the Queryable lambda with the canonical `Ceiling` function. On SQL Server:
+EF6 translates the Queryable lambda with the canonical `Ceiling` function. On SQL Server an `int` argument uses store `CEILING` and the result stays `int`, including inside a later division. A `double` column is unchanged:
 
 ```sql
 CEILING([Extent1].[Amount])
@@ -87,5 +85,5 @@ Every EF6 provider supports `ceiling`.
 
 ## Notes
 
-- The return type is always `double`, regardless of the argument's original type.
+- The public result is `double`. On SQL Server the store type stays `int` until a `double` consumer, so a later division still truncates.
 - See [`floor`](floor.md) for rounding down, and [`round`](round.md) for rounding to a given number of digits.

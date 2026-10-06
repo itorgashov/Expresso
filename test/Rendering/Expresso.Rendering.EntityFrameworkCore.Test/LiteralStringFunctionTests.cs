@@ -140,6 +140,21 @@ namespace Expresso.Rendering.EntityFrameworkCore.Test
         }
 
         [Fact]
+        public void SqlServer_BracketPattern_IsEscaped()
+        {
+            // Scenario: a bracket is a character class on SQL Server. Both a column source and a literal source escape it.
+            using var context = TestWidgetContext.SqlServer();
+            var field = Sql(context, new StrContainsFunc(new Field("name", typeof(string)), new Literal("[ab]")));
+            var literal = Sql(context, new StrContainsFunc(new Literal("ab"), new Literal("[ab]")));
+            var prefix = Sql(context, new StrStartswithFunc(new Field("name", typeof(string)), new Literal("[a-c]")));
+            Assert.Contains(@"\[ab]", field, StringComparison.Ordinal);
+            Assert.Contains(@"\[ab]", literal, StringComparison.Ordinal);
+            Assert.Contains(@"\[a-c]", prefix, StringComparison.Ordinal);
+            var suffix = Sql(context, new StrEndswithFunc(new Field("name", typeof(string)), new Literal("[ab]")));
+            Assert.Contains(@"\[ab]", suffix, StringComparison.Ordinal);
+        }
+
+        [Fact]
         public void LiteralStringMarkers_AreNotUsedForFields()
         {
             var field = new EqFunc(new LenFunc(new Field("name", typeof(string))), new Literal(1));

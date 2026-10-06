@@ -54,7 +54,7 @@ A `byte` operand is widened to `int`, and when either operand is `double` both b
 
 ### In-memory
 
-Same as Queryable.
+`ExpressoFunctions.Add` follows PostgreSQL. An `int` sum outside the 32-bit range, and a finite `double` sum that overflows, throw `NotSupportedException`. `isnull(add(...))` evaluates the call, so those errors are not reported as false. A NULL argument stays NULL and does not evaluate the other operand.
 
 ## EF Core rendering
 
@@ -66,7 +66,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 [w].[Age] + @__Value_0
 ```
 
-No provider overrides.
+A call whose operands are all literals stays in SQL (`+`), so SQLite can use its wider integer range instead of a wrapped CLR result. `isnull(add(...))` keeps the addition, including for a non-nullable `int`.
 
 ## EF6 rendering
 

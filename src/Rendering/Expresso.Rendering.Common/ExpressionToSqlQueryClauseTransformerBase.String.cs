@@ -191,7 +191,8 @@ namespace Expresso.Rendering
                 _ => escapedLiteral
             };
 
-        private static string EscapeLikeLiteral(string value) =>
+        /// <summary>Escapes <c>\</c>, then <c>%</c>, then <c>_</c>. SQL Server also escapes <c>[</c>.</summary>
+        protected virtual string EscapeLikeLiteral(string value) =>
             value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
     }
 }

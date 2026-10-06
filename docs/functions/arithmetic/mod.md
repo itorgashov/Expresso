@@ -60,7 +60,7 @@ A `byte` operand is widened to `int`, and when either operand is `double` both b
 
 ### In-memory
 
-Same as Queryable, except a zero divisor throws `NotSupportedException`. `isnull(mod(...))` throws as well.
+Same as Queryable, except a zero divisor throws `NotSupportedException`. `int.MinValue % -1` is `0`, matching PostgreSQL, and `isnull(mod(...))` evaluates the call.
 
 ## EF Core rendering
 

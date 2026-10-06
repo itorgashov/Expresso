@@ -14,6 +14,38 @@ namespace Expresso.Rendering.EntityFramework
         [DbFunction("SqlServer", "SQRT")]
         public static double? SqlServerSqrt(double? value) => throw NotInMemory();
 
+        /// <summary>SQL Server <c>POWER</c> of an <c>int</c> base. The result stays an integer.</summary>
+        [DbFunction("SqlServer", "POWER")]
+        public static int? SqlServerPower(int? value, double? exponent) => throw NotInMemory();
+
+        /// <summary>SQL Server <c>POWER</c> of an <c>int</c> base and an <c>int</c> exponent.</summary>
+        [DbFunction("SqlServer", "POWER")]
+        public static int? SqlServerPowerInt(int? value, int? exponent) => throw NotInMemory();
+
+        /// <summary>SQL Server <c>POWER</c> of a <c>tinyint</c> base.</summary>
+        [DbFunction("SqlServer", "POWER")]
+        public static int? SqlServerPowerByte(byte? value, double? exponent) => throw NotInMemory();
+
+        /// <summary>SQL Server <c>POWER</c> of a <c>tinyint</c> base and an <c>int</c> exponent.</summary>
+        [DbFunction("SqlServer", "POWER")]
+        public static int? SqlServerPowerByteInt(byte? value, int? exponent) => throw NotInMemory();
+
+        /// <summary>SQL Server <c>FLOOR</c> of an <c>int</c>. The result stays an integer.</summary>
+        [DbFunction("SqlServer", "FLOOR")]
+        public static int? SqlServerFloor(int? value) => throw NotInMemory();
+
+        /// <summary>SQL Server <c>CEILING</c> of an <c>int</c>. The result stays an integer.</summary>
+        [DbFunction("SqlServer", "CEILING")]
+        public static int? SqlServerCeiling(int? value) => throw NotInMemory();
+
+        /// <summary>SQL Server <c>ROUND</c> of an <c>int</c>. The result stays an integer.</summary>
+        [DbFunction("SqlServer", "ROUND")]
+        public static int? SqlServerRound(int? value, int? digits) => throw NotInMemory();
+
+        /// <summary>Canonical <c>Abs</c> so a literal minimum <c>int</c> is not evaluated in the CLR.</summary>
+        [DbFunction("Edm", "Abs")]
+        public static int? EdmAbs(int? value) => throw NotInMemory();
+
         [DbFunction("SqlServer", "DATALENGTH")]
         public static int? SqlServerDataLength(string value) => throw NotInMemory();
 

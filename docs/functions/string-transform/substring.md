@@ -68,7 +68,7 @@ The 1-based `start` becomes the 0-based .NET index by subtracting 1. The result 
 
 ### In-memory
 
-`ExpressoFunctions.Substring(text, start, length)` follows PostgreSQL `SUBSTRING(text FROM start FOR length)`: `start` stays 1-based and positions outside the string are dropped, so `substring("Alice",4,10)` is `"ce"`. A negative `length` throws `ArgumentException`.
+`ExpressoFunctions.Substring(text, start, length)` follows PostgreSQL `SUBSTRING(text FROM start FOR length)`: `start` stays 1-based and positions outside the string are dropped, so `substring("Alice",4,10)` is `"ce"`. A negative `length` throws `NotSupportedException`, including when `isnull` consumes the call.
 
 ## EF Core rendering
 
@@ -80,7 +80,7 @@ EF Core translates the Queryable lambda. When `start` is a parameter, EF Core co
 SUBSTRING([w].[Name], @__p_0 + 1, @__Value_1)
 ```
 
-When every argument is a literal, the call stays in SQL (`SUBSTRING`, `SUBSTR`, or `substr`) so a length past the end is clamped by the engine. A start or length that references a row still uses the provider's usual translation.
+When every argument is a literal, the call stays in SQL (`SUBSTRING`, `SUBSTR`, or `substr`) so a length past the end is clamped by the engine. A start or length that references a row still uses the provider's usual translation. `isnull(substring(...))` keeps that call, so a negative length is evaluated by the engine. SQLite accepts a negative length.
 
 ## EF6 rendering
 
@@ -92,7 +92,7 @@ EF6 translates the Queryable lambda with the canonical `Substring` function. On 
 SUBSTRING([Extent1].[Name], (@p__linq__0 - 1) + 1, @p__linq__1)
 ```
 
-Every EF6 provider supports `substring`.
+`isnull(substring(...))` keeps that call. Every EF6 provider supports `substring`.
 
 ## Notes
 

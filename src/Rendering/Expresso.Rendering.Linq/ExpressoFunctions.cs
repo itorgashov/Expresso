@@ -11,46 +11,46 @@ namespace Expresso.Rendering.Linq
         public static double Sqrt(double value) =>
             value < 0 ? throw new NotSupportedException("square root of a negative number") : Math.Sqrt(value);
 
-        /// <summary>PostgreSQL <c>/</c>: division by zero is an error (including IEEE infinity for <c>double</c>).</summary>
-        /// <exception cref="NotSupportedException"><paramref name="right"/> is zero.</exception>
-        public static double Divide(double left, double right) =>
-            right == 0 ? throw new NotSupportedException("division by zero") : left / right;
+        /// <summary>PostgreSQL <c>/</c>: division by zero is an error, and a finite input that overflows or underflows is a range error.</summary>
+        /// <exception cref="NotSupportedException"><paramref name="right"/> is zero, or the quotient is out of range.</exception>
+        public static double Divide(double left, double right)
+        {
+            if (right == 0)
+            {
+                throw new NotSupportedException("division by zero");
+            }
+
+            var result = left / right;
+            if (double.IsInfinity(result) && !double.IsInfinity(left) && !double.IsInfinity(right))
+            {
+                throw new NotSupportedException("value out of range: overflow");
+            }
+
+            if (result == 0.0 && left != 0.0 && !double.IsInfinity(right))
+            {
+                throw new NotSupportedException("value out of range: underflow");
+            }
+
+            return result;
+        }
+
+        /// <summary>PostgreSQL <c>abs</c> of <c>int</c>: the minimum <c>int</c> overflows.</summary>
+        /// <exception cref="NotSupportedException"><paramref name="value"/> is <see cref="int.MinValue"/>.</exception>
+        public static int Abs(int value) =>
+            value == int.MinValue ? throw new NotSupportedException("integer out of range") : Math.Abs(value);
 
         /// <summary>PostgreSQL <c>%</c>: modulo by zero is an error.</summary>
         /// <exception cref="NotSupportedException"><paramref name="right"/> is zero.</exception>
         public static double Modulo(double left, double right) =>
             right == 0 ? throw new NotSupportedException("division by zero") : left % right;
 
-        /// <summary>Rounds half away from zero at <paramref name="digits"/> decimal places (negative digits round left of the point).</summary>
-        public static double Round(double value, int digits)
-        {
-            if (double.IsNaN(value) || double.IsInfinity(value) || Math.Abs(value) >= 7.9e27 || digits > 28)
-            {
-                return value;
-            }
-
-            var exact = (decimal)value;
-            if (digits >= 0)
-            {
-                return (double)Math.Round(exact, digits, MidpointRounding.AwayFromZero);
-            }
-
-            if (digits < -28)
-            {
-                return 0d;
-            }
-
-            var factor = Pow10(-digits);
-            return (double)(Math.Round(exact / factor, MidpointRounding.AwayFromZero) * factor);
-        }
-
         /// <summary>SQL <c>SUBSTRING(s FROM start FOR length)</c>: 1-based, positions outside the string are dropped.</summary>
-        /// <exception cref="ArgumentException"><paramref name="length"/> is negative.</exception>
+        /// <exception cref="NotSupportedException"><paramref name="length"/> is negative.</exception>
         public static string Substring(string source, int start, int length)
         {
             if (length < 0)
             {
-                throw new ArgumentException("negative substring length not allowed", nameof(length));
+                throw new NotSupportedException("negative substring length not allowed");
             }
 
             long from = Math.Max(start, 1);
@@ -129,17 +129,6 @@ namespace Expresso.Rendering.Linq
             }
 
             return best!;
-        }
-
-        private static decimal Pow10(int exponent)
-        {
-            var result = 1m;
-            for (var i = 0; i < exponent; i++)
-            {
-                result *= 10m;
-            }
-
-            return result;
         }
     }
 }

@@ -74,7 +74,7 @@ The result is NULL when `text` or `length` is NULL. Example: `eq(right(isbn,1),"
 
 ### SQL Server and PostgreSQL
 
-`RIGHT(text, length)` for a field or a literal length:
+`RIGHT(text, length)` for a field or a literal length. `isnull(right(...))` and `not(isnull(right(...)))` keep `RIGHT`, so a negative length is raised by SQL Server:
 
 ```sql
 RIGHT([w].[Isbn], @n)

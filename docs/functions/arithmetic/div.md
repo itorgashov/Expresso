@@ -56,7 +56,7 @@ The integer `/` in SQL depends on the engine, while the lambda always means trun
 
 ### In-memory
 
-Same as Queryable, except division by zero throws `NotSupportedException`. `isnull(div(...))` throws as well.
+Same as Queryable, except division by zero throws `NotSupportedException`, `int.MinValue / -1` throws `NotSupportedException` (`integer out of range`), and a finite `double` quotient that overflows or underflows throws as well. `isnull(div(...))` evaluates the call, so those errors are not reported as false.
 
 ## EF Core rendering
 

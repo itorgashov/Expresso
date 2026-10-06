@@ -20,4 +20,4 @@ Set `ExpressoSample:Engine` in `appsettings.json` and put the matching connectio
 dotnet run --project samples/Expresso.Sample.WebApi.EfCore
 ```
 
-Swagger: `/swagger`. Endpoints match the ADO sample (`GET /api/books`, `/api/authors`, `/api/publishers` with `filter` and `sort`).
+Swagger: `/swagger` (the site root redirects there). Endpoints match the ADO sample (`GET /api/books`, `/api/authors`, `/api/publishers` with `filter` and `sort`).

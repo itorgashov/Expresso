@@ -47,6 +47,7 @@ namespace Expresso.Rendering.EntityFrameworkCore
             {
                 (nameof(ExpressoDbFunctions.IsDomainNull), typeof(double), a => FoldSafeIsNull(a[0], boolMapping(), intMapping())),
                 (nameof(ExpressoDbFunctions.IsDomainNull), typeof(int), a => FoldSafeIsNull(a[0], boolMapping(), intMapping())),
+                (nameof(ExpressoDbFunctions.IsDomainNull), typeof(string), a => FoldSafeIsNull(a[0], boolMapping(), intMapping())),
             };
     }
 }

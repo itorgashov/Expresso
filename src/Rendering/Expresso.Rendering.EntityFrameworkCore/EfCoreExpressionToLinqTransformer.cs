@@ -53,12 +53,43 @@ namespace Expresso.Rendering.EntityFrameworkCore
             Marker(nameof(ExpressoDbFunctions.Time), value) ?? base.Time(value);
 
         /// <inheritdoc />
+        protected override Expression Floor(Expression value) =>
+            SqlServerInteger(value, nameof(ExpressoDbFunctions.SqlFloor)) ?? base.Floor(value);
+
+        /// <inheritdoc />
+        protected override Expression Ceiling(Expression value) =>
+            SqlServerInteger(value, nameof(ExpressoDbFunctions.SqlCeiling)) ?? base.Ceiling(value);
+
+        /// <inheritdoc />
         protected override Expression Round(Expression value, Expression? digits)
         {
             var count = digits ?? Expression.Constant(0);
-            return Marker(nameof(ExpressoDbFunctions.Round), value, count)
-                ?? LiteralCall(nameof(ExpressoDbFunctions.SqlRound), value, count)
-                ?? base.Round(value, digits);
+            var integer = SqlServerInteger(value, nameof(ExpressoDbFunctions.SqlRoundInt), count);
+            if (integer is not null)
+            {
+                return integer;
+            }
+
+            // Other providers register ROUND for double. An int argument must use that signature
+            // so a literal precision outside 0–15 is not evaluated with Math.Round.
+            var number = LinqEx.ConvertTo(value, typeof(double));
+            return Marker(nameof(ExpressoDbFunctions.Round), number, count)
+                ?? LiteralCall(nameof(ExpressoDbFunctions.SqlRound), number, count)
+                ?? base.Round(number, digits);
+        }
+
+        /// <summary>SQL Server store call that returns <c>int</c>, or <see langword="null"/> for every other case.</summary>
+        private Expression? SqlServerInteger(Expression value, string name, params Expression[] more)
+        {
+            if (Provider != EfCoreProvider.SqlServer || value.Type != typeof(int))
+            {
+                return null;
+            }
+
+            var arguments = new Expression[more.Length + 1];
+            arguments[0] = value;
+            more.CopyTo(arguments, 1);
+            return Marker(name, arguments);
         }
 
         /// <inheritdoc />
@@ -118,10 +149,16 @@ namespace Expresso.Rendering.EntityFrameworkCore
         private static Expression LikeCall(Expression source, Expression pattern) =>
             Expression.Call(Like, Expression.Property(null, typeof(EF), nameof(EF.Functions)), source, pattern, Expression.Constant(LikeEscape));
 
-        /// <summary>Escapes <c>\</c>, <c>%</c> and <c>_</c> with <c>\</c>, in that order, then adds the <c>%</c> wildcards.</summary>
-        private static Expression LikePattern(Expression pattern, bool prefix, bool suffix)
+        /// <summary>
+        /// Escapes <c>\</c>, <c>%</c> and <c>_</c> with <c>\</c>, in that order. SQL Server also escapes <c>[</c>,
+        /// then the <c>%</c> wildcards are added.
+        /// </summary>
+        private Expression LikePattern(Expression pattern, bool prefix, bool suffix)
         {
-            var escaped = new[] { LikeEscape, "%", "_" }.Aggregate(pattern, (text, special) =>
+            var specials = Provider == EfCoreProvider.SqlServer
+                ? new[] { LikeEscape, "%", "_", "[" }
+                : new[] { LikeEscape, "%", "_" };
+            var escaped = specials.Aggregate(pattern, (text, special) =>
                 (Expression)Expression.Call(text, StringReplace, Expression.Constant(special), Expression.Constant(LikeEscape + special)));
             var percent = Expression.Constant("%");
             if (prefix)

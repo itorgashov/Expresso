@@ -18,7 +18,7 @@ namespace Expresso.Rendering.EntityFrameworkCore
                     : DomainNull(value);
             }
 
-            if (function == "power")
+            if (function == "power" || (function == "abs" && value.Type == typeof(int)))
             {
                 return DomainNull(value);
             }
@@ -45,6 +45,21 @@ namespace Expresso.Rendering.EntityFrameworkCore
             {
                 var method = ExpressoFunctionTranslations.Find(Provider, nameof(ExpressoDbFunctions.IsNullValue), new[] { typeof(string) });
                 return method is null ? null : Expression.Equal(Expression.Call(method, value), Expression.Constant(true));
+            }
+
+            if (function == "substring" || function is "add" or "sub" or "mult")
+            {
+                return DomainNull(value);
+            }
+
+            if (Provider == EfCoreProvider.SqlServer && function is "left" or "right")
+            {
+                return DomainNull(value);
+            }
+
+            if (Provider == EfCoreProvider.SqlServer && function == "round" && value.Type == typeof(int))
+            {
+                return DomainNull(value);
             }
 
             return base.ComputedNull(function, args, value);

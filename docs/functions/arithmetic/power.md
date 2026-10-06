@@ -54,28 +54,28 @@ Both arguments are converted to `double` first. The result is NULL when either a
 
 ### In-memory
 
-Same as Queryable.
+`ExpressoFunctions.Power` follows PostgreSQL `power`. A negative base with a fractional exponent, and zero raised to a negative exponent, throw `NotSupportedException`. A finite input whose result overflows or underflows throws as well. `isnull(power(...))` evaluates the call, so those errors are not reported as false. `power(2,2)` is `4`.
 
 ## EF Core rendering
 
 ### All providers
 
-On SQL Server:
+On SQL Server an `int` or `byte` base stays in `POWER`, and the result stays an integer until a `double` consumer needs it. `eq(power(age,0.5),2.0)` therefore uses integer arithmetic (`POWER(5,0.5)` is `2`, not about `2.236`) and only then casts:
 
 ```sql
-POWER(CAST([w].[Age] AS float), @__p_0)
+CAST(POWER([w].[Age], @__p_0) AS float)
 ```
 
-The call is `POWER` on every provider, including a column base. `isnull(power(...))` keeps that call inside `NULLIF`, including on SQLite and MySQL and for a non-nullable base, so a domain result is not folded to false. A literal call stays inside `POWER` as well.
+A nested call keeps that integer result. `power(power(age,0.5),0.5)` is `POWER(POWER([w].[Age], …), …)`, and `div(power(age,1),2)` divides the integer `POWER` before any float cast. `floor`, `ceiling` and `round` of that integer result stay integer too, so `div(floor(power(age,1)),2)` still truncates. A `double` base stays a floating-point `POWER`. On Oracle a double literal or parameter is cast to `NUMBER`, so `POWER(2, 1024)` raises ORA-01426 instead of returning a `BINARY_DOUBLE` infinity. A `BINARY_DOUBLE` column is left as a binary double. `isnull(power(...))` keeps that call inside `NULLIF`, including on SQLite and MySQL and for a non-nullable base, so a domain result is not folded to false. A literal call stays inside `POWER` as well.
 
 ## EF6 rendering
 
 ### All providers
 
-EF6 translates the Queryable lambda with the canonical `Power` function. On SQL Server:
+On SQL Server an `int` or `byte` base stays in `POWER`, and the integer result is cast to `float` only when a later `double` consumer needs it. Nested `POWER`, integer division and `ABS` therefore see the integer result. Other providers convert both arguments to `float` first. On SQL Server:
 
 ```sql
-POWER(CAST([Extent1].[Age] AS float), @p__linq__0)
+CAST(POWER([Extent1].[Age], @p__linq__0) AS float)
 ```
 
 `isnull(power(...))` compares that `POWER` result with NULL, so the call is not folded to false.

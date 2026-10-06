@@ -25,11 +25,20 @@ namespace Expresso.Rendering.EntityFramework.Test
 
         public DbSet<Widget> Widgets => Set<Widget>();
 
+        public DbSet<NullableIntRow> NullableInts => Set<NullableIntRow>();
+
         public Ef6ExpressionToLinqTransformer Transformer() => new(this);
 
         /// <summary>SQL of <c>Widgets.Where(filter).Select(Id)</c>.</summary>
         public string WhereSql(FilterCriteria filter) =>
             Widgets.Where(Transformer(), filter, WidgetLinqMapping.Create()).Select(w => w.Id).ToString();
+
+        /// <summary>SQL of a nullable <c>int</c> filter.</summary>
+        public string NullableSql(FilterCriteria filter)
+        {
+            var mapping = new LinqQueryMapping<NullableIntRow>().Field("rank", r => r.Rank);
+            return NullableInts.Where(Transformer(), filter, mapping).Select(r => r.Id).ToString();
+        }
 
         /// <summary>SQL of <c>Widgets[.Where(filter)].OrderBy(sort).Select(Id)</c>.</summary>
         public string OrderSql(SortDirective sort, FilterCriteria? filter = null)
@@ -46,7 +55,16 @@ namespace Expresso.Rendering.EntityFramework.Test
             modelBuilder.Entity<Widget>().HasMany(w => w.Tags).WithRequired().HasForeignKey(t => t.WidgetId);
             modelBuilder.Entity<WidgetTag>().ToTable("widget_tag").HasMany(t => t.TagMeta).WithRequired().HasForeignKey(m => m.TagId);
             modelBuilder.Entity<WidgetTagMeta>().ToTable("widget_tag_meta");
+            modelBuilder.Entity<NullableIntRow>().ToTable("rank_row");
         }
+    }
+
+    /// <summary>Nullable <c>int</c> column for SQL Server integer <c>FLOOR</c>.</summary>
+    public sealed class NullableIntRow
+    {
+        public int Id { get; set; }
+
+        public int? Rank { get; set; }
     }
 
     /// <summary>SQL Server provider with a fixed manifest token, so building the model never connects.</summary>

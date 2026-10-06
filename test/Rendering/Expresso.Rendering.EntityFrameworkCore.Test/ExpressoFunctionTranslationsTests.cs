@@ -101,16 +101,22 @@ namespace Expresso.Rendering.EntityFrameworkCore.Test
             (EfCoreProvider.Db2, "Second", typeof(TimeSpan), "SECOND(a0)"),
             (EfCoreProvider.SqlServer, "IsDomainNull", typeof(double), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.SqlServer, "IsDomainNull", typeof(int), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
+            (EfCoreProvider.SqlServer, "IsDomainNull", typeof(string), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.PostgreSql, "IsDomainNull", typeof(double), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.PostgreSql, "IsDomainNull", typeof(int), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
+            (EfCoreProvider.PostgreSql, "IsDomainNull", typeof(string), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.Oracle, "IsDomainNull", typeof(double), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.Oracle, "IsDomainNull", typeof(int), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
+            (EfCoreProvider.Oracle, "IsDomainNull", typeof(string), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.Db2, "IsDomainNull", typeof(double), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.Db2, "IsDomainNull", typeof(int), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
+            (EfCoreProvider.Db2, "IsDomainNull", typeof(string), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.MySql, "IsDomainNull", typeof(double), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.MySql, "IsDomainNull", typeof(int), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
+            (EfCoreProvider.MySql, "IsDomainNull", typeof(string), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.Sqlite, "IsDomainNull", typeof(double), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.Sqlite, "IsDomainNull", typeof(int), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
+            (EfCoreProvider.Sqlite, "IsDomainNull", typeof(string), "CASE WHEN NULLIF(a0, NULL) == NULL THEN 1 ELSE 0 END == 1"),
             (EfCoreProvider.SqlServer, "Sqrt", typeof(double), "SQRT(a0)"),
             (EfCoreProvider.SqlServer, "Divide", typeof(double), "a0 / a1"),
             (EfCoreProvider.SqlServer, "Divide", typeof(int), "a0 / a1"),
@@ -181,9 +187,16 @@ namespace Expresso.Rendering.EntityFrameworkCore.Test
             (EfCoreProvider.SqlServer, "SqlLTrim", typeof(string), "LTRIM(a0)"),
             (EfCoreProvider.SqlServer, "SqlRTrim", typeof(string), "RTRIM(a0)"),
             (EfCoreProvider.SqlServer, "SqlPower", typeof(double), "POWER(a0, a1)"),
+            (EfCoreProvider.SqlServer, "SqlPower", typeof(int), "POWER(a0, a1)"),
+            (EfCoreProvider.SqlServer, "SqlPower", typeof(byte), "POWER(a0, a1)"),
+            (EfCoreProvider.SqlServer, "SqlPowerInt", typeof(int), "POWER(a0, a1)"),
+            (EfCoreProvider.SqlServer, "SqlPowerInt", typeof(byte), "POWER(a0, a1)"),
             (EfCoreProvider.SqlServer, "SqlAbs", typeof(double), "ABS(a0)"),
             (EfCoreProvider.SqlServer, "SqlAbs", typeof(int), "ABS(a0)"),
             (EfCoreProvider.SqlServer, "SqlRound", typeof(double), "ROUND(a0, a1)"),
+            (EfCoreProvider.SqlServer, "SqlFloor", typeof(int), "FLOOR(a0)"),
+            (EfCoreProvider.SqlServer, "SqlCeiling", typeof(int), "CEILING(a0)"),
+            (EfCoreProvider.SqlServer, "SqlRoundInt", typeof(int), "ROUND(a0, a1)"),
             (EfCoreProvider.PostgreSql, "SqlUpper", typeof(string), "UPPER(a0)"),
             (EfCoreProvider.PostgreSql, "SqlLTrim", typeof(string), "LTRIM(a0)"),
             (EfCoreProvider.PostgreSql, "SqlRTrim", typeof(string), "RTRIM(a0)"),
@@ -220,7 +233,7 @@ namespace Expresso.Rendering.EntityFrameworkCore.Test
         };
 
         public static IEnumerable<object[]> GoldenCases() =>
-            GoldenBase.Select(g => new object[] { g.Provider, g.Marker, g.Value, g.Sql });
+            AllGolden().Select(g => new object[] { g.Provider, g.Marker, g.Value, g.Sql });
 
         public static IEnumerable<object[]> Markers() =>
             typeof(ExpressoDbFunctions).GetMethods(BindingFlags.Public | BindingFlags.Static).Select(m => new object[] { m.Name, m.GetParameters()[0].ParameterType });
@@ -251,7 +264,7 @@ namespace Expresso.Rendering.EntityFrameworkCore.Test
                 }
             }
 
-            var goldenKeys = GoldenBase.Select(g => (g.Provider, g.Marker, g.Value)).ToHashSet();
+            var goldenKeys = AllGolden().Select(g => (g.Provider, g.Marker, g.Value)).ToHashSet();
             var missing = new List<string>();
             foreach (var provider in Enum.GetValues<EfCoreProvider>())
             {
@@ -268,6 +281,32 @@ namespace Expresso.Rendering.EntityFrameworkCore.Test
             }
 
             Assert.True(missing.Count == 0, "Registered translations without golden SQL:" + Environment.NewLine + string.Join(Environment.NewLine, missing));
+        }
+
+        private static IEnumerable<(EfCoreProvider Provider, string Marker, Type Value, string Sql)> AllGolden() =>
+            GoldenBase.Concat(ArithmeticGolden());
+
+        private static IEnumerable<(EfCoreProvider Provider, string Marker, Type Value, string Sql)> ArithmeticGolden()
+        {
+            var operations = new (string Marker, string Sql)[]
+            {
+                ("SqlAdd", "a0 + a1"),
+                ("SqlSubtract", "a0 - a1"),
+                ("SqlMultiply", "a0 * a1"),
+            };
+            foreach (var provider in Enum.GetValues<EfCoreProvider>())
+            {
+                if (provider == EfCoreProvider.Other)
+                {
+                    continue;
+                }
+
+                foreach (var operation in operations)
+                {
+                    yield return (provider, operation.Marker, typeof(int), operation.Sql);
+                    yield return (provider, operation.Marker, typeof(double), operation.Sql);
+                }
+            }
         }
 
         [Fact]

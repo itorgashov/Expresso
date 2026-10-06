@@ -71,7 +71,7 @@ A `byte` or `int` argument is converted to `double` first. The result is NULL wh
 
 ### In-memory
 
-`ExpressoFunctions.Round(argument, digits)`, with `digits` `0` for the 1-argument form, follows PostgreSQL `round(numeric, int)`. It rounds half away from zero (`round(2.5)` is `3`, not .NET's banker's `2`), and a negative `digits` rounds to the left of the decimal point.
+`ExpressoFunctions.Round(argument, digits)`, with `digits` `0` for the 1-argument form, follows PostgreSQL `round(numeric, int)`. It first keeps 15 significant digits, the same conversion PostgreSQL uses from `float8` to `numeric`, breaking an exact tie to even (`round(1000000000000005,0)` is `1000000000000000`). It then rounds half away from zero (`round(2.5)` is `3`, not .NET's banker's `2`). That decimal is converted to the nearest finite `double`, with ties to even, so `round(1e-106,300)` equals the input and `round(2.3490724761267527e-14,28)` equals `round(2.3490724761267527e-14,29)`. A result outside the finite `double` range, such as rounding the largest finite `double`, raises `NotSupportedException` (`value out of range: overflow`). A negative `digits` rounds to the left of the decimal point. Magnitudes outside the `decimal` range and precisions past 28 still round: `round(1e29,-30)` is `0`, `round(1.234567e-29,30)` is `1.2e-29`, `round(1.005e-29,31)` is `1.01e-29`, `round(1.225e-28,30)` is `1.23e-28`, `round(5e-29,28)` is `1e-28`, and `round(1.499e-27,27)` is `1e-27`. `round(1.234567890123456,30)` is `1.23456789012346`. A precision of `int` maximum leaves `1e29` unchanged, and rounding the smallest positive `double` at 324 places stays that value.
 
 ## EF Core rendering
 
@@ -99,13 +99,13 @@ ROUND(argument::numeric, digits)
 ROUND(argument, digits)
 ```
 
-On SQL Server, MySQL / MariaDB, SQLite and Oracle, a call whose operands do not reference the query row also stays in `ROUND`, including a precision outside 0–15. `eq(round(2.5),3.0)` keeps `ROUND`.
+On SQL Server, MySQL / MariaDB, SQLite and Oracle, a call whose operands do not reference the query row also stays in `ROUND`, including a precision outside 0–15. `eq(round(2.5),3.0)` keeps `ROUND`. An `int` or `byte` literal does too: `eq(round(1,20),1.0)` stays in `ROUND` instead of being evaluated with `Math.Round`. On SQL Server an `int` argument stays `int`, so `div(round(power(age,1),0),2)` divides the integer `ROUND` before any float cast, and `isnull(round(age,-1))` keeps that `ROUND` so an overflow is still raised. Other providers convert an `int` argument to `double` first. A `double` argument stays a floating-point `ROUND`. PostgreSQL still casts that `double` to `numeric`, including for an `int` column.
 
 ## EF6 rendering
 
 ### All providers
 
-EF6 translates the Queryable lambda with the canonical `Round` function. On SQL Server:
+EF6 translates the Queryable lambda with the canonical `Round` function. On SQL Server an `int` argument uses store `ROUND` and the result stays `int`, including inside a later division. `isnull(round(age,-1))` and `not(isnull(round(age,-1)))` keep that `ROUND`. A `double` column is unchanged:
 
 ```sql
 ROUND([Extent1].[Amount], 0)
@@ -119,5 +119,5 @@ PostgreSQL throws `NotSupportedException` because EF6 cannot cast to numeric, an
 
 - Zero and negative `digits` are supported. For example, `round(price,-1)` rounds to the nearest ten, matching SQL Server's native `ROUND` semantics.
 - SQL Server's `ROUND` rounds away from zero at the midpoint (`ROUND(2.5,0) = 3`), which differs from .NET's default `Math.Round` (banker's rounding, `MidpointRounding.ToEven`). Expresso does not change this: the SQL Server behavior is what executes.
-- The return type is always `double`, regardless of the argument's original type.
+- The public result is `double`. On SQL Server the store type stays `int` until a `double` consumer, so a later division still truncates.
 - See [`floor`](floor.md)/[`ceiling`](ceiling.md) for rounding to the nearest whole number in a fixed direction.

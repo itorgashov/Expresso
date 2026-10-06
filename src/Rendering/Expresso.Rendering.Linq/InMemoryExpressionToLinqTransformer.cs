@@ -19,23 +19,62 @@ namespace Expresso.Rendering.Linq
                 return DomainError(Expression.LessThan(args[0].Value, Expression.Constant(0.0)), "negative square root");
             }
 
-            if (function is "div" or "mod")
+            if (function is "add" or "sub" or "mult" or "div" or "mod")
             {
-                var zero = Expression.Constant(Convert.ChangeType(0, args[1].Type, System.Globalization.CultureInfo.InvariantCulture), args[1].Type);
-                return DomainError(Expression.Equal(args[1].Value, zero), "division by zero");
+                return Observe(value);
+            }
+
+            if (function == "power")
+            {
+                return Observe(Call(
+                    nameof(ExpressoFunctions.Power),
+                    LinqEx.ConvertTo(args[0].Value, typeof(double)),
+                    LinqEx.ConvertTo(args[1].Value, typeof(double))));
+            }
+
+            if (function == "abs" && args[0].Type == typeof(int))
+            {
+                return Observe(Call(nameof(ExpressoFunctions.Abs), args[0].Value));
+            }
+
+            if (function == "substring")
+            {
+                return Observe(Call(nameof(ExpressoFunctions.Substring), args[0].Value, args[1].Value, args[2].Value));
             }
 
             return null;
         }
 
         /// <inheritdoc />
+        protected override Expression Add(Expression left, Expression right) =>
+            Call(nameof(ExpressoFunctions.Add), left, right);
+
+        /// <inheritdoc />
+        protected override Expression Subtract(Expression left, Expression right) =>
+            Call(nameof(ExpressoFunctions.Subtract), left, right);
+
+        /// <inheritdoc />
+        protected override Expression Multiply(Expression left, Expression right) =>
+            Call(nameof(ExpressoFunctions.Multiply), left, right);
+
+        /// <inheritdoc />
+        protected override Expression Power(Expression left, Expression right) =>
+            Call(nameof(ExpressoFunctions.Power), LinqEx.ConvertTo(left, typeof(double)), LinqEx.ConvertTo(right, typeof(double)));
+
+        /// <inheritdoc />
+        protected override Expression Abs(Expression value) =>
+            value.Type == typeof(int) ? Call(nameof(ExpressoFunctions.Abs), value) : base.Abs(value);
+
+        /// <inheritdoc />
         protected override Expression Sqrt(Expression value) => Call(nameof(ExpressoFunctions.Sqrt), value);
 
         /// <inheritdoc />
-        protected override Expression Divide(Expression left, Expression right) => ZeroGuard(base.Divide(left, right), right);
+        protected override Expression Divide(Expression left, Expression right) =>
+            Call(nameof(ExpressoFunctions.Divide), left, right);
 
         /// <inheritdoc />
-        protected override Expression Modulo(Expression left, Expression right) => ZeroGuard(base.Modulo(left, right), right);
+        protected override Expression Modulo(Expression left, Expression right) =>
+            Call(nameof(ExpressoFunctions.Modulo), left, right);
 
         /// <inheritdoc />
         protected override Expression Length(Expression source) => Call(nameof(ExpressoFunctions.Length), source);
@@ -45,7 +84,7 @@ namespace Expresso.Rendering.Linq
 
         /// <inheritdoc />
         protected override Expression Round(Expression value, Expression? digits) =>
-            Call(nameof(ExpressoFunctions.Round), value, digits ?? Expression.Constant(0));
+            Call(nameof(ExpressoFunctions.Round), LinqEx.ConvertTo(value, typeof(double)), digits ?? Expression.Constant(0));
 
         /// <inheritdoc />
         protected override Expression StartsWith(Expression source, Expression pattern) =>
@@ -109,6 +148,10 @@ namespace Expresso.Rendering.Linq
         protected override Expression Max(Expression items, LambdaExpression selector) =>
             GenericCall(nameof(ExpressoFunctions.Max), items, selector);
 
+        /// <summary>Runs <paramref name="probe"/> for its error, then reports that the result is not NULL.</summary>
+        private static Expression Observe(Expression probe) =>
+            Expression.Block(typeof(bool), probe, Expression.Constant(false));
+
         /// <summary>
         /// Evaluating the NULL condition throws when <paramref name="when"/> is true, so <c>isnull</c> of a domain error
         /// rejects instead of returning false.
@@ -119,15 +162,6 @@ namespace Expresso.Rendering.Linq
                 Expression.New(typeof(NotSupportedException).GetConstructor(new[] { typeof(string) })!, Expression.Constant(message)),
                 typeof(bool));
             return Expression.Condition(when, fail, Expression.Constant(false));
-        }
-
-        private static Expression ZeroGuard(Expression result, Expression right)
-        {
-            var zero = Expression.Constant(Convert.ChangeType(0, right.Type, System.Globalization.CultureInfo.InvariantCulture), right.Type);
-            var fail = Expression.Throw(
-                Expression.New(typeof(NotSupportedException).GetConstructor(new[] { typeof(string) })!, Expression.Constant("division by zero")),
-                result.Type);
-            return Expression.Condition(Expression.Equal(right, zero), fail, result);
         }
 
         private static Expression Call(string name, params Expression[] arguments) =>

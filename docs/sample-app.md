@@ -38,7 +38,7 @@ Put that engine's connection string in `ConnectionStrings` under the same name:
 
 ## Domain: books, authors, publishers
 
-The sample database (`samples/database/*/schema.sql`, seed from `seed.json`) models a small library catalog. Table names are shown without a schema prefix; the dialect catalog adds one where the engine needs it.
+The sample database (`samples/database/*/schema.sql`, seed from `seed.json`) models a small library catalog. Table names are shown without a schema prefix; the dialect catalog adds one where the engine needs it. The EF6 host qualifies Oracle tables with the connection's `User Id` (upper case) and PostgreSQL tables with `public`. Without that schema, those EF6 providers look for `dbo`.
 
 | Table | Purpose |
 |---|---|

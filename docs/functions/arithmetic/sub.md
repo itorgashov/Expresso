@@ -54,7 +54,7 @@ A `byte` operand is widened to `int`, and when either operand is `double` both b
 
 ### In-memory
 
-Same as Queryable.
+`ExpressoFunctions.Subtract` follows PostgreSQL. An `int` difference outside the 32-bit range throws `NotSupportedException`, including when `isnull` consumes the call. `sub` of the minimum `int` and `1` is that error, not a wrapped positive value.
 
 ## EF Core rendering
 
@@ -66,7 +66,7 @@ EF Core translates the Queryable lambda. On SQL Server:
 [w].[Age] - @__Value_0
 ```
 
-No provider overrides.
+A call whose operands are all literals stays in SQL (`-`). `isnull(sub(...))` keeps the subtraction.
 
 ## EF6 rendering
 

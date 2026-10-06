@@ -95,7 +95,7 @@ time(value)
 value - TRUNC(value)
 ```
 
-The result is `INTERVAL DAY TO SECOND` and keeps fractional seconds, so `hour(time(createdat))` and `addseconds` on that result stay on an interval. A comparison with a `TimeOnly` literal binds the parameter as `TimeSpan`. A `TimeOnly` column mapped as text (`NVARCHAR2`) still throws `NotSupportedException`; map it to `INTERVAL DAY(0) TO SECOND(0)`. See [docs/semantics.md](../../semantics.md).
+The result is `INTERVAL DAY TO SECOND` and keeps fractional seconds, so `hour(time(createdat))` and `addseconds` on that result stay on an interval. A comparison with a `TimeOnly` literal binds the parameter as `INTERVAL DAY TO SECOND`. A `TimeOnly` column mapped as text (`NVARCHAR2`) still throws `NotSupportedException`; map it to `INTERVAL DAY(0) TO SECOND(0)`. See [docs/semantics.md](../../semantics.md).
 
 ### DB2
 

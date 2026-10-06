@@ -18,7 +18,8 @@ namespace Expresso.Rendering.EntityFrameworkCore
                 .Concat(DomainNullEntries(() => PostgreSqlBool!, () => PostgreSqlInt!))
                 .Concat(LiteralEntries("substr"))
                 .Concat(StringLiteralEntries("LENGTH", indexOf: a => MinusOne(Function("STRPOS", typeof(int), a[0], a[1]))))
-                .Concat(NumericLiteralEntries(round: false));
+                .Concat(NumericLiteralEntries(round: false))
+                .Concat(ArithmeticLiteralEntries());
         }
     }
 }
