@@ -96,7 +96,7 @@ These providers use the same NULL-as-empty lambda as EF Core, including Oracle's
 CASE WHEN ([Extent1].[Lastname] IS NULL) THEN N'' ELSE [Extent1].[Lastname] END
 ```
 
-No EF6 provider throws for `concat`, but on Oracle a query that emits the concatenation fails in the database with ORA-12704: EF6's own NULL guard emits `N''` against `VARCHAR2` columns. `isnull(concat(...))` works there, because it only tests the arguments for NULL.
+No EF6 provider throws for `concat`, but on Oracle a query that emits the concatenation fails in the database with ORA-12704: EF6's own NULL guard emits `N''` against `VARCHAR2` columns. That includes a function such as `right` whose argument is the concatenation. `isnull(concat(...))` works there, because it only tests the arguments for NULL.
 
 ## Notes
 

@@ -72,7 +72,7 @@ A nested call keeps that integer result. `power(power(age,0.5),0.5)` is `POWER(P
 
 ### All providers
 
-On SQL Server an `int` or `byte` base stays in `POWER`, and the integer result is cast to `float` only when a later `double` consumer needs it. Nested `POWER`, integer division and `ABS` therefore see the integer result. Other providers convert both arguments to `float` first. On SQL Server:
+On SQL Server an `int` or `byte` base stays in `POWER`, and the integer result is cast to `float` only when a later `double` consumer needs it. Nested `POWER`, integer division and `ABS` therefore see the integer result. Other providers convert both arguments to `float` first. On SQLite a non-zero result smaller than the smallest normal double is returned as `0`, so `power(0.5,1075)` compares equal to `0`. On SQL Server:
 
 ```sql
 CAST(POWER([Extent1].[Age], @p__linq__0) AS float)

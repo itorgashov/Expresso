@@ -43,7 +43,7 @@ namespace Expresso.Rendering.Integration.Test.Ef6
         public static readonly IReadOnlyDictionary<string, Ef6Gap> Oracle = Build(
             (TimeOfDayCases, new Ef6Gap("the provider has no time-of-day (Edm.Time) type")),
             (DateAddCases, new Ef6Gap("the provider pastes the amount into an INTERVAL literal, so parameters fail (ORA-01867)")),
-            (new[] { "concat", "concat-null-eq" }, new Ef6Gap(
+            (new[] { "concat", "concat-null-eq", "right-trailing" }, new Ef6Gap(
                 "EF6's concat null guard emits N'' (ORA-12704 on VARCHAR2 columns)",
                 Kind: Ef6GapKind.Database)),
             (new[] { "sqrt", "isnull-sqrt-neg" }, new Ef6Gap("the provider manifest has no SQRT")));

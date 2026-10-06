@@ -98,13 +98,21 @@ namespace Expresso.Rendering.EntityFramework
         }
 
         /// <summary><c>DbFunctions.AddYears</c> … <c>AddSeconds</c> on a <c>DateTime</c> or time-of-day <c>TimeSpan</c>.</summary>
-        protected override Expression DateAdd(LinqDatePart part, Expression value, Expression amount) => Provider switch
+        protected override Expression DateAdd(LinqDatePart part, Expression value, Expression amount)
         {
-            Ef6Provider.MySql => MySqlDateAdd(part, value, amount),
-            Ef6Provider.Oracle => throw Unsupported(AddName(part), "the provider pastes the amount into an INTERVAL literal, so parameters fail (ORA-01867)"),
-            Ef6Provider.Sqlite => throw Unsupported(AddName(part), "the provider translates no canonical date arithmetic"),
-            _ => Call(DbFunction("Add" + part + "s", LinqEx.NullableType(value.Type), typeof(int?)), value, amount),
-        };
+            if (value.Type == typeof(TimeSpan) && Provider is Ef6Provider.Oracle or Ef6Provider.Sqlite)
+            {
+                throw Unsupported(AddName(part), NoTimeOfDay);
+            }
+
+            return Provider switch
+            {
+                Ef6Provider.MySql => MySqlDateAdd(part, value, amount),
+                Ef6Provider.Oracle => throw Unsupported(AddName(part), "the provider pastes the amount into an INTERVAL literal, so parameters fail (ORA-01867)"),
+                Ef6Provider.Sqlite => throw Unsupported(AddName(part), "the provider translates no canonical date arithmetic"),
+                _ => Call(DbFunction("Add" + part + "s", LinqEx.NullableType(value.Type), typeof(int?)), value, amount),
+            };
+        }
 
         /// <inheritdoc />
         protected override Expression Left(Expression source, Expression length) => Provider switch

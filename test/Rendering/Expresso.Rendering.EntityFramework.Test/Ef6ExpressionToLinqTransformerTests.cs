@@ -96,6 +96,10 @@ namespace Expresso.Rendering.EntityFramework.Test
         [InlineData(Ef6Provider.Sqlite, "addhours", "'addhours'")]
         [InlineData(Ef6Provider.Sqlite, "date", "'date'")]
         [InlineData(Ef6Provider.Sqlite, "time", "'time'")]
+        [InlineData(Ef6Provider.Sqlite, "time-hour", "Edm.Time")]
+        [InlineData(Ef6Provider.Sqlite, "time-wrap", "Edm.Time")]
+        [InlineData(Ef6Provider.Oracle, "eq-time", "Edm.Time")]
+        [InlineData(Ef6Provider.Oracle, "time-add-eq", "Edm.Time")]
         [InlineData(Ef6Provider.MySql, "addmonths", "'addmonths'")]
         [InlineData(Ef6Provider.MySql, "addyears", "'addyears'")]
         public void Provider_WithoutExactRendering_Throws(Ef6Provider provider, string caseId, string function)

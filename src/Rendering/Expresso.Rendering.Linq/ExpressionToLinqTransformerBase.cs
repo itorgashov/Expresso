@@ -176,6 +176,11 @@ namespace Expresso.Rendering.Linq
             return LinqNode.Scalar(value, CombineIsNull(function, arguments, value, NullFromArguments(function, arguments)));
         }
 
+        /// <summary>Called for each mapped field before it is used. The default accepts every field.</summary>
+        protected virtual void ValidateField(Expression body)
+        {
+        }
+
         private static bool IsNumeric(Type type) =>
             type == typeof(byte) || type == typeof(int) || type == typeof(double);
 
@@ -187,6 +192,7 @@ namespace Expresso.Rendering.Linq
             }
 
             var body = LinqEx.Inline(selector, s.Item);
+            ValidateField(body);
             var underlying = Nullable.GetUnderlyingType(body.Type);
             if ((underlying ?? body.Type) != node.ReturnType)
             {

@@ -141,8 +141,6 @@ namespace Expresso.Rendering.Integration.Test
 
         private sealed class ErrorsException : DbException
         {
-            public new string SqlState => string.Empty;
-
             public object[] Errors { get; } = { new StateError() };
 
             private sealed class StateError

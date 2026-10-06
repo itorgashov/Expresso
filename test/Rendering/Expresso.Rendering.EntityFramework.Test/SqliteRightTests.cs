@@ -54,5 +54,21 @@ namespace Expresso.Rendering.EntityFramework.Test
             Assert.Contains("-", notes);
             Assert.DoesNotContain("case", notes);
         }
+
+        [Fact]
+        public void PowerUnderflow_FlushesSubnormalsToZero()
+        {
+            // Scenario: System.Data.SQLite returns 0.5^1075 as a subnormal, so it does not equal 0.
+            // Current SQLite returns 0. The comparison must see 0.
+            using var context = new SqliteRightContext();
+            var sql = context.WhereSql(new FilterCriteria
+            {
+                Expression = new EqFunc(new PowerFunc(new Literal(0.5), new Literal(1075.0)), new Literal(0.0)),
+            });
+
+            Assert.Contains("CASE", sql, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("ABS", sql, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("POWER", sql, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

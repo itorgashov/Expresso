@@ -5,6 +5,16 @@ namespace Expresso.Rendering.EntityFramework
 {
     public partial class Ef6ExpressionToLinqTransformer
     {
+        /// <inheritdoc />
+        protected override void ValidateField(Expression body)
+        {
+            if (Provider is Ef6Provider.Oracle or Ef6Provider.Sqlite
+                && (Nullable.GetUnderlyingType(body.Type) ?? body.Type) == typeof(TimeSpan))
+            {
+                throw Unsupported("time", NoTimeOfDay);
+            }
+        }
+
         /// <summary>
         /// SQL Server <c>POWER</c> keeps an integer base and an integer result.
         /// A later double consumer casts that result. Other providers convert both arguments to <c>double</c> first.
@@ -29,7 +39,23 @@ namespace Expresso.Rendering.EntityFramework
                 return Call(Function(name), left, exponent);
             }
 
-            return base.Power(LinqEx.ConvertTo(left, typeof(double)), LinqEx.ConvertTo(right, typeof(double)));
+            var power = base.Power(LinqEx.ConvertTo(left, typeof(double)), LinqEx.ConvertTo(right, typeof(double)));
+            return Provider == Ef6Provider.Sqlite ? FlushSubnormal(power) : power;
+        }
+
+        /// <summary>
+        /// System.Data.SQLite returns <c>2^-1075</c> as a subnormal. Current SQLite returns 0, so a non-zero
+        /// magnitude below the smallest normal double becomes 0.
+        /// </summary>
+        private static Expression FlushSubnormal(Expression value)
+        {
+            var absolute = Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Abs), typeof(double)), value);
+            var zero = Expression.Constant(0.0);
+            var leastNormal = Expression.Constant(2.2250738585072014E-308);
+            var subnormal = Expression.AndAlso(
+                Expression.GreaterThan(absolute, zero),
+                Expression.LessThan(absolute, leastNormal));
+            return Expression.Condition(subnormal, zero, value);
         }
 
         /// <inheritdoc />
