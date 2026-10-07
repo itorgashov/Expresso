@@ -59,11 +59,11 @@ namespace Expresso.Rendering.EntityFrameworkCore
         }
 
         /// <summary>Literal numeric calls whose BCL versions disagree with the engine (midpoint rounding, domain results, integer limits).</summary>
-        private static IEnumerable<(string Marker, Type Value, Translation Translation)> NumericLiteralEntries(bool round, Translation? power = null)
+        private static IEnumerable<(string Marker, Type Value, Translation Translation)> NumericLiteralEntries(bool round)
         {
             var entries = new List<(string Marker, Type Value, Translation Translation)>
             {
-                (nameof(ExpressoDbFunctions.SqlPower), typeof(double), power ?? (a => Function("POWER", typeof(double), a[0], a[1]))),
+                (nameof(ExpressoDbFunctions.SqlPower), typeof(double), a => Function("POWER", typeof(double), a[0], a[1])),
                 (nameof(ExpressoDbFunctions.SqlAbs), typeof(double), a => Function("ABS", typeof(double), a[0])),
                 (nameof(ExpressoDbFunctions.SqlAbs), typeof(int), a => Function("ABS", typeof(int), a[0])),
             };

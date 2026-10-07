@@ -5,6 +5,8 @@ namespace Expresso.Rendering.EntityFramework
 {
     public partial class Ef6ExpressionToLinqTransformer
     {
+        private const string OracleIntegerPower = "integer-to-double promotion changes Oracle NUMBER arithmetic to BINARY_DOUBLE";
+
         /// <inheritdoc />
         protected override void ValidateField(Expression body)
         {
@@ -39,23 +41,74 @@ namespace Expresso.Rendering.EntityFramework
                 return Call(Function(name), left, exponent);
             }
 
-            var power = base.Power(LinqEx.ConvertTo(left, typeof(double)), LinqEx.ConvertTo(right, typeof(double)));
-            return Provider == Ef6Provider.Sqlite ? FlushSubnormal(power) : power;
+            var baseValue = LinqEx.ConvertTo(left, typeof(double));
+            var exponentValue = LinqEx.ConvertTo(right, typeof(double));
+            if (Provider == Ef6Provider.Oracle)
+            {
+                var promotion = new OracleIntegerPromotionProbe();
+                promotion.Visit(baseValue);
+                promotion.Visit(exponentValue);
+                if (promotion.Found)
+                {
+                    throw Unsupported("power", OracleIntegerPower);
+                }
+            }
+
+            var power = base.Power(baseValue, exponentValue);
+            return Provider == Ef6Provider.Sqlite ? RoundPowerUnderflow(baseValue, exponentValue, power) : power;
         }
 
         /// <summary>
-        /// System.Data.SQLite returns <c>2^-1075</c> as a subnormal. Current SQLite returns 0, so a non-zero
-        /// magnitude below the smallest normal double becomes 0.
+        /// System.Data.SQLite can return the smallest subnormal when the power rounds to zero.
+        /// Evaluate the half exponent outside the subnormal range and let multiplication round the result;
+        /// exact binary half-way ties need an explicit ties-to-even correction.
         /// </summary>
-        private static Expression FlushSubnormal(Expression value)
+        private static Expression RoundPowerUnderflow(Expression baseValue, Expression exponent, Expression value)
         {
             var absolute = Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Abs), typeof(double)), value);
             var zero = Expression.Constant(0.0);
-            var leastNormal = Expression.Constant(2.2250738585072014E-308);
-            var subnormal = Expression.AndAlso(
+            var smallest = Expression.Constant(double.Epsilon);
+            var baseMagnitude = Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Abs), typeof(double)), baseValue);
+            // Both logarithms must run in SQL. A CLR-folded LOG(2) loses digits in EF6's SQL literal formatting.
+            var logarithm = Function(nameof(Ef6Functions.SqliteLog));
+            var log2 = Expression.Divide(Call(logarithm, baseMagnitude), Call(logarithm, Expression.Constant(2.0)));
+            var binaryExponent = Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Round), typeof(double)), log2);
+            var binaryBase = Expression.Call(LinqEx.Method(typeof(Math), nameof(Math.Pow), typeof(double), typeof(double)), Expression.Constant(2.0), binaryExponent);
+            // A finite double power-of-two base has an exponent k in [-1074,1023]. The exact tie needs
+            // exponent = -1075/k to be representable in binary: k's odd part must divide 1075.
+            // 1075*1024 includes every possible power-of-two factor in that range, so this modulo tests it exactly.
+            var dyadicTie = Expression.Equal(Expression.Modulo(Expression.Constant(1100800.0), binaryExponent), zero);
+            var exactTie = Expression.AndAlso(
+                Expression.Equal(baseMagnitude, binaryBase),
+                Expression.AndAlso(dyadicTie, Expression.Equal(Expression.Multiply(exponent, binaryExponent), Expression.Constant(-1075.0))));
+            var halfPower = Expression.Call(
+                LinqEx.Method(typeof(Math), nameof(Math.Pow), typeof(double), typeof(double)),
+                baseMagnitude,
+                Expression.Divide(exponent, Expression.Constant(2.0)));
+            var roundedZero = Expression.Equal(Expression.Multiply(halfPower, halfPower), zero);
+            var roundsToZero = Expression.AndAlso(
                 Expression.GreaterThan(absolute, zero),
-                Expression.LessThan(absolute, leastNormal));
-            return Expression.Condition(subnormal, zero, value);
+                Expression.AndAlso(
+                    Expression.LessThanOrEqual(absolute, smallest),
+                    Expression.OrElse(exactTie, roundedZero)));
+            return Expression.Condition(roundsToZero, zero, value);
+        }
+
+        private sealed class OracleIntegerPromotionProbe : ExpressionVisitor
+        {
+            public bool Found { get; private set; }
+
+            protected override Expression VisitUnary(UnaryExpression node)
+            {
+                var operand = Visit(node.Operand);
+                if (node.NodeType == ExpressionType.Convert && node.Type == typeof(double)
+                    && (operand.Type == typeof(int) || operand.Type == typeof(byte)))
+                {
+                    Found = true;
+                }
+
+                return node.Update(operand);
+            }
         }
 
         /// <inheritdoc />

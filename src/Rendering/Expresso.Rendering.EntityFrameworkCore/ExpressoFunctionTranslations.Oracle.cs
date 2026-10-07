@@ -113,23 +113,6 @@ namespace Expresso.Rendering.EntityFrameworkCore
                 : OracleInterval;
         }
 
-        /// <summary>
-        /// <c>POWER</c> where double literals bind as <c>NUMBER</c>. ADO binds a <c>double</c> parameter as
-        /// <c>OracleDbType.Double</c> (NUMBER), so <c>POWER(2, 1024)</c> raises ORA-01426. EF would otherwise emit
-        /// <c>BINARY_DOUBLE</c> and return infinity. A <c>BINARY_DOUBLE</c> column stays a binary double: Oracle
-        /// promotes <c>POWER(BINARY_DOUBLE, NUMBER)</c> to binary double, which matches ADO for column math.
-        /// </summary>
-        private static SqlExpression OracleNumberPower(SqlExpression left, SqlExpression right)
-        {
-            var number = new DecimalTypeMapping("NUMBER");
-            return Function("POWER", typeof(double), number, AsOracleNumberLiteral(left, number), AsOracleNumberLiteral(right, number));
-        }
-
-        private static SqlExpression AsOracleNumberLiteral(SqlExpression expression, DecimalTypeMapping number) =>
-            expression is SqlConstantExpression or SqlParameterExpression
-                ? Cast(expression, typeof(decimal), number)
-                : expression;
-
         /// <summary><c>SUBSTR(s, GREATEST(LENGTH(s) - n + 1, 1))</c>, matching the ADO renderer.</summary>
         private static SqlExpression OracleLiteralRight(SqlExpression value, SqlExpression length)
         {

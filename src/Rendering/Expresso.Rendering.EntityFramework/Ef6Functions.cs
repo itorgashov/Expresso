@@ -52,6 +52,10 @@ namespace Expresso.Rendering.EntityFramework
         [DbFunction("SQLite", "SQRT")]
         public static double? SqliteSqrt(double? value) => throw NotInMemory();
 
+        /// <summary>SQLite's logarithm, kept in SQL even for a constant argument.</summary>
+        [DbFunction("SQLite", "LOG")]
+        public static double? SqliteLog(double? value) => throw NotInMemory();
+
         [DbFunction("SQLite", "DATEPART")]
         public static int? SqliteDatePart(string part, DateTime? value) => throw NotInMemory();
 

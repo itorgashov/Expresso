@@ -41,6 +41,7 @@ namespace Expresso.Rendering.Integration.Test.Ef6
                 Throws: false)));
 
         public static readonly IReadOnlyDictionary<string, Ef6Gap> Oracle = Build(
+            (new[] { "power", "sort-power-subnormal", "isnull-power-subnormal-nullable" }, new Ef6Gap("integer-to-double promotion changes Oracle NUMBER arithmetic to BINARY_DOUBLE")),
             (TimeOfDayCases, new Ef6Gap("the provider has no time-of-day (Edm.Time) type")),
             (DateAddCases, new Ef6Gap("the provider pastes the amount into an INTERVAL literal, so parameters fail (ORA-01867)")),
             (new[] { "concat", "concat-null-eq", "right-trailing" }, new Ef6Gap(

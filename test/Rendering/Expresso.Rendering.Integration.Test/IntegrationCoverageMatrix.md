@@ -33,6 +33,7 @@ Case ids from `RendererIntegrationCases`. Every dialect collection (SQL Server, 
 
 - **Catalog:** every EF Core collection (`{Engine}EfItTests`, all seven engines) runs the ids above and must return the expected ids. `NestedSort_IncludeSorted` also runs the nested cases through `IncludeSorted`.
 - **EF6:** `{Engine}Ef6ItTests` (SQL Server, PostgreSQL, MySQL, MariaDB, SQLite, Oracle) run the catalog and the differential cases the same way. Cases listed in `Ef6ProviderGaps` for that provider must throw instead (skipped with the reason when the divergence is silent); see [docs/linq-rendering.md](../../../docs/linq-rendering.md#ef6-provider-limits).
+- **POWER remediation:** shared differential cases cover representable subnormals, signed/field/nested/nullable operands, sort keys, and computed Oracle NUMBER overflow. SQLite EF6 additionally compares native ADO at binary and non-binary underflow boundaries and neighboring double inputs (`PowerUnderflowBoundary_*`).
 - **Differential:** `RendererDifferentialCases` has no fixed expectation; EF Core must return the same outcome as ADO on the same engine (both failing counts as agreement). In-memory LINQ must match PostgreSQL ADO (all TFMs) on the catalog and on the differential cases that don't depend on collation.
 
 | Split probed | Case id |

@@ -102,6 +102,6 @@ A function that a provider cannot render exactly throws `NotSupportedException` 
 | PostgreSQL | `round`, `sqrt` |
 | MySQL / MariaDB | `addyears`, `addmonths` |
 | SQLite | `addyears` … `addseconds`, `date`, `time` |
-| Oracle | `addyears` … `addseconds`, `time`, `sqrt` |
+| Oracle | `addyears` … `addseconds`, `time`, `sqrt`, `power` with integer-to-double promotion |
 
 Oracle `concat` fails in the database instead (ORA-12704: EF6's own NULL guard emits `N''` against `VARCHAR2`). Two silent differences are listed under [EF6 limits](semantics.md#ef6-limits). The function pages give the reasons per provider.

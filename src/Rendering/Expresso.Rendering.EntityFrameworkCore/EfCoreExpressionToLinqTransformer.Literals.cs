@@ -1,21 +1,33 @@
 using System.Linq.Expressions;
+using Expresso.Core.CriteriaExpressions;
 using Expresso.Rendering.Linq;
 
 namespace Expresso.Rendering.EntityFrameworkCore
 {
     public partial class EfCoreExpressionToLinqTransformer
     {
+        /// <summary>Oracle numeric binds match the ADO NUMBER parameters before any arithmetic is evaluated.</summary>
+        protected override LinqNode Literal(Literal literal)
+        {
+            var node = base.Literal(literal);
+            return Provider == EfCoreProvider.Oracle && literal.Value is double
+                ? LinqNode.Scalar(Marker(nameof(ExpressoDbFunctions.OracleNumber), node.Value)!, node.IsNull)
+                : node;
+        }
+
         /// <inheritdoc />
         protected override Expression Sqrt(Expression value) =>
             LiteralCall(nameof(ExpressoDbFunctions.Sqrt), value) ?? base.Sqrt(value);
 
         /// <inheritdoc />
         protected override Expression Divide(Expression left, Expression right) =>
-            LiteralCall(nameof(ExpressoDbFunctions.Divide), left, right) ?? base.Divide(left, right);
+            LiteralCall(nameof(ExpressoDbFunctions.Divide), OracleNumericOperand(left), OracleNumericOperand(right))
+                ?? base.Divide(OracleNumericOperand(left), OracleNumericOperand(right));
 
         /// <inheritdoc />
         protected override Expression Modulo(Expression left, Expression right) =>
-            LiteralCall(nameof(ExpressoDbFunctions.Modulo), left, right) ?? base.Modulo(left, right);
+            LiteralCall(nameof(ExpressoDbFunctions.Modulo), OracleNumericOperand(left), OracleNumericOperand(right))
+                ?? base.Modulo(OracleNumericOperand(left), OracleNumericOperand(right));
 
         /// <inheritdoc />
         protected override Expression Substring(Expression source, Expression start, Expression length) =>
@@ -51,15 +63,18 @@ namespace Expresso.Rendering.EntityFrameworkCore
 
         /// <inheritdoc />
         protected override Expression Add(Expression left, Expression right) =>
-            LiteralCall(nameof(ExpressoDbFunctions.SqlAdd), left, right) ?? base.Add(left, right);
+            LiteralCall(nameof(ExpressoDbFunctions.SqlAdd), OracleNumericOperand(left), OracleNumericOperand(right))
+                ?? base.Add(OracleNumericOperand(left), OracleNumericOperand(right));
 
         /// <inheritdoc />
         protected override Expression Subtract(Expression left, Expression right) =>
-            LiteralCall(nameof(ExpressoDbFunctions.SqlSubtract), left, right) ?? base.Subtract(left, right);
+            LiteralCall(nameof(ExpressoDbFunctions.SqlSubtract), OracleNumericOperand(left), OracleNumericOperand(right))
+                ?? base.Subtract(OracleNumericOperand(left), OracleNumericOperand(right));
 
         /// <inheritdoc />
         protected override Expression Multiply(Expression left, Expression right) =>
-            LiteralCall(nameof(ExpressoDbFunctions.SqlMultiply), left, right) ?? base.Multiply(left, right);
+            LiteralCall(nameof(ExpressoDbFunctions.SqlMultiply), OracleNumericOperand(left), OracleNumericOperand(right))
+                ?? base.Multiply(OracleNumericOperand(left), OracleNumericOperand(right));
 
         /// <inheritdoc />
         protected override Expression Power(Expression left, Expression right)
@@ -86,6 +101,9 @@ namespace Expresso.Rendering.EntityFrameworkCore
 
             var floatingExponent = LinqEx.ConvertTo(right, typeof(double));
             var baseValue = LinqEx.ConvertTo(left, typeof(double));
+            baseValue = OracleNumericOperand(baseValue);
+            floatingExponent = OracleNumericOperand(floatingExponent);
+
             return Marker(nameof(ExpressoDbFunctions.SqlPower), baseValue, floatingExponent) ?? base.Power(baseValue, floatingExponent);
         }
 
@@ -104,6 +122,9 @@ namespace Expresso.Rendering.EntityFrameworkCore
             return probe.Found;
         }
 
+        private Expression OracleNumericOperand(Expression value) =>
+            Provider == EfCoreProvider.Oracle ? new OracleNumericPromotion(this).Visit(value)! : value;
+
         private sealed class ParameterProbe : ExpressionVisitor
         {
             public bool Found { get; private set; }
@@ -112,6 +133,24 @@ namespace Expresso.Rendering.EntityFrameworkCore
             {
                 Found = true;
                 return node;
+            }
+        }
+
+        // CLR promotion is necessary for the expression types, but Oracle must keep NUMBER integer operands
+        // inside computed POWER arguments. Actual double columns have no integer conversion and are untouched.
+        private sealed class OracleNumericPromotion : ExpressionVisitor
+        {
+            private readonly EfCoreExpressionToLinqTransformer _transformer;
+
+            public OracleNumericPromotion(EfCoreExpressionToLinqTransformer transformer) => _transformer = transformer;
+
+            protected override Expression VisitUnary(UnaryExpression node)
+            {
+                var operand = Visit(node.Operand);
+                return node.NodeType == ExpressionType.Convert && node.Type == typeof(double)
+                    && (operand.Type == typeof(int) || operand.Type == typeof(byte))
+                    ? _transformer.Marker(nameof(ExpressoDbFunctions.OracleNumber), operand)!
+                    : node.Update(operand);
             }
         }
     }

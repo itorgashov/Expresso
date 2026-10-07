@@ -56,10 +56,10 @@ namespace Expresso.Rendering.EntityFramework.Test
         }
 
         [Fact]
-        public void PowerUnderflow_FlushesSubnormalsToZero()
+        public void PowerUnderflow_PreservesRepresentableSubnormals()
         {
             // Scenario: System.Data.SQLite returns 0.5^1075 as a subnormal, so it does not equal 0.
-            // Current SQLite returns 0. The comparison must see 0.
+            // Current SQLite returns 0. Only that rounded-to-zero boundary may be corrected; 0.5^1074 stays nonzero.
             using var context = new SqliteRightContext();
             var sql = context.WhereSql(new FilterCriteria
             {
@@ -69,6 +69,10 @@ namespace Expresso.Rendering.EntityFramework.Test
             Assert.Contains("CASE", sql, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("ABS", sql, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("POWER", sql, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("LOG(2", sql, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("1075", sql, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("4.94065645841247", sql, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("2.2250738585072", sql, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

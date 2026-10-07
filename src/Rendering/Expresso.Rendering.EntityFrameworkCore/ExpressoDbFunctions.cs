@@ -6,6 +6,15 @@ namespace Expresso.Rendering.EntityFrameworkCore
     /// </summary>
     public static class ExpressoDbFunctions
     {
+        /// <summary>Converts an Oracle double parameter to NUMBER before arithmetic, matching the ADO bind.</summary>
+        public static double OracleNumber(double value) => throw NotInMemory(nameof(OracleNumber));
+
+        /// <summary>Promotes an Oracle integer to NUMBER without introducing BINARY_DOUBLE arithmetic.</summary>
+        public static double OracleNumber(int value) => throw NotInMemory(nameof(OracleNumber));
+
+        /// <summary>Promotes an Oracle byte to NUMBER without introducing BINARY_DOUBLE arithmetic.</summary>
+        public static double OracleNumber(byte value) => throw NotInMemory(nameof(OracleNumber));
+
         /// <summary><c>dayofweek</c>, Sunday = 0.</summary>
         public static int DayOfWeek(DateTime value) => throw NotInMemory(nameof(DayOfWeek));
 

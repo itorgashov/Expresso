@@ -66,13 +66,13 @@ On SQL Server an `int` or `byte` base stays in `POWER`, and the result stays an 
 CAST(POWER([w].[Age], @__p_0) AS float)
 ```
 
-A nested call keeps that integer result. `power(power(age,0.5),0.5)` is `POWER(POWER([w].[Age], …), …)`, and `div(power(age,1),2)` divides the integer `POWER` before any float cast. `floor`, `ceiling` and `round` of that integer result stay integer too, so `div(floor(power(age,1)),2)` still truncates. A `double` base stays a floating-point `POWER`. On Oracle a double literal or parameter is cast to `NUMBER`, so `POWER(2, 1024)` raises ORA-01426 instead of returning a `BINARY_DOUBLE` infinity. A `BINARY_DOUBLE` column is left as a binary double. `isnull(power(...))` keeps that call inside `NULLIF`, including on SQLite and MySQL and for a non-nullable base, so a domain result is not folded to false. A literal call stays inside `POWER` as well.
+A nested call keeps that integer result. `power(power(age,0.5),0.5)` is `POWER(POWER([w].[Age], …), …)`, and `div(power(age,1),2)` divides the integer `POWER` before any float cast. `floor`, `ceiling` and `round` of that integer result stay integer too, so `div(floor(power(age,1)),2)` still truncates. A `double` base stays a floating-point `POWER`. On Oracle each double literal or parameter is cast to `NUMBER` before arithmetic, so `POWER(2, 1024)` and `POWER(1 + 1, 1024)` raise ORA-01426 instead of returning a `BINARY_DOUBLE` infinity. Integer operands promoted inside a computed base or exponent also stay `NUMBER`. A `BINARY_DOUBLE` column and arithmetic derived from it keep binary floating point. `isnull(power(...))` keeps that call inside `NULLIF`, including on SQLite and MySQL and for a non-nullable base, so a domain result is not folded to false. A literal call stays inside `POWER` as well.
 
 ## EF6 rendering
 
 ### All providers
 
-On SQL Server an `int` or `byte` base stays in `POWER`, and the integer result is cast to `float` only when a later `double` consumer needs it. Nested `POWER`, integer division and `ABS` therefore see the integer result. Other providers convert both arguments to `float` first. On SQLite a non-zero result smaller than the smallest normal double is returned as `0`, so `power(0.5,1075)` compares equal to `0`. On SQL Server:
+On SQL Server an `int` or `byte` base stays in `POWER`, and the integer result is cast to `float` only when a later `double` consumer needs it. Nested `POWER`, integer division and `ABS` therefore see the integer result. Other providers convert both arguments to `float` first. SQLite preserves representable subnormals: `power(0.5,1023)` and `power(0.5,1074)` are nonzero. A correction at the half-subnormal boundary makes `power(0.5,1075)` compare equal to `0`, matching the ADO SQLite engine. On SQL Server:
 
 ```sql
 CAST(POWER([Extent1].[Age], @p__linq__0) AS float)
@@ -80,7 +80,7 @@ CAST(POWER([Extent1].[Age], @p__linq__0) AS float)
 
 `isnull(power(...))` compares that `POWER` result with NULL, so the call is not folded to false.
 
-Every EF6 provider supports `power`.
+Oracle EF6 rejects `power` when its base or exponent requires integer-to-double promotion, including an integer column in a computed operand. The provider emits a `BINARY_DOUBLE` cast, which changes NUMBER range and comparison behavior. For example, `power(age,1)` and `power(0.5,add(age,1023.0))` throw `NotSupportedException`. Double-only operands remain supported; genuine `BINARY_DOUBLE` columns keep their native arithmetic.
 
 ## Notes
 

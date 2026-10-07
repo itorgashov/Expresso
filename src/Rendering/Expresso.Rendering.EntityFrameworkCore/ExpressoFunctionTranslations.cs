@@ -216,6 +216,9 @@ namespace Expresso.Rendering.EntityFrameworkCore
                     dayOfWeek,
                     (nameof(ExpressoDbFunctions.Date), Timestamp, a => Function("TRUNC", typeof(DateOnly), OracleDateOnly, a[0])),
                     (nameof(ExpressoDbFunctions.Time), Timestamp, a => OracleTimeOfDay(a[0])),
+                    (nameof(ExpressoDbFunctions.OracleNumber), typeof(double), a => Cast(a[0], typeof(double), new DoubleTypeMapping("NUMBER"))),
+                    (nameof(ExpressoDbFunctions.OracleNumber), typeof(int), a => Cast(a[0], typeof(double), new DoubleTypeMapping("NUMBER"))),
+                    (nameof(ExpressoDbFunctions.OracleNumber), typeof(byte), a => Cast(a[0], typeof(double), new DoubleTypeMapping("NUMBER"))),
                     (nameof(ExpressoDbFunctions.IndexOf), typeof(string), a => Binary(ExpressionType.Subtract, Function("INSTR", typeof(int), a[0], a[1]), Fragment("1"))),
                     (nameof(ExpressoDbFunctions.IsNullValue), typeof(string), a => OracleIsNullValue(a[0])),
                 }
@@ -224,7 +227,7 @@ namespace Expresso.Rendering.EntityFrameworkCore
                 .Concat(DomainNullEntries(() => OracleBool, () => OracleNumber))
                 .Concat(LiteralEntries("SUBSTR"))
                 .Concat(StringLiteralEntries("LENGTH", right: a => OracleLiteralRight(a[0], a[1])))
-                .Concat(NumericLiteralEntries(round: true, power: a => OracleNumberPower(a[0], a[1])))
+                .Concat(NumericLiteralEntries(round: true))
                 .Concat(ArithmeticLiteralEntries());
         }
 
