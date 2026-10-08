@@ -15,6 +15,7 @@ internal sealed class SampleSqlMappings
             { "displayname", sql.Col("a", "display_name") },
             { "dateofbirth", sql.Col("a", "date_of_birth") },
             { "createdat", sql.Col("a", "created_at") },
+            { "id", sql.Col("a", "id") },
         };
 
         AwardItemFields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

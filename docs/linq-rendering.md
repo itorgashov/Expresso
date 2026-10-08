@@ -28,6 +28,8 @@ var books = new LinqQueryMapping<Book>()
 
 The field catalog used by the parser ([docs/field-providers.md](field-providers.md)) stays the allow-list; the mapping only says where each field lives.
 
+`Page` applies either [limiting model](pagination.md), paged or offset/number, after a deterministic order. EF6 requires ordered input for a positive offset. For EF Core, use `Page(paging, db.Database.ProviderName)`; IBM EF Core 8 rejects positive offsets with `NotSupportedException`, so you must handle the ordered-key fallback explicitly. For SQLite EF6, use `Page(paging, Ef6Provider.Sqlite)` so an offset without a row count adds an unlimited `LIMIT -1`. The plain `Page(paging)` overload also works on in-memory sequences. See [Pagination](pagination.md#apply-the-limit-with-linq) for namespaces and complete examples.
+
 ## Profiles
 
 - The Queryable profile (`QueryableExpressionToLinqTransformer`) emits the BCL members that LINQ providers translate (`string.Substring`, `DateTime.Year`, `Enumerable.Any`, …). Use it with a LINQ provider that translates to SQL. It is not meant for LINQ to objects: for example, `left` becomes `Substring(0, n)`, which throws in memory when the string is shorter than `n`.
@@ -75,7 +77,7 @@ var query = db.Books
 - Supported providers: SQL Server, PostgreSQL (Npgsql), MySQL / MariaDB (Pomelo or Oracle's `MySql.EntityFrameworkCore`), SQLite, Oracle and DB2 (IBM). Other providers get the plain Queryable lambdas.
 - Overrides are placeholder methods in `ExpressoDbFunctions` that `HasExpressoFunctions` maps to provider SQL. They exist only where the provider's own translation differs from the SQL renderer. Each function page lists them.
 - `IncludeSorted` needs each sorted collection mapped to a navigation property (`b => b.Authors`). Otherwise it throws `NotSupportedException`; order a child query with `OrderByNested` instead.
-- DB2 cannot correlate sort keys in `ORDER BY` (`SQL0206N`). Use `EfCoreLiftedSort.OrderedKeys` to project keys, order the outer query, then load entities by id and restore order (see the EF Core sample repositories).
+- DB2 cannot correlate sort keys in `ORDER BY` (`SQL0206N`). Use `EfCoreLiftedSort.OrderedKeys` to project keys, order the outer query, then load entities by key and restore their order. See the [ordered-key example](pagination.md#ef-core).
 - DI: `services.AddEfCoreExpressionTransformations<AppDbContext>()` registers a scoped transformer for that context's provider.
 
 ## EF6
@@ -105,3 +107,9 @@ A function that a provider cannot render exactly throws `NotSupportedException` 
 | Oracle | `addyears` … `addseconds`, `time`, `sqrt`, `power` with integer-to-double promotion |
 
 Oracle `concat` fails in the database instead (ORA-12704: EF6's own NULL guard emits `N''` against `VARCHAR2`). Two silent differences are listed under [EF6 limits](semantics.md#ef6-limits). The function pages give the reasons per provider.
+
+## Next steps
+
+- [Pagination](pagination.md): limiting models, provider-aware calls, and totals
+- [Render to LINQ and EF](getting-started-linq.md): configure providers and map entities
+- [Error handling](error-handling.md): validation and provider restrictions

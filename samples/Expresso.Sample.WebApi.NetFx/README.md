@@ -32,9 +32,11 @@ Same as the ASP.NET Core sample:
 
 | Resource | GET all | GET by id |
 |---|---|---|
-| Books | `GET /api/books?filter=&sort=` | `GET /api/books/{id}` |
-| Authors | `GET /api/authors?filter=&sort=` | `GET /api/authors/{id}` |
-| Publishers | `GET /api/publishers?filter=&sort=` | `GET /api/publishers/{id}` |
+| Books | `GET /api/books?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/books/{id}` |
+| Authors | `GET /api/authors?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/authors/{id}` |
+| Publishers | `GET /api/publishers?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/publishers/{id}` |
+
+This host chooses `page` / `pagesize` for paged results and `skip` / `take` for offset/number results. `page` is 1-based and requires `pagesize`; `pagesize` alone selects page 1. Requests that combine the two models or supply `page` without `pagesize` return HTTP 400. A positive offset or a limit adds `X-Total-Count`, even for an empty result. Only page-based requests add `X-Total-Pages`. See the [sample contract](../../docs/sample-app.md#pagination-contract) and [library semantics](../../docs/pagination.md).
 
 Example: `GET /api/publishers?filter=eq(opens,"09:00")` (time-of-day field mapped as `TimeSpan` on this host).
 Collection filter: `GET /api/books?filter=any(authors,eq(displayname,"Leo Tolstoy"))`.

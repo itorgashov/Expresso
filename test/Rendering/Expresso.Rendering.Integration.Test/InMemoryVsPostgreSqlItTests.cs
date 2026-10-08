@@ -1,4 +1,5 @@
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Rendering.Linq;
 using Expresso.Rendering.TestCases;
@@ -13,7 +14,7 @@ namespace Expresso.Rendering.Integration.Test
         private readonly LinqQueryMapping<Widget> _mapping = WidgetLinqMapping.Create();
         private readonly LinqQueryMapping<WidgetTag> _tagMapping = WidgetLinqMapping.Tags();
 
-        public IReadOnlyList<int> QueryWidgetIds(FilterCriteria? filter, SortDirective? sort)
+        public IReadOnlyList<int> QueryWidgetIds(FilterCriteria? filter, SortDirective? sort, PagingDirective? paging = null)
         {
             IEnumerable<Widget> rows = _widgets;
             if (filter is not null)
@@ -22,7 +23,8 @@ namespace Expresso.Rendering.Integration.Test
             }
 
             var ordered = sort is null ? rows.OrderBy(w => w.Id) : rows.OrderBy(_transformer, sort, _mapping);
-            return ordered.Select(w => w.Id).ToList();
+            var windowed = paging is null || paging.IsEmpty ? ordered : ordered.Page(paging);
+            return windowed.Select(w => w.Id).ToList();
         }
 
         public IReadOnlyList<string> QueryTagLabels(int widgetId, SortDirective sort) =>
@@ -66,15 +68,24 @@ namespace Expresso.Rendering.Integration.Test
             AssertSame(testCase.Filter, testCase.Sort);
         }
 
+        [SkippableTheory]
+        [MemberData(nameof(RendererIntegrationCases.PagingCases), MemberType = typeof(RendererIntegrationCases))]
+        public void Paging_InMemoryMatchesPostgreSql(PagingCase testCase)
+        {
+            Skip.IfNot(IntegrationEnabled.IsOn, IntegrationEnabled.SkipReason);
+            AssertSame(testCase.Filter, testCase.Sort, paging: testCase.Paging);
+        }
+
         private void AssertSame(
             FilterCriteria? filter,
             SortDirective? sort,
             DifferentialRejection rejection = DifferentialRejection.None,
             string? unsupportedReason = null,
-            IReadOnlyList<string>? databaseCodes = null) =>
+            IReadOnlyList<string>? databaseCodes = null,
+            PagingDirective? paging = null) =>
             DifferentialOutcome.AssertSame(
-                DifferentialOutcome.Of(() => _postgres.QueryWidgetIds(filter, sort)),
-                DifferentialOutcome.Of(() => _inMemory.QueryWidgetIds(filter, sort)),
+                DifferentialOutcome.Of(() => _postgres.QueryWidgetIds(filter, sort, paging)),
+                DifferentialOutcome.Of(() => _inMemory.QueryWidgetIds(filter, sort, paging)),
                 rejection,
                 unsupportedReason: unsupportedReason,
                 databaseCodes: databaseCodes);

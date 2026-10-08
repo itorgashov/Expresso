@@ -1,4 +1,6 @@
 using System.Linq.Expressions;
+using Expresso.Core.CriteriaExpressions;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Rendering.EntityFrameworkCore;
 using Expresso.Rendering.Linq;
@@ -16,21 +18,33 @@ internal static class EfCoreListSort
         IExpressionToLinqTransformer transformer,
         SampleDbContext db,
         Func<IQueryable<T>, IQueryable<T>> withIncludes,
+        PagingDirective paging,
         CancellationToken cancellationToken)
         where T : class
     {
-        if (sortDirective is null || sortDirective.Items.Count == 0)
+        var effective = paging.IsEmpty
+            ? sortDirective
+            : (sortDirective ?? new SortDirective(Array.Empty<SortDirectiveItem>())).ThenBy(new Field("id", typeof(int)));
+
+        if (effective is null || effective.Items.Count == 0)
         {
             return await withIncludes(query.OrderBy(IdSelector<T>())).ToListAsync(cancellationToken);
         }
 
         if (EfCoreProviders.Resolve(db.Database.ProviderName) != EfCoreProvider.Db2)
         {
-            return await withIncludes(query.OrderBy(transformer, sortDirective, mapping)).ToListAsync(cancellationToken);
+            var ordered = query.OrderBy(transformer, effective, mapping);
+            var windowed = paging.IsEmpty ? ordered : ordered.Page(paging);
+            return await withIncludes(windowed).ToListAsync(cancellationToken);
         }
 
+        // IBM EF Core drops OFFSET, so EfCorePaging.Page throws. Page the ordered keys in memory.
         var id = IdSelector<T>();
-        var ids = await query.OrderedKeys(transformer, sortDirective, mapping, id).ToListAsync(cancellationToken);
+        var ids = await query.OrderedKeys(transformer, effective, mapping, id).ToListAsync(cancellationToken);
+        if (!paging.IsEmpty)
+        {
+            ids = ids.Page(paging).ToList();
+        }
         if (ids.Count == 0)
         {
             return Array.Empty<T>();

@@ -36,6 +36,24 @@ namespace Expresso.Core.Sorting
 
         public int TotalSortKeyCount() => _items.Count + SumNestedKeyCount(_nested);
 
+        /// <summary>Returns a new directive with <paramref name="expression"/> appended. <see cref="Nested"/> is kept and this instance is unchanged.</summary>
+        /// <param name="expression">Sort key to append.</param>
+        /// <param name="direction">Direction of the appended key.</param>
+        /// <returns>The new directive.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="expression"/> is <see langword="null"/>.</exception>
+        public SortDirective ThenBy(AbstractExpression expression, SortDirection direction = SortDirection.Ascending)
+        {
+            if (expression is null)
+            {
+                throw new ArgumentNullException(nameof(expression));
+            }
+
+            var items = new List<SortDirectiveItem>(_items.Count + 1);
+            items.AddRange(_items);
+            items.Add(new SortDirectiveItem { Expression = expression, Direction = direction });
+            return new SortDirective(items, _nested);
+        }
+
         private static int SumNestedKeyCount(IReadOnlyList<CollectionSort> nested)
         {
             var count = 0;

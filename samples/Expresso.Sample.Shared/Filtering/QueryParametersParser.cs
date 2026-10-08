@@ -1,4 +1,5 @@
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Parsing;
 
@@ -76,5 +77,45 @@ public static class QueryParametersParser
             FilterCriteria = filterCriteria,
             SortDirective = sortDirective,
         };
+    }
+
+    /// <summary>Outcome of parsing <c>page</c>, <c>pagesize</c>, <c>skip</c>, and <c>take</c>.</summary>
+    public sealed class PagingParseResult
+    {
+        /// <summary>Parsed window. <see cref="PagingDirective.None"/> when the request is rejected or omitted paging.</summary>
+        public PagingDirective Paging { get; init; } = PagingDirective.None;
+
+        /// <summary><see langword="true"/> when a value is invalid, <c>page</c> is set without <c>pagesize</c>, or both paging styles are set.</summary>
+        public bool IsBadRequest { get; init; }
+    }
+
+    /// <summary>Parses the paging query values. The library ignores a bare <c>page</c> and prefers page size over skip/take; this host rejects both of those requests.</summary>
+    /// <param name="page">Raw <c>page</c> value.</param>
+    /// <param name="pageSize">Raw <c>pagesize</c> value.</param>
+    /// <param name="skip">Raw <c>skip</c> value.</param>
+    /// <param name="take">Raw <c>take</c> value.</param>
+    /// <param name="pagingParser">Expresso paging parser.</param>
+    /// <returns>The window, or a result with <see cref="PagingParseResult.IsBadRequest"/> set.</returns>
+    public static PagingParseResult ParsePaging(
+        string? page,
+        string? pageSize,
+        string? skip,
+        string? take,
+        IPagingDirectiveParser pagingParser)
+    {
+        try
+        {
+            var paging = pagingParser.Parse(page, pageSize, skip, take);
+            if ((paging.Page is not null && paging.PageSize is null) || paging.HasPageAndSkipTake)
+            {
+                return new PagingParseResult { IsBadRequest = true };
+            }
+
+            return new PagingParseResult { Paging = paging };
+        }
+        catch
+        {
+            return new PagingParseResult { IsBadRequest = true };
+        }
     }
 }

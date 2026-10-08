@@ -20,41 +20,57 @@ public sealed class PublishersController : ApiController
     private readonly IFilterParser _filterParser;
     private readonly ISortDirectiveParser _sortDirectiveParser;
     private readonly IRequestFieldsInfoProvider _requestFieldsProvider;
+    private readonly IPagingDirectiveParser _pagingParser;
 
     /// <summary>Creates the controller.</summary>
     /// <param name="repository">Publisher store.</param>
     /// <param name="filterParser">Expresso filter parser.</param>
     /// <param name="sortDirectiveParser">Expresso sort parser.</param>
     /// <param name="requestFieldsProvider">Publisher field catalog.</param>
+    /// <param name="pagingParser">Expresso paging parser.</param>
     public PublishersController(
         IRepository<Publisher> repository,
         IFilterParser filterParser,
         ISortDirectiveParser sortDirectiveParser,
-        IRequestFieldsInfoProvider requestFieldsProvider)
+        IRequestFieldsInfoProvider requestFieldsProvider,
+        IPagingDirectiveParser pagingParser)
     {
         _repository = repository;
         _filterParser = filterParser;
         _sortDirectiveParser = sortDirectiveParser;
         _requestFieldsProvider = requestFieldsProvider;
+        _pagingParser = pagingParser;
     }
 
     [HttpGet]
     [Route("")]
-    /// <summary>Returns publishers that match <paramref name="filter"/>, ordered by <paramref name="sort"/>.</summary>
+    /// <summary>Returns publishers that match <paramref name="filter"/>, ordered by <paramref name="sort"/>, optionally paged.</summary>
     /// <param name="filter">Expresso filter, or <see langword="null"/> to return every publisher.</param>
     /// <param name="sort">Expresso sort, or <see langword="null"/> for the repository default.</param>
+    /// <param name="page">1-based page. Requires <paramref name="pagesize"/>.</param>
+    /// <param name="pagesize">Page size. Without <paramref name="page"/>, this is the first page.</param>
+    /// <param name="skip">Rows to skip when page size is omitted.</param>
+    /// <param name="take">Maximum rows when page size is omitted.</param>
     /// <param name="cancellationToken">Token that cancels the query.</param>
-    /// <returns>200 with the publishers, or 400 when the query string is invalid.</returns>
-    public async Task<IHttpActionResult> GetAll(string? filter = null, string? sort = null, CancellationToken cancellationToken = default)
+    /// <returns>200 with the publishers, or 400 when the query string is invalid or both paging styles are set.</returns>
+    public async Task<IHttpActionResult> GetAll(string? filter = null, string? sort = null, string? page = null, string? pagesize = null, string? skip = null, string? take = null, CancellationToken cancellationToken = default)
     {
         var parsed = QueryParametersParser.Parse(filter, sort, "publisher", _filterParser, _sortDirectiveParser, _requestFieldsProvider);
-        if (parsed.IsBadRequest)
+        var paging = QueryParametersParser.ParsePaging(page, pagesize, skip, take, _pagingParser);
+        if (parsed.IsBadRequest || paging.IsBadRequest)
         {
             return BadRequest();
         }
 
-        var publishers = await _repository.GetAllAsync(parsed.FilterCriteria, parsed.SortDirective, cancellationToken);
-        return Ok(publishers.Select(ViewModelMapper.ToViewModel).ToList());
+        var publishers = await _repository.GetAllAsync(parsed.FilterCriteria, parsed.SortDirective, paging.Paging, cancellationToken);
+        var body = publishers.Select(ViewModelMapper.ToViewModel).ToList();
+        if (paging.Paging.IsEmpty)
+        {
+            return Ok(body);
+        }
+
+        var total = await _repository.CountAsync(parsed.FilterCriteria, cancellationToken);
+        return ResponseMessage(PagingHttp.WithHeaders(Request, body, paging.Paging, total));
     }
 
     [HttpGet]

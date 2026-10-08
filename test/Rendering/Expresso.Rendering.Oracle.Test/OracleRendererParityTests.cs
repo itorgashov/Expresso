@@ -16,6 +16,8 @@ namespace Expresso.Tests.Oracle
 
         public override string P(int index) => $":param_{index}";
 
+        public override string Bind(string prefix, int index) => $":{prefix}_{index}";
+
         public override string Length(string inner) => $"LENGTH({inner})";
 
         public override string Left(string inner, string countSql) => $"SUBSTR({inner}, 1, {countSql})";

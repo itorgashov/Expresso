@@ -1,6 +1,7 @@
 #if NET8_0_OR_GREATER
 using System.Data.Common;
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Rendering.EntityFrameworkCore;
 using Expresso.Rendering.Linq;
@@ -27,19 +28,28 @@ namespace Expresso.Rendering.Integration.Test.Ef
             _liftSortKeys = liftSortKeys;
         }
 
-        public IReadOnlyList<int> QueryWidgetIds(FilterCriteria? filter, SortDirective? sort)
+        public IReadOnlyList<int> QueryWidgetIds(FilterCriteria? filter, SortDirective? sort, PagingDirective? paging = null)
         {
             using var context = new WidgetDbContext(_options);
-            return Run(WidgetIds(context, filter, sort));
+            var ids = Run(WidgetIds(context, filter, sort, _liftSortKeys ? null : paging));
+            // EfCorePaging.Page throws for a DB2 offset. Page the ordered keys in memory instead.
+            return _liftSortKeys && paging is not null && !paging.IsEmpty ? ids.Page(paging).ToList() : ids;
+        }
+
+        /// <summary>Calls the public EF Core <c>Page</c> with this context's provider name.</summary>
+        public void Page(PagingDirective paging)
+        {
+            using var context = new WidgetDbContext(_options);
+            _ = context.Widgets.OrderBy(w => w.Id).Page(paging, context.Database.ProviderName);
         }
 
         /// <summary>SQL EF generates for <see cref="QueryWidgetIds"/> (diagnostics), or the translation error.</summary>
-        public string Sql(FilterCriteria? filter, SortDirective? sort)
+        public string Sql(FilterCriteria? filter, SortDirective? sort, PagingDirective? paging = null)
         {
             using var context = new WidgetDbContext(_options);
             try
             {
-                return WidgetIds(context, filter, sort).ToQueryString();
+                return WidgetIds(context, filter, sort, paging).ToQueryString();
             }
             catch (InvalidOperationException ex)
             {
@@ -47,7 +57,7 @@ namespace Expresso.Rendering.Integration.Test.Ef
             }
         }
 
-        private IQueryable<int> WidgetIds(WidgetDbContext context, FilterCriteria? filter, SortDirective? sort)
+        private IQueryable<int> WidgetIds(WidgetDbContext context, FilterCriteria? filter, SortDirective? sort, PagingDirective? paging)
         {
             var transformer = new EfCoreExpressionToLinqTransformer(context.Database.ProviderName);
             IQueryable<Widget> query = context.Widgets;
@@ -56,9 +66,15 @@ namespace Expresso.Rendering.Integration.Test.Ef
                 query = query.Where(transformer, filter, _mapping);
             }
 
-            return sort is not null && _liftSortKeys
-                ? query.OrderedKeys(transformer, sort, _mapping, w => w.Id)
-                : (sort is null ? query.OrderBy(w => w.Id) : query.OrderBy(transformer, sort, _mapping)).Select(w => w.Id);
+            if (sort is not null && _liftSortKeys)
+            {
+                var keys = query.OrderedKeys(transformer, sort, _mapping, w => w.Id);
+                return paging is null || paging.IsEmpty ? keys : keys.Page(paging);
+            }
+
+            var ordered = sort is null ? query.OrderBy(w => w.Id) : query.OrderBy(transformer, sort, _mapping);
+            var windowed = paging is null || paging.IsEmpty ? ordered : ordered.Page(paging);
+            return windowed.Select(w => w.Id);
         }
 
         private static List<TResult> Run<TResult>(IQueryable<TResult> query)

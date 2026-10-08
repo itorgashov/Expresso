@@ -9,6 +9,10 @@ namespace Expresso.Rendering
     {
         protected override string SubstringFunctionName => "substr";
 
+        /// <summary>SQLite uses <c>LIMIT</c>/<c>OFFSET</c>. <c>LIMIT -1</c> means "through the end".</summary>
+        protected override string FormatPagingClause(string offsetParameter, string? limitParameter) =>
+            $"LIMIT {limitParameter ?? "-1"} OFFSET {offsetParameter}";
+
         protected override bool UseConcatFunction => false;
 
         protected override string CeilingFunctionName => "CEIL";

@@ -15,30 +15,50 @@ namespace Expresso.Sample.WebApi.Controllers;
 /// <param name="filterParser">Expresso filter parser.</param>
 /// <param name="sortDirectiveParser">Expresso sort parser.</param>
 /// <param name="requestFieldsProvider">Author field catalog.</param>
+/// <param name="pagingParser">Expresso paging parser.</param>
 public sealed class AuthorsController(
     IRepository<Author> repository,
     IFilterParser filterParser,
     ISortDirectiveParser sortDirectiveParser,
-    IRequestFieldsInfoProvider requestFieldsProvider) : ControllerBase
+    IRequestFieldsInfoProvider requestFieldsProvider,
+    IPagingDirectiveParser pagingParser) : ControllerBase
 {
     [HttpGet]
-    /// <summary>Returns authors that match <paramref name="filter"/>, ordered by <paramref name="sort"/>.</summary>
+    /// <summary>Returns authors that match <paramref name="filter"/>, ordered by <paramref name="sort"/>, optionally paged.</summary>
     /// <param name="filter">Expresso filter, or <see langword="null"/> to return every author.</param>
     /// <param name="sort">Expresso sort, or <see langword="null"/> for the repository default.</param>
+    /// <param name="page">1-based page. Requires <paramref name="pageSize"/>.</param>
+    /// <param name="pageSize">Page size. Without <paramref name="page"/>, this is the first page.</param>
+    /// <param name="skip">Rows to skip when page size is omitted.</param>
+    /// <param name="take">Maximum rows when page size is omitted.</param>
     /// <param name="cancellationToken">Token that cancels the query.</param>
-    /// <returns>200 with the authors, or 400 when the query string is invalid.</returns>
+    /// <returns>200 with the authors, or 400 when the query string is invalid or both paging styles are set.</returns>
     public async Task<ActionResult<IReadOnlyList<AuthorViewModel>>> GetAll(
         [FromQuery] string? filter,
         [FromQuery] string? sort,
+        [FromQuery] string? page,
+        [FromQuery(Name = "pagesize")] string? pageSize,
+        [FromQuery] string? skip,
+        [FromQuery] string? take,
         CancellationToken cancellationToken)
     {
         var parsed = QueryParametersParser.Parse(filter, sort, "author", filterParser, sortDirectiveParser, requestFieldsProvider);
-        if (parsed.IsBadRequest)
+        var paging = QueryParametersParser.ParsePaging(page, pageSize, skip, take, pagingParser);
+        if (parsed.IsBadRequest || paging.IsBadRequest)
         {
             return BadRequest();
         }
 
-        var authors = await repository.GetAllAsync(parsed.FilterCriteria, parsed.SortDirective, cancellationToken);
+        var authors = await repository.GetAllAsync(parsed.FilterCriteria, parsed.SortDirective, paging.Paging, cancellationToken);
+        if (!paging.Paging.IsEmpty)
+        {
+            var total = await repository.CountAsync(parsed.FilterCriteria, cancellationToken);
+            foreach (var header in PagingHeaders.Values(paging.Paging, total))
+            {
+                Response.Headers[header.Name] = header.Value;
+            }
+        }
+
         return Ok(authors.Select(ViewModelMapper.ToViewModel).ToList());
     }
 

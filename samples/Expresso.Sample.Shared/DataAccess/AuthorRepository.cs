@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Sample.Shared.Models;
 using Expresso.Rendering;
@@ -23,6 +24,7 @@ public sealed class AuthorRepository : IRepository<Author>
     private readonly IExpressionToQueryClauseTransformer _criteriaTransformer;
     private readonly SampleSqlMappings _mappings;
     private readonly SqlQueryMapping _queryMapping;
+    private readonly string _baseFrom;
     private readonly string _baseSelect;
 
     /// <summary>Creates the repository.</summary>
@@ -39,6 +41,7 @@ public sealed class AuthorRepository : IRepository<Author>
         _queryMapping = new SqlQueryMapping(
             _mappings.AuthorItemFields,
             new[] { _mappings.AwardsOnAuthor });
+        _baseFrom = " FROM " + sql.TableAs("author", "a");
         _baseSelect =
             "SELECT" +
             " " + sql.Col("a", "id") + "," +
@@ -47,19 +50,20 @@ public sealed class AuthorRepository : IRepository<Author>
             " " + sql.Col("a", "display_name") + "," +
             " " + sql.Col("a", "date_of_birth") + "," +
             " " + sql.Col("a", "created_at") +
-            " FROM " + sql.TableAs("author", "a");
+            _baseFrom;
     }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<Author>> GetAllAsync(
         FilterCriteria? filterCriteria,
         SortDirective? sortDirective,
+        PagingDirective paging,
         CancellationToken cancellationToken = default)
     {
         var connection = await _db.OpenAsync(cancellationToken);
         using (connection)
         {
-            var (sql, parameters) = BuildSelectQuery(filterCriteria, sortDirective);
+            var (sql, parameters) = BuildSelectQuery(filterCriteria, SampleStableSort.ForPaging(sortDirective, paging), paging);
 
             var authors = new List<Author>();
             using (var command = connection.CreateCommand())
@@ -112,9 +116,17 @@ public sealed class AuthorRepository : IRepository<Author>
         }
     }
 
+    /// <inheritdoc />
+    public Task<long> CountAsync(FilterCriteria? filterCriteria, CancellationToken cancellationToken = default)
+    {
+        var (sql, parameters) = BuildCountQuery(filterCriteria);
+        return SampleCount.ReadAsync(_db, sql, parameters, cancellationToken);
+    }
+
     private (string sql, Dictionary<string, object>? parameters) BuildSelectQuery(
         FilterCriteria? filterCriteria,
-        SortDirective? sortDirective)
+        SortDirective? sortDirective,
+        PagingDirective paging)
     {
         var sql = new StringBuilder(_baseSelect);
         Dictionary<string, object>? parameters = null;
@@ -134,6 +146,23 @@ public sealed class AuthorRepository : IRepository<Author>
             sql.Append(result.orderByClause);
             parameters ??= new Dictionary<string, object>();
             ParameterMerge.Merge(parameters, result.parameters);
+        }
+
+        SamplePagingSql.Append(sql, ref parameters, _criteriaTransformer, paging);
+        return (sql.ToString(), parameters);
+    }
+
+    private (string sql, Dictionary<string, object>? parameters) BuildCountQuery(FilterCriteria? filterCriteria)
+    {
+        var sql = new StringBuilder("SELECT COUNT(*)");
+        sql.Append(_baseFrom);
+        Dictionary<string, object>? parameters = null;
+        if (filterCriteria is not null)
+        {
+            var result = _criteriaTransformer.RenderWhereClause(filterCriteria, _queryMapping, WhereParamPrefix);
+            sql.Append(" WHERE ");
+            sql.Append(result.whereClause);
+            parameters = new Dictionary<string, object>(result.parameters);
         }
 
         return (sql.ToString(), parameters);

@@ -15,6 +15,7 @@ internal static class BookLinqMappings
         .Field("displayname", a => a.DisplayName)
         .Field("dateofbirth", a => a.DateOfBirth)
         .Field("createdat", a => a.CreatedAt)
+        .Field("id", a => a.Id)
         .Collection("awards", a => a.Awards, Awards);
 
     public static readonly LinqQueryMapping<Book> Books = new LinqQueryMapping<Book>()
@@ -26,6 +27,7 @@ internal static class BookLinqMappings
         .Field("rating", b => b.Rating)
         .Field("createdat", b => b.CreatedAt)
         .Field("externalid", b => b.ExternalId)
+        .Field("id", b => b.Id)
         .Collection("authors", b => b.Authors, Authors);
 
     public static readonly LinqQueryMapping<Publisher> Publishers = new LinqQueryMapping<Publisher>()
@@ -33,5 +35,6 @@ internal static class BookLinqMappings
         .Field("country", p => p.Country)
         .Field("location", p => p.Location)
         .Field("opens", p => p.OpensAt)
-        .Field("closes", p => p.ClosesAt);
+        .Field("closes", p => p.ClosesAt)
+        .Field("id", p => p.Id);
 }

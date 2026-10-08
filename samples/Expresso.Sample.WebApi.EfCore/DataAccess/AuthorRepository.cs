@@ -1,4 +1,5 @@
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Rendering.EntityFrameworkCore;
 using Expresso.Rendering.Linq;
@@ -21,6 +22,7 @@ public sealed class AuthorRepository : IRepository<Author>
     public async Task<IReadOnlyList<Author>> GetAllAsync(
         FilterCriteria? filterCriteria,
         SortDirective? sortDirective,
+        PagingDirective paging,
         CancellationToken cancellationToken = default)
     {
         IQueryable<Author> query = _db.Authors;
@@ -37,8 +39,12 @@ public sealed class AuthorRepository : IRepository<Author>
             _transformer,
             _db,
             q => WithIncludes(q, sortDirective).AsSplitQuery(),
+            paging,
             cancellationToken);
     }
+
+    public Task<long> CountAsync(FilterCriteria? filterCriteria, CancellationToken cancellationToken = default) =>
+        EfCoreCounts.LongCountAsync(_db.Authors, filterCriteria, BookLinqMappings.Authors, _transformer, cancellationToken);
 
     private IQueryable<Author> WithIncludes(IQueryable<Author> query, SortDirective? sortDirective)
     {

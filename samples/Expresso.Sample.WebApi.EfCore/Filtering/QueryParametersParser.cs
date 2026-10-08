@@ -1,4 +1,5 @@
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Parsing;
 
@@ -63,5 +64,36 @@ public static class QueryParametersParser
             FilterCriteria = filterCriteria,
             SortDirective = sortDirective,
         };
+    }
+
+    public sealed class PagingParseResult
+    {
+        public PagingDirective Paging { get; init; } = PagingDirective.None;
+
+        public bool IsBadRequest { get; init; }
+    }
+
+    /// <summary>Rejects a bare <c>page</c> and a request that sets both paging styles. The library would otherwise ignore the bare page and prefer page size.</summary>
+    public static PagingParseResult ParsePaging(
+        string? page,
+        string? pageSize,
+        string? skip,
+        string? take,
+        IPagingDirectiveParser pagingParser)
+    {
+        try
+        {
+            var paging = pagingParser.Parse(page, pageSize, skip, take);
+            if ((paging.Page is not null && paging.PageSize is null) || paging.HasPageAndSkipTake)
+            {
+                return new PagingParseResult { IsBadRequest = true };
+            }
+
+            return new PagingParseResult { Paging = paging };
+        }
+        catch
+        {
+            return new PagingParseResult { IsBadRequest = true };
+        }
     }
 }

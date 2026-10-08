@@ -20,4 +20,4 @@ Set `ExpressoSample:Engine` in `appsettings.json` and put the matching connectio
 dotnet run --project samples/Expresso.Sample.WebApi.EfCore
 ```
 
-Swagger: `/swagger` (the site root redirects there). Endpoints match the ADO sample (`GET /api/books`, `/api/authors`, `/api/publishers` with `filter` and `sort`).
+Swagger: `/swagger` (the site root redirects there). Endpoints match the ADO sample (`GET /api/books`, `/api/authors`, `/api/publishers` with `filter`, `sort`, and optional `page` / `pagesize` or `skip` / `take`). These paging parameter names belong to the sample API. A positive offset or a limit adds `X-Total-Count`, even for an empty result. Only page-based requests add `X-Total-Pages`. Requests that combine the two models or supply `page` without `pagesize` return HTTP 400. See the [sample contract](../../docs/sample-app.md#pagination-contract) and [library semantics](../../docs/pagination.md).

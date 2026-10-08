@@ -13,6 +13,15 @@ namespace Expresso.Rendering.TestCases
 
         public abstract string P(int index);
 
+        /// <summary>Bind name for a paging parameter. Oracle uses a colon; every other dialect uses <c>@</c>.</summary>
+        public virtual string Bind(string prefix, int index) => $"@{prefix}_{index}";
+
+        /// <summary>Paging clause for <paramref name="offsetParameter"/> and an optional limit bind name. Default is <c>OFFSET</c>/<c>FETCH</c>.</summary>
+        public virtual string Paging(string offsetParameter, string? limitParameter) =>
+            limitParameter is null
+                ? $"OFFSET {offsetParameter} ROWS"
+                : $"OFFSET {offsetParameter} ROWS FETCH NEXT {limitParameter} ROWS ONLY";
+
         public abstract string Length(string inner);
 
         public abstract string Left(string inner, string countSql);

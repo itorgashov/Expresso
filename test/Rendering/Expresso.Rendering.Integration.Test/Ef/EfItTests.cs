@@ -1,4 +1,6 @@
 #if NET8_0_OR_GREATER
+using Expresso.Core.Paging;
+
 namespace Expresso.Rendering.Integration.Test.Ef
 {
     /// <summary>
@@ -90,6 +92,14 @@ namespace Expresso.Rendering.Integration.Test.Ef
     public sealed class Db2EfItTests : EfEngineItTests
     {
         public Db2EfItTests(Db2ItFixture f) : base(f.Session, f.EfSession) { }
+
+        [SkippableFact]
+        public void Page_Offset_IsRejected()
+        {
+            Skip.IfNot(IntegrationEnabled.IsOn, IntegrationEnabled.SkipReason);
+            var error = Assert.Throws<NotSupportedException>(() => ((EfEngineSession)Session).Page(new PagingDirective(page: 2, pageSize: 2)));
+            Assert.Contains("OFFSET", error.Message);
+        }
     }
 }
 #endif

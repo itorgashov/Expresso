@@ -20,7 +20,7 @@ The EF packages reference the EF library they extend, so your application contro
 
 ## Map fields to members
 
-A `LinqQueryMapping<T>` says where each query field lives on your entity. It is the LINQ counterpart of the SQL column dictionary. The sample entities below are used in every example on this page.
+A `LinqQueryMapping<T>` says where each query field lives on your entity. It is the LINQ counterpart of the SQL column dictionary. The entities below illustrate the mapping used on this page.
 
 ```csharp
 public sealed class Book
@@ -206,6 +206,36 @@ static IOrderedQueryable<Book> OrderByKeys(IQueryable<Book> source, IReadOnlyLis
 }
 ```
 
+## Limit the result
+
+Create a `PagingDirective` for paged or offset/number results, then apply it after a deterministic order. The examples here assume `orderedSource` is an already filtered and ordered query.
+
+For EF Core, use the provider-aware overload:
+
+```csharp
+using Expresso.Core.Paging;
+using Expresso.Rendering.EntityFrameworkCore;
+using Expresso.Rendering.Linq;
+
+var paging = new PagingDirective(page: 3, pageSize: 20);
+var limited = orderedSource.Page(paging, db.Database.ProviderName);
+```
+
+IBM EF Core 8 drops positive offsets. This overload throws `NotSupportedException` for such a window; it does not automatically page in memory. See [Pagination](pagination.md#ef-core) for the ordered-key fallback and its cost.
+
+For SQLite EF6, use the overload that supplies an unlimited `LIMIT` when an offset has no row count:
+
+```csharp
+using Expresso.Core.Paging;
+using Expresso.Rendering.EntityFramework;
+using Expresso.Rendering.Linq;
+
+var paging = new PagingDirective(skip: 40);
+var limited = orderedSource.Page(paging, Ef6Provider.Sqlite);
+```
+
+Pass the actual provider for other EF6 databases. EF6 requires an `OrderBy` before any positive offset. On an in-memory `IEnumerable<T>`, use `orderedItems.Page(paging)` from `Expresso.Rendering.Linq`. Expresso does not add a sort or a unique tie-breaker; see [Pagination](pagination.md#establish-a-deterministic-order) for ordering and directive semantics.
+
 ## Troubleshoot
 
 | Symptom | Cause and fix |
@@ -213,6 +243,9 @@ static IOrderedQueryable<Book> OrderByKeys(IQueryable<Book> source, IReadOnlyLis
 | EF Core says it cannot translate a call to an `ExpressoDbFunctions` method | The model does not call `HasExpressoFunctions(Database.ProviderName)`. Add it to `OnModelCreating`. |
 | `NotSupportedException` from `IncludeSorted` | The sorted collection is not mapped to a navigation property. Map it as `b => b.Authors`, or use `OrderByNested` on a child query. |
 | `NotSupportedException` when you build an EF6 query | The provider cannot render that function exactly. See [EF6 limits](semantics.md#ef6-limits). |
+| EF6: `Skip` is only supported for sorted input | Call `OrderBy` before `Page` when the offset is greater than 0. See [Pagination](pagination.md). |
+| SQLite EF6 rejects a bare `OFFSET` | For an offset without a row count, use `Page(paging, Ef6Provider.Sqlite)` to add an unlimited `LIMIT`. |
+| IBM EF Core: provider-aware `Page` throws for a positive offset | The provider drops the offset. Retrieve ordered keys and limit them in memory, as described in [Pagination](pagination.md#ef-core). |
 | A filter over objects throws for some inputs, such as `left` on a short string | You used the Queryable transformer on objects. Use `InMemoryExpressionToLinqTransformer`. |
 | The wrong transformer is injected | Several registrations compete for `IExpressionToLinqTransformer`. The last one wins. Inject the concrete type. |
 | An EF6 `Guid` filter on SQLite matches nothing | System.Data.SQLite binds `Guid` as binary by default. Add `BinaryGUID=False` to the connection string if the database stores GUIDs as text. |
@@ -223,6 +256,7 @@ static IOrderedQueryable<Book> OrderByKeys(IQueryable<Book> source, IReadOnlyLis
 
 ## Next steps
 
+- [Pagination](pagination.md): the two limiting models, provider-aware calls, and totals
 - [LINQ rendering](linq-rendering.md): profiles, providers and mapping details
 - [Filter behavior and database differences](semantics.md): NULL handling, types and EF6 limits
 - [Function reference](functions/README.md): the LINQ, EF Core and EF6 form of every function

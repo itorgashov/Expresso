@@ -80,5 +80,37 @@ namespace Expresso.Rendering.Linq.Test
             var labels = widget.Tags.AsQueryable().OrderBy(QueryableTransformer, testCase.Sort, WidgetLinqMapping.Tags()).Select(t => t.Label);
             Assert.Equal(testCase.ExpectedLabels, labels);
         }
+
+        [Theory]
+        [MemberData(nameof(RendererIntegrationCases.PagingCases), MemberType = typeof(RendererIntegrationCases))]
+        public void InMemory_Paging_ReturnsExpectedIds(PagingCase testCase)
+        {
+            IEnumerable<Widget> widgets = WidgetSeedData.CreateWidgets();
+            if (testCase.Filter is not null)
+            {
+                widgets = widgets.Where(InMemoryTransformer, testCase.Filter, Mapping);
+            }
+
+            var ordered = testCase.Sort is null
+                ? widgets.OrderBy(w => w.Id)
+                : widgets.OrderBy(InMemoryTransformer, testCase.Sort, Mapping);
+            Assert.Equal(testCase.ExpectedIdsOrdered, ordered.Page(testCase.Paging).Select(w => w.Id));
+        }
+
+        [Theory]
+        [MemberData(nameof(RendererIntegrationCases.PagingCases), MemberType = typeof(RendererIntegrationCases))]
+        public void Queryable_Paging_ReturnsExpectedIds(PagingCase testCase)
+        {
+            var widgets = WidgetSeedData.CreateWidgets().AsQueryable();
+            if (testCase.Filter is not null)
+            {
+                widgets = widgets.Where(QueryableTransformer, testCase.Filter, Mapping);
+            }
+
+            var ordered = testCase.Sort is null
+                ? widgets.OrderBy(w => w.Id)
+                : widgets.OrderBy(QueryableTransformer, testCase.Sort, Mapping);
+            Assert.Equal(testCase.ExpectedIdsOrdered, ordered.Page(testCase.Paging).Select(w => w.Id));
+        }
     }
 }

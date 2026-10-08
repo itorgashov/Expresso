@@ -44,7 +44,9 @@ namespace Expresso.Rendering.Integration.Test
 #endif
 #if NETFRAMEWORK
             var path = _path;
-            Ef6Session = new Ef6.Ef6EngineSession(() => new System.Data.SQLite.SQLiteConnection("Data Source=" + path + ";BinaryGUID=False"));
+            Ef6Session = new Ef6.Ef6EngineSession(
+                () => new System.Data.SQLite.SQLiteConnection("Data Source=" + path + ";BinaryGUID=False"),
+                provider: Expresso.Rendering.EntityFramework.Ef6Provider.Sqlite);
 #endif
         }
 

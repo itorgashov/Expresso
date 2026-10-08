@@ -38,15 +38,18 @@ Open Swagger UI at `/swagger`.
 
 | Controller | GET all | GET by id |
 |---|---|---|
-| Books | `GET /api/books?filter=&sort=` | `GET /api/books/{id}` |
-| Authors | `GET /api/authors?filter=&sort=` | `GET /api/authors/{id}` |
-| Publishers | `GET /api/publishers?filter=&sort=` | `GET /api/publishers/{id}` |
+| Books | `GET /api/books?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/books/{id}` |
+| Authors | `GET /api/authors?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/authors/{id}` |
+| Publishers | `GET /api/publishers?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/publishers/{id}` |
+
+These hosts choose `page` / `pagesize` for paged results and `skip` / `take` for offset/number results. `page` is 1-based and requires `pagesize`; `pagesize` alone selects page 1. Requests that combine the two models or supply `page` without `pagesize` return HTTP 400. A positive offset or a limit adds `X-Total-Count`, even for an empty result, and page-based requests also add `X-Total-Pages`. The body stays a JSON array. See the [sample contract](../../docs/sample-app.md#pagination-contract) and [library semantics](../../docs/pagination.md).
 
 ## Example queries
 
 **Books**
 
-- `GET /api/books?filter=gt(year,2000)&sort=rating,desc,title,asc`
+- `GET /api/books?filter=gt(year,2000)&sort=rating,desc,title,asc&page=2&pagesize=5`
+- `GET /api/books?skip=10&take=20`
 - `GET /api/books?filter=startswith(publisher,"North")`
 - `GET /api/books?filter=contains(title,"War")`
 - `GET /api/books?filter=gte(createdat,"2020-01-01")`

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Sample.Shared.Models;
 using Expresso.Rendering;
@@ -21,6 +22,7 @@ public sealed class BookRepository : IRepository<Book>
     private readonly ISampleDb _db;
     private readonly IExpressionToQueryClauseTransformer _criteriaTransformer;
     private readonly SqlQueryMapping _queryMapping;
+    private readonly string _baseFrom;
     private readonly string _baseSelect;
 
     /// <summary>Creates the repository.</summary>
@@ -45,8 +47,12 @@ public sealed class BookRepository : IRepository<Book>
                 { "rating", sql.Col("b", "rating") },
                 { "createdat", sql.Col("b", "created_at") },
                 { "externalid", sql.Col("b", "external_id") },
+                { "id", sql.Col("b", "id") },
             },
             new[] { mappings.BookAuthors });
+        _baseFrom =
+            " FROM " + sql.TableAs("book", "b") +
+            " INNER JOIN " + sql.TableAs("publisher", "p") + " ON " + sql.Col("p", "id") + " = " + sql.Col("b", "publisher_id");
         _baseSelect =
             "SELECT" +
             " " + sql.Col("b", "id") + "," +
@@ -58,20 +64,20 @@ public sealed class BookRepository : IRepository<Book>
             " " + sql.Col("b", "created_at") + "," +
             " " + sql.Col("b", "external_id") + "," +
             " " + sql.Col("p", "name") + " AS publisher_name" +
-            " FROM " + sql.TableAs("book", "b") +
-            " INNER JOIN " + sql.TableAs("publisher", "p") + " ON " + sql.Col("p", "id") + " = " + sql.Col("b", "publisher_id");
+            _baseFrom;
     }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<Book>> GetAllAsync(
         FilterCriteria? filterCriteria,
         SortDirective? sortDirective,
+        PagingDirective paging,
         CancellationToken cancellationToken = default)
     {
         var connection = await _db.OpenAsync(cancellationToken);
         using (connection)
         {
-            var (sql, parameters) = BuildSelectQuery(filterCriteria, sortDirective);
+            var (sql, parameters) = BuildSelectQuery(filterCriteria, SampleStableSort.ForPaging(sortDirective, paging), paging);
 
             var books = new List<Book>();
             using (var command = connection.CreateCommand())
@@ -136,9 +142,17 @@ public sealed class BookRepository : IRepository<Book>
         }
     }
 
+    /// <inheritdoc />
+    public Task<long> CountAsync(FilterCriteria? filterCriteria, CancellationToken cancellationToken = default)
+    {
+        var (sql, parameters) = BuildCountQuery(filterCriteria);
+        return SampleCount.ReadAsync(_db, sql, parameters, cancellationToken);
+    }
+
     private (string sql, Dictionary<string, object>? parameters) BuildSelectQuery(
         FilterCriteria? filterCriteria,
-        SortDirective? sortDirective)
+        SortDirective? sortDirective,
+        PagingDirective paging)
     {
         var sql = new StringBuilder(_baseSelect);
         Dictionary<string, object>? parameters = null;
@@ -158,6 +172,23 @@ public sealed class BookRepository : IRepository<Book>
             sql.Append(result.orderByClause);
             parameters ??= new Dictionary<string, object>();
             ParameterMerge.Merge(parameters, result.parameters);
+        }
+
+        SamplePagingSql.Append(sql, ref parameters, _criteriaTransformer, paging);
+        return (sql.ToString(), parameters);
+    }
+
+    private (string sql, Dictionary<string, object>? parameters) BuildCountQuery(FilterCriteria? filterCriteria)
+    {
+        var sql = new StringBuilder("SELECT COUNT(*)");
+        sql.Append(_baseFrom);
+        Dictionary<string, object>? parameters = null;
+        if (filterCriteria is not null)
+        {
+            var result = _criteriaTransformer.RenderWhereClause(filterCriteria, _queryMapping, WhereParamPrefix);
+            sql.Append(" WHERE ");
+            sql.Append(result.whereClause);
+            parameters = new Dictionary<string, object>(result.parameters);
         }
 
         return (sql.ToString(), parameters);

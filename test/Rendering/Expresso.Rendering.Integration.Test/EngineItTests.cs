@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Rendering;
 
@@ -34,6 +35,14 @@ namespace Expresso.Rendering.Integration.Test
             AssertOutcome(testCase.Id, testCase.ExpectedLabels, () => Session.QueryTagLabels(testCase.WidgetId, testCase.Sort));
         }
 
+        [SkippableTheory]
+        [MemberData(nameof(RendererIntegrationCases.PagingCases), MemberType = typeof(RendererIntegrationCases))]
+        public void Paging_ReturnsExpectedIds(PagingCase testCase)
+        {
+            Skip.IfNot(IntegrationEnabled.IsOn, IntegrationEnabled.SkipReason);
+            AssertOutcome(testCase.Id, testCase.ExpectedIdsOrdered, () => Session.QueryWidgetIds(testCase.Filter, testCase.Sort, testCase.Paging));
+        }
+
         /// <summary>Asserts the query result; sessions with documented provider gaps assert those instead.</summary>
         protected virtual void AssertOutcome<T>(string caseId, IReadOnlyList<T> expected, Func<IReadOnlyList<T>> query) =>
             Assert.Equal(expected, query());
@@ -41,7 +50,7 @@ namespace Expresso.Rendering.Integration.Test
 
     public interface IEngineSession
     {
-        IReadOnlyList<int> QueryWidgetIds(FilterCriteria? filter, SortDirective? sort);
+        IReadOnlyList<int> QueryWidgetIds(FilterCriteria? filter, SortDirective? sort, PagingDirective? paging = null);
 
         IReadOnlyList<string> QueryTagLabels(int widgetId, SortDirective sort);
     }
@@ -86,8 +95,9 @@ namespace Expresso.Rendering.Integration.Test
             _orderByInSelectList = orderByInSelectList;
         }
 
-        public IReadOnlyList<int> QueryWidgetIds(FilterCriteria? filter, SortDirective? sort)
+        public IReadOnlyList<int> QueryWidgetIds(FilterCriteria? filter, SortDirective? sort, PagingDirective? paging = null)
         {
+            paging ??= PagingDirective.None;
             var parameters = new Dictionary<string, object>();
             var whereSql = string.Empty;
             if (filter is not null)
@@ -115,6 +125,13 @@ namespace Expresso.Rendering.Integration.Test
                 {
                     sql += $" ORDER BY {_idColumn}";
                 }
+            }
+
+            if (!paging.IsEmpty)
+            {
+                var rendered = _transformer.RenderPagingClause(paging, "pg");
+                sql += " " + rendered.pagingClause;
+                Merge(parameters, rendered.parameters);
             }
 
             using var cmd = _connection.CreateCommand();

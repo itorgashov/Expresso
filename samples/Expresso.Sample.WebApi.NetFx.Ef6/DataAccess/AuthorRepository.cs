@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Rendering.Linq;
 using Expresso.Sample.WebApi.NetFx.Ef6.Entities;
@@ -24,6 +25,7 @@ public sealed class AuthorRepository : IRepository<Author>
     public async Task<IReadOnlyList<Author>> GetAllAsync(
         FilterCriteria? filterCriteria,
         SortDirective? sortDirective,
+        PagingDirective paging,
         CancellationToken cancellationToken = default)
     {
         IQueryable<Author> query = _db.Authors;
@@ -33,14 +35,7 @@ public sealed class AuthorRepository : IRepository<Author>
             query = query.Where(_transformer, filterCriteria, BookLinqMappings.Authors);
         }
 
-        if (sortDirective is not null && sortDirective.Items.Count > 0)
-        {
-            query = query.OrderBy(_transformer, sortDirective, BookLinqMappings.Authors);
-        }
-        else
-        {
-            query = query.OrderBy(a => a.Id);
-        }
+        query = Ef6ListQuery.OrderAndPage(query, sortDirective, paging, _transformer, BookLinqMappings.Authors, a => a.Id, _db);
 
         if (sortDirective is not null && sortDirective.Nested.Count > 0)
         {
@@ -51,6 +46,9 @@ public sealed class AuthorRepository : IRepository<Author>
 
         return await query.Include(a => a.Awards).ToListAsync(cancellationToken);
     }
+
+    public Task<long> CountAsync(FilterCriteria? filterCriteria, CancellationToken cancellationToken = default) =>
+        Ef6ListQuery.CountAsync(_db.Authors, filterCriteria, BookLinqMappings.Authors, _transformer, cancellationToken);
 
     public async Task<Author?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         await _db.Authors.Include(a => a.Awards).FirstOrDefaultAsync(a => a.Id == id, cancellationToken);

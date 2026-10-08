@@ -10,6 +10,10 @@ namespace Expresso.Rendering
         protected override string QuoteIdentifierPart(string part) =>
             "`" + part.Replace("`", "``") + "`";
 
+        /// <summary>MySQL and MariaDB use <c>LIMIT</c>/<c>OFFSET</c>. A missing limit is the unsigned-bigint maximum, which means "through the end".</summary>
+        protected override string FormatPagingClause(string offsetParameter, string? limitParameter) =>
+            $"LIMIT {limitParameter ?? "18446744073709551615"} OFFSET {offsetParameter}";
+
         protected override string LengthFunctionName => "CHAR_LENGTH";
 
         protected override string SqlStringConcatOperator => ", ";

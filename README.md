@@ -42,13 +42,13 @@ The grammar, literal rules and supported types are in [Query syntax](docs/query-
 
 | Package | Role |
 |---|---|
-| `Expresso.Core` | Expression tree, filter and sort models, field-catalog contract |
-| `Expresso.Parsing` | Query-string parsers and dependency injection |
+| `Expresso.Core` | Expression tree, filter, sort, and paging models, field-catalog contract |
+| `Expresso.Parsing` | Filter, sort, and paging text parsers and dependency injection |
 | `Expresso.Rendering.Common` | Shared SQL rendering contract |
-| `Expresso.Rendering.SqlServer`, `PostgreSql`, `Sqlite`, `MySql`, `Oracle`, `Db2` | `WHERE` and `ORDER BY` rendering for one dialect |
-| `Expresso.Rendering.Linq` | LINQ rendering for any `IQueryable<T>` provider and for in-memory collections |
-| `Expresso.Rendering.EntityFrameworkCore` | EF Core 8+ overrides and `IncludeSorted` |
-| `Expresso.Rendering.EntityFramework` | EF6 overrides |
+| `Expresso.Rendering.SqlServer`, `PostgreSql`, `Sqlite`, `MySql`, `Oracle`, `Db2` | Filter, sort, and paging clause rendering for one dialect |
+| `Expresso.Rendering.Linq` | LINQ filtering, sorting, and result limits for `IQueryable<T>` and in-memory collections |
+| `Expresso.Rendering.EntityFrameworkCore` | EF Core 8+ overrides, `IncludeSorted`, and provider-aware paging |
+| `Expresso.Rendering.EntityFramework` | EF6 overrides and provider-aware paging |
 
 There is no metapackage: reference the packages you need. Database drivers and native clients are not included (DB2 needs IBM's clidriver on the host). See [Packages](docs/packages.md).
 
@@ -62,6 +62,7 @@ New to Expresso? Start with the [overview](docs/overview.md), then [Get started]
   - [Render to LINQ and EF](docs/getting-started-linq.md) for EF Core, EF6 and in-memory collections
 - [Packages](docs/packages.md): each NuGet package and which ones you need
 - [Query syntax](docs/query-syntax.md): filter and sort grammar, literals, supported types
+- [Pagination](docs/pagination.md): paged and offset/number results, ordering, and totals
 - [Field providers](docs/field-providers.md): the field allow-list and query model
 - [SQL rendering](docs/rendering.md): quoting and parameters per dialect
 - [LINQ rendering](docs/linq-rendering.md): profiles, EF Core, EF6 and provider limits

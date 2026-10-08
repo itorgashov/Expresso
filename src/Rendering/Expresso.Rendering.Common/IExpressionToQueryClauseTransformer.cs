@@ -1,4 +1,5 @@
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 
 namespace Expresso.Rendering
@@ -35,5 +36,11 @@ namespace Expresso.Rendering
         /// <param name="paramNamePrefix">Bind-name prefix. Must start with a letter and contain only letters, digits, and underscores.</param>
         /// <returns>The <c>ORDER BY</c> text without the <c>ORDER BY</c> keyword, and the bound parameter values keyed by bind name.</returns>
         (string orderByClause, Dictionary<string, object> parameters) RenderOrderByClause(SortDirective sortDirective, SqlQueryMapping mapping, string paramNamePrefix);
+
+        /// <summary>Renders <paramref name="paging"/> as a dialect paging clause, including its keywords.</summary>
+        /// <param name="paging">Paging window. An empty directive renders no text.</param>
+        /// <param name="paramNamePrefix">Bind-name prefix. Must start with a letter and contain only letters, digits, and underscores.</param>
+        /// <returns>The paging text (empty when <see cref="PagingDirective.IsEmpty"/> is true), and the bound parameter values keyed by bind name. Append it after <c>ORDER BY</c>.</returns>
+        (string pagingClause, Dictionary<string, object> parameters) RenderPagingClause(PagingDirective paging, string paramNamePrefix);
     }
 }

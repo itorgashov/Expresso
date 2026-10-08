@@ -11,7 +11,7 @@ namespace Expresso.Rendering.TestCases
 
     public sealed record NestedSortCase(string Id, int WidgetId, SortDirective Sort, string[] ExpectedLabels);
 
-    public static class RendererIntegrationCases
+    public static partial class RendererIntegrationCases
     {
         public static IEnumerable<object[]> FilterCases() =>
             AllFilters().Select(c => new object[] { c });

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Sample.Shared.Models;
 using Expresso.Rendering;
@@ -20,6 +21,7 @@ public sealed class PublisherRepository : IRepository<Publisher>
     private readonly ISampleDb _db;
     private readonly IExpressionToQueryClauseTransformer _criteriaTransformer;
     private readonly Dictionary<string, string> _fieldToColumnMapping;
+    private readonly string _baseFrom;
     private readonly string _baseSelect;
 
     /// <summary>Creates the repository.</summary>
@@ -39,7 +41,9 @@ public sealed class PublisherRepository : IRepository<Publisher>
             { "location", sql.Col("p", "location") },
             { "opens", sql.Col("p", "opens_at") },
             { "closes", sql.Col("p", "closes_at") },
+            { "id", sql.Col("p", "id") },
         };
+        _baseFrom = " FROM " + sql.TableAs("publisher", "p");
         _baseSelect =
             "SELECT" +
             " " + sql.Col("p", "id") + "," +
@@ -48,19 +52,20 @@ public sealed class PublisherRepository : IRepository<Publisher>
             " " + sql.Col("p", "location") + "," +
             " " + sql.Col("p", "opens_at") + "," +
             " " + sql.Col("p", "closes_at") +
-            " FROM " + sql.TableAs("publisher", "p");
+            _baseFrom;
     }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<Publisher>> GetAllAsync(
         FilterCriteria? filterCriteria,
         SortDirective? sortDirective,
+        PagingDirective paging,
         CancellationToken cancellationToken = default)
     {
         var connection = await _db.OpenAsync(cancellationToken);
         using (connection)
         {
-            var (sql, parameters) = BuildSelectQuery(filterCriteria, sortDirective);
+            var (sql, parameters) = BuildSelectQuery(filterCriteria, SampleStableSort.ForPaging(sortDirective, paging), paging);
 
             var publishers = new List<Publisher>();
             using (var command = connection.CreateCommand())
@@ -105,9 +110,17 @@ public sealed class PublisherRepository : IRepository<Publisher>
         }
     }
 
+    /// <inheritdoc />
+    public Task<long> CountAsync(FilterCriteria? filterCriteria, CancellationToken cancellationToken = default)
+    {
+        var (sql, parameters) = BuildCountQuery(filterCriteria);
+        return SampleCount.ReadAsync(_db, sql, parameters, cancellationToken);
+    }
+
     private (string sql, Dictionary<string, object>? parameters) BuildSelectQuery(
         FilterCriteria? filterCriteria,
-        SortDirective? sortDirective)
+        SortDirective? sortDirective,
+        PagingDirective paging)
     {
         var sql = new StringBuilder(_baseSelect);
         Dictionary<string, object>? parameters = null;
@@ -120,13 +133,30 @@ public sealed class PublisherRepository : IRepository<Publisher>
             parameters = new Dictionary<string, object>(result.parameters);
         }
 
-        if (sortDirective is not null)
+        if (sortDirective is not null && sortDirective.Items.Count > 0)
         {
             var result = _criteriaTransformer.RenderOrderByClause(sortDirective, _fieldToColumnMapping, OrderParamPrefix);
             sql.Append(" ORDER BY ");
             sql.Append(result.orderByClause);
             parameters ??= new Dictionary<string, object>();
             ParameterMerge.Merge(parameters, result.parameters);
+        }
+
+        SamplePagingSql.Append(sql, ref parameters, _criteriaTransformer, paging);
+        return (sql.ToString(), parameters);
+    }
+
+    private (string sql, Dictionary<string, object>? parameters) BuildCountQuery(FilterCriteria? filterCriteria)
+    {
+        var sql = new StringBuilder("SELECT COUNT(*)");
+        sql.Append(_baseFrom);
+        Dictionary<string, object>? parameters = null;
+        if (filterCriteria is not null)
+        {
+            var result = _criteriaTransformer.RenderWhereClause(filterCriteria, _fieldToColumnMapping, WhereParamPrefix);
+            sql.Append(" WHERE ");
+            sql.Append(result.whereClause);
+            parameters = new Dictionary<string, object>(result.parameters);
         }
 
         return (sql.ToString(), parameters);

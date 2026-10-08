@@ -2,6 +2,7 @@
 using System.Data.Common;
 using System.Data.Entity.Core;
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 using Expresso.Rendering.EntityFramework;
 using Expresso.Rendering.Linq;
@@ -15,17 +16,19 @@ namespace Expresso.Rendering.Integration.Test.Ef6
         private readonly string? _schema;
         private readonly LinqQueryMapping<Widget> _mapping = WidgetLinqMapping.Create();
         private readonly LinqQueryMapping<WidgetTag> _tagMapping = WidgetLinqMapping.Tags();
+        private readonly Ef6Provider _provider;
 
-        public Ef6EngineSession(Func<DbConnection> connect, string? schema = null)
+        public Ef6EngineSession(Func<DbConnection> connect, string? schema = null, Ef6Provider provider = Ef6Provider.Other)
         {
             _connect = connect;
             _schema = schema;
+            _provider = provider;
         }
 
-        public IReadOnlyList<int> QueryWidgetIds(FilterCriteria? filter, SortDirective? sort)
+        public IReadOnlyList<int> QueryWidgetIds(FilterCriteria? filter, SortDirective? sort, PagingDirective? paging = null)
         {
             using var context = NewContext();
-            return Run(WidgetIds(context, filter, sort));
+            return Run(WidgetIds(context, filter, sort, paging));
         }
 
         /// <summary>SQL EF6 generates for <see cref="QueryWidgetIds"/> (diagnostics), or the translation error.</summary>
@@ -34,7 +37,7 @@ namespace Expresso.Rendering.Integration.Test.Ef6
             using var context = NewContext();
             try
             {
-                return WidgetIds(context, filter, sort).ToString();
+                return WidgetIds(context, filter, sort, paging: null).ToString();
             }
             catch (NotSupportedException ex)
             {
@@ -54,7 +57,7 @@ namespace Expresso.Rendering.Integration.Test.Ef6
 
         private WidgetEf6Context NewContext() => new(_connect(), _schema);
 
-        private IQueryable<int> WidgetIds(WidgetEf6Context context, FilterCriteria? filter, SortDirective? sort)
+        private IQueryable<int> WidgetIds(WidgetEf6Context context, FilterCriteria? filter, SortDirective? sort, PagingDirective? paging)
         {
             var transformer = new Ef6ExpressionToLinqTransformer(context);
             IQueryable<Widget> query = context.Widgets;
@@ -63,7 +66,9 @@ namespace Expresso.Rendering.Integration.Test.Ef6
                 query = query.Where(transformer, filter, _mapping);
             }
 
-            return (sort is null ? query.OrderBy(w => w.Id) : query.OrderBy(transformer, sort, _mapping)).Select(w => w.Id);
+            var ordered = sort is null ? query.OrderBy(w => w.Id) : query.OrderBy(transformer, sort, _mapping);
+            var windowed = paging is null || paging.IsEmpty ? ordered : ordered.Page(paging, _provider);
+            return windowed.Select(w => w.Id);
         }
 
         private static List<TResult> Run<TResult>(IQueryable<TResult> query)

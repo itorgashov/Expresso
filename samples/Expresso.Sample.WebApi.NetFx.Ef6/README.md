@@ -24,4 +24,4 @@ On **Oracle** and **SQLite**, `opens` and `closes` are not filter or sort fields
 dotnet run --project samples/Expresso.Sample.WebApi.NetFx.Ef6
 ```
 
-Default URL: `http://localhost:5081/` (Swagger at `/swagger`).
+Default URL: `http://localhost:5081/` (Swagger at `/swagger`). List routes accept the sample API's `page` / `pagesize` or `skip` / `take` parameters. A positive offset or a limit adds `X-Total-Count`, even for an empty result. Only page-based requests add `X-Total-Pages`. Requests that combine the two models or supply `page` without `pagesize` return HTTP 400. See the [sample contract](../../docs/sample-app.md#pagination-contract) and [library semantics](../../docs/pagination.md).

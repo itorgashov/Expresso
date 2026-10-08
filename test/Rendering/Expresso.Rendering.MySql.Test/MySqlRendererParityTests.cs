@@ -16,6 +16,9 @@ namespace Expresso.Tests.MySql
 
         public override string P(int index) => $"@param_{index}";
 
+        public override string Paging(string offsetParameter, string? limitParameter) =>
+            $"LIMIT {limitParameter ?? "18446744073709551615"} OFFSET {offsetParameter}";
+
         public override string Length(string inner) => $"CHAR_LENGTH({inner})";
 
         public override string Left(string inner, string countSql) => $"LEFT({inner}, {countSql})";

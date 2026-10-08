@@ -1,6 +1,6 @@
 # Query syntax
 
-This page defines the grammar of the `filter` and `sort` query strings: how to write a filter, sort related rows, and write literals of each type.
+The filter and sort grammar defines how to write predicates, order related rows, and express literals of each type. Result limits are independent of this grammar; see [Pagination](pagination.md) for paged and offset/number semantics.
 
 ## Filter grammar
 
@@ -116,3 +116,9 @@ Three kinds of argument are not functions:
 - A literal is a constant parsed from the query string, as described above.
 
 They have no pages of their own in the [function reference](functions/README.md).
+
+## Next steps
+
+- [Get started](getting-started.md): parse filter and sort expressions
+- [Pagination](pagination.md): apply result limits independently of the grammar
+- [Function reference](functions/README.md): syntax and behavior of each function

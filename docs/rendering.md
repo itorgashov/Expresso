@@ -1,10 +1,10 @@
 # SQL rendering
 
-The SQL renderers turn a `FilterCriteria` and a `SortDirective` into parameterized `WHERE` and `ORDER BY` fragments. Each dialect package sets the identifier quoting, the parameter names and the spelling of each function. This page lists those differences. To use a renderer, see [Render to SQL](getting-started-sql.md).
+The SQL renderers produce parameterized filter, sort, and paging clauses for your database dialect. Each dialect package sets the identifier quoting, parameter names, and function spellings. To configure a renderer and execute a query, see [Render to SQL](getting-started-sql.md).
 
 Each [function page](functions/README.md) shows the SQL for every dialect and groups the engines that produce the same fragment. MariaDB uses the MySQL package and produces the same SQL as MySQL.
 
-For LINQ, EF Core and EF6, see [LINQ rendering](linq-rendering.md). The rules shared by every renderer, such as NULL logic, types and engine-defined behavior, are in [Filter behavior and database differences](semantics.md).
+For LINQ, EF Core and EF6, see [LINQ rendering](linq-rendering.md). The rules shared by every renderer, such as NULL logic, types and engine-defined behavior, are in [Filter behavior and database differences](semantics.md). To limit a result, pass a `PagingDirective` to `RenderPagingClause`. Both paged and offset/number models produce `OFFSET`/`FETCH` or `LIMIT`/`OFFSET` clauses; see [Pagination](pagination.md).
 
 Renderers never connect to a database. Reference an ADO.NET provider in your application and install any native client it needs on the host. For DB2, including the .NET Framework and .NET 6+ drivers, see [Database clients](packages.md#database-clients-not-included).
 
@@ -47,3 +47,9 @@ DB2 rejects a correlated reference inside a scalar subquery in `ORDER BY` (`SQL0
 ## Sort keys
 
 A boolean sort key renders as `CASE WHEN … THEN 1 ELSE 0 END` on every dialect. The parent `ORDER BY` does not include a nested `sortfor` key. To order a child collection, call `RenderOrderByClause` again with the child `SortDirective` and the item mapping.
+
+## Next steps
+
+- [Pagination](pagination.md): paged and offset/number clauses and ordering requirements
+- [Render to SQL](getting-started-sql.md): compose and execute a query
+- [LINQ rendering](linq-rendering.md): the alternative rendering path

@@ -112,5 +112,39 @@ namespace Expresso.Tests.Core.Sorting
 
             Assert.Equal(3, directive.TotalSortKeyCount());
         }
+
+        [Fact]
+        public void ThenBy_AppendsKeyAndKeepsNested()
+        {
+            var year = new Field("year", typeof(int));
+            var nested = new CollectionSort(
+                "authors",
+                new SortDirective(new[]
+                {
+                    new SortDirectiveItem { Expression = new Field("lastname", typeof(string), "authors"), Direction = SortDirection.Ascending },
+                }));
+            var directive = new SortDirective(
+                new[] { new SortDirectiveItem { Expression = year, Direction = SortDirection.Descending } },
+                new[] { nested });
+            var id = new Field("id", typeof(int));
+
+            var extended = directive.ThenBy(id);
+
+            Assert.Single(directive.Items);
+            Assert.Equal(2, extended.Items.Count);
+            Assert.Same(year, extended.Items[0].Expression);
+            Assert.Equal(SortDirection.Descending, extended.Items[0].Direction);
+            Assert.Same(id, extended.Items[1].Expression);
+            Assert.Equal(SortDirection.Ascending, extended.Items[1].Direction);
+            Assert.Single(extended.Nested);
+            Assert.Same(directive.Nested[0], extended.Nested[0]);
+        }
+
+        [Fact]
+        public void ThenBy_RejectsNullExpression()
+        {
+            var directive = new SortDirective(Array.Empty<SortDirectiveItem>());
+            Assert.Throws<ArgumentNullException>(() => directive.ThenBy(null!));
+        }
     }
 }

@@ -26,6 +26,7 @@ Case ids from `RendererIntegrationCases`. Every dialect collection (SQL Server, 
 | nested any | `nested-any` |
 | parent sort | `sort-name-asc`, `sort-age-desc-name`, `sort-count-tags`, `sort-min-score`, `sort-bool` |
 | nested collection sort | `nested-label-asc`, `nested-score-desc` |
+| paging | `page-1-size-2`, `page-2-size-2`, `page-2-size-4`, `page-4-size-2`, `pagesize-only-3`, `skip-2-take-3`, `skip-only-4`, `take-only-2`, `skip-beyond`, `page-wins`, `page-without-size`, `page-only`, `page-age-desc`, `page-filter`, `page-count-tags` |
 
 `sortfor` grammar is covered by parsing unit tests; IT uses `SortDirective` trees.
 

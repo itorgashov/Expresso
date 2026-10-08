@@ -57,7 +57,7 @@ Every function checks its arguments when the tree is built (see [Error handling]
 | | SQL renderers | LINQ renderers |
 |---|---|---|
 | Packages | `Expresso.Rendering.SqlServer`, `PostgreSql`, `Sqlite`, `MySql`, `Oracle`, `Db2` | `Expresso.Rendering.Linq`, plus `EntityFrameworkCore` (net8.0) or `EntityFramework` (EF6, net48) |
-| Output | `WHERE` and `ORDER BY` text, and parameter values | `Expression<Func<T, bool>>` and sort keys, through `Where`, `OrderBy` and `IncludeSorted` extensions |
+| Output | `WHERE`, `ORDER BY`, and paging text, and parameter values | Predicates, sort keys, and result limits through `Where`, `OrderBy`, `IncludeSorted`, and `Page` extensions |
 | Mapping | `SqlQueryMapping` and `CollectionSqlMapping` (field to column, collection to `FROM`) | `LinqQueryMapping<T>` (field to member lambda, collection to navigation) |
 | You run it with | ADO.NET or Dapper | EF Core, EF6, any LINQ provider, or LINQ to objects |
 
@@ -65,7 +65,7 @@ Pick the one that matches how your application reads data. EF Core and EF6 add p
 
 ## Use cases
 
-- Paginated list and search APIs where the client picks which columns to filter and sort by (`GET /api/books?filter=...&sort=...`), without a bespoke query per combination.
+- Paginated list and search APIs where the client picks which columns to filter and sort by, without a bespoke query per combination.
 - Admin and back-office grids where users build ad-hoc filters such as date ranges, text search and status flags.
 - Reporting and export endpoints that need flexible, safe predicates over a known set of columns.
 - ADO.NET and Dapper data-access layers that want dynamic `WHERE` and `ORDER BY` fragments without an ORM and without string concatenation (and its injection risk).
@@ -76,7 +76,7 @@ Pick the one that matches how your application reads data. EF Core and EF6 add p
 
 Expresso is deliberately narrow. It does not replace:
 
-- OData or another full query protocol. There is no `$expand`, `$select`, pagination envelope or standard wire format. If you need a broad, standards-based protocol with an existing client ecosystem, use OData.
+- OData or another full query protocol. There is no `$expand`, `$select`, or standard wire format. Expresso supports [paged and offset/number results](pagination.md), but your application defines how callers supply the values and how results and totals are returned. If you need a broad, standards-based protocol with an existing client ecosystem, use OData.
 - An ORM. Expresso renders `WHERE` and `ORDER BY` fragments, or LINQ predicates and sort keys. You still write the base `SELECT` and joins, or supply the `IQueryable<T>`. Collection filters add correlated `EXISTS` and aggregate subqueries from your `CollectionSqlMapping`, or use the navigation in your `LinqQueryMapping<T>`. They do not load related rows for you.
 
 If your API surface is small and fixed, plain parameters can be simpler than a query language. Expresso fits the middle ground: more filter and sort combinations than you want to code by hand, but not so open-ended that you need a full protocol.
@@ -84,6 +84,7 @@ If your API surface is small and fixed, plain parameters can be simpler than a q
 ## Next steps
 
 - [Get started](getting-started.md): install, register, parse, then choose [SQL](getting-started-sql.md) or [LINQ and EF](getting-started-linq.md)
+- [Pagination](pagination.md): paged and offset/number results
 - [Packages](packages.md): the NuGet packages and which ones you need
 - [LINQ rendering](linq-rendering.md): profiles, EF Core, EF6 and provider limits
 - [Filter behavior and database differences](semantics.md): NULL handling, types and engine differences

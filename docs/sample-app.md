@@ -121,13 +121,57 @@ Each host implements `IRequestFieldsInfoProvider` and `IRequestQueryModelProvide
 
 | Controller | GET all | GET by id |
 |---|---|---|
-| Books | `GET /api/books?filter=&sort=` | `GET /api/books/{id}` |
-| Authors | `GET /api/authors?filter=&sort=` | `GET /api/authors/{id}` |
-| Publishers | `GET /api/publishers?filter=&sort=` | `GET /api/publishers/{id}` |
+| Books | `GET /api/books?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/books/{id}` |
+| Authors | `GET /api/authors?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/authors/{id}` |
+| Publishers | `GET /api/publishers?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/publishers/{id}` |
+
+### Pagination contract
+
+The sample hosts expose the two [Expresso limiting models](pagination.md) through the endpoint names below. These names and the response headers are choices made by the samples, rather than requirements of the library.
+
+| Query parameter | Sample behavior |
+|---|---|
+| `page` | 1-based page number; requires `pagesize`. |
+| `pagesize` | Maximum rows per page; defaults to page 1 if `page` is omitted. |
+| `skip` | Number of matching rows to skip; defaults to 0. |
+| `take` | Maximum rows after the offset; if omitted, return all remaining rows. |
+
+Requests that supply `page` without `pagesize`, combine the two models, or contain invalid paging values return HTTP 400. Those input policies are stricter than the library's directive semantics.
+
+The body always remains a JSON array. When the directive has a positive offset or a limit, the response includes `X-Total-Count`, the number of rows matching the filter before paging. Page-based requests also include `X-Total-Pages`; skip/take requests do not. These headers are present even when the result is empty. No paging headers are sent when the directive imposes no restriction, including `skip=0` without `take`.
+
+For illustration, if 41 rows match the filter, a request beyond the last page returns:
+
+```http
+GET /api/books?page=4&pagesize=20
+
+HTTP/1.1 200 OK
+X-Total-Count: 41
+X-Total-Pages: 3
+Content-Type: application/json
+
+[]
+```
+
+For the same matching count, an offset/number request beyond the end returns only the count header:
+
+```http
+GET /api/books?skip=50&take=20
+
+HTTP/1.1 200 OK
+X-Total-Count: 41
+Content-Type: application/json
+
+[]
+```
+
+If no rows match, the total count is 0 and a page-based request reports 0 total pages. Counting uses a separate query, so totals and rows can change between the reads.
 
 ### Example queries
 
 ```text
+GET /api/books?filter=gt(year,2000)&sort=rating,desc,title,asc&page=2&pagesize=5
+GET /api/books?skip=10&take=20
 GET /api/books?filter=gt(year,2000)&sort=rating,desc,title,asc
 GET /api/books?filter=startswith(publisher,"North")
 GET /api/books?filter=contains(title,"War")
@@ -146,6 +190,7 @@ On net48, configure `LiteralParseOptions` with `CultureName = "nl-NL"` and `Date
 
 ## Reading further
 
+- [Pagination](pagination.md): library semantics, provider restrictions, and counting options
 - ASP.NET Core controller: [Controllers/BooksController.cs](../samples/Expresso.Sample.WebApi/Controllers/BooksController.cs)
 - Web API 2 controller: [Controllers/BooksController.cs](../samples/Expresso.Sample.WebApi.NetFx/Controllers/BooksController.cs)
 - Repository pattern: [DataAccess/BookRepository.cs](../samples/Expresso.Sample.Shared/DataAccess/BookRepository.cs)

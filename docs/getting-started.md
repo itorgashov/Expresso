@@ -2,8 +2,6 @@
 
 Expresso turns a `filter` and `sort` query string into a validated expression tree, then renders that tree as parameterized SQL or as LINQ. The first steps are the same for both: install the parsing packages, register the parser, describe which fields clients may use, and parse the incoming query strings. Then you choose how to run the result.
 
-For a complete, runnable version of these steps, see the [sample app](sample-app.md) and the projects under [samples/](../samples/).
-
 ## Install the parsing packages
 
 Expresso has no metapackage. Install only what each project needs.
@@ -18,7 +16,7 @@ dotnet add MyApp.Api package Expresso.Core
 dotnet add MyApp.Api package Expresso.Parsing
 ```
 
-If one project does both jobs, as the sample does, install the parsing package and the renderer package in that project. Both bring `Expresso.Core` with them.
+If one project does both jobs, install the parsing package and the renderer package in that project. Both bring `Expresso.Core` with them.
 
 ## Register the parser
 
@@ -91,6 +89,21 @@ public async Task<IActionResult> GetBooks(
 
 Parsing throws on invalid input. The [error handling](error-handling.md) page lists what to catch and how to return a `400 Bad Request`.
 
+## Limit the result
+
+Expresso supports paged results (page number and page size) and offset/number results (rows to skip and maximum rows to return). Create a `PagingDirective` separately from the filter and sort:
+
+```csharp
+using Expresso.Core.Paging;
+
+var paged = new PagingDirective(page: 3, pageSize: 20);
+var offsetNumber = new PagingDirective(skip: 40, take: 20);
+```
+
+Both directives skip 40 matching rows and return at most 20. Pass the chosen directive to the SQL renderer or LINQ extension described in [Pagination](pagination.md). Use `PagingDirective.None` when you do not want a result limit.
+
+If the values arrive as text, inject `IPagingDirectiveParser`, which `AddRequestParametersParsers` also registers. Its `Parse` method accepts page number, page size, offset, and row count in that order. Your application chooses how to receive and name these inputs; the .NET argument names shown above do not impose an endpoint contract.
+
 ## Choose how to run the filter
 
 `FilterCriteria` and `SortDirective` are independent of the database. Pick the renderer that matches how your application reads data.
@@ -106,6 +119,6 @@ You can use both in the same application, for example SQL for reports and EF Cor
 
 - [Render to SQL](getting-started-sql.md)
 - [Render to LINQ and EF](getting-started-linq.md)
+- [Pagination](pagination.md): paged and offset/number results, ordering, and totals
 - [Query syntax](query-syntax.md): the filter and sort grammar and literal rules
 - [Function reference](functions/README.md): every supported function
-- [Sample app](sample-app.md): these steps wired up in a runnable Web API

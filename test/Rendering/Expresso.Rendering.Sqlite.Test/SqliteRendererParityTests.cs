@@ -16,6 +16,9 @@ namespace Expresso.Tests.Sqlite
 
         public override string P(int index) => $"@param_{index}";
 
+        public override string Paging(string offsetParameter, string? limitParameter) =>
+            $"LIMIT {limitParameter ?? "-1"} OFFSET {offsetParameter}";
+
         public override string Length(string inner) => $"LENGTH({inner})";
 
         public override string Left(string inner, string countSql) => $"substr({inner}, 1, {countSql})";

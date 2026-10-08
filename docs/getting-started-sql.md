@@ -71,14 +71,14 @@ if (filterCriteria is not null)
 {
     var (whereClause, whereParams) = _transformer.RenderWhereClause(filterCriteria, FieldToColumn, "wparam");
     sql.Append(" WHERE ").Append(whereClause);
-    foreach (var (key, value) in whereParams) parameters[key] = value;
+    foreach (var pair in whereParams) parameters[pair.Key] = pair.Value;
 }
 
 if (sortDirective is not null && sortDirective.Items.Count > 0)
 {
     var (orderByClause, orderParams) = _transformer.RenderOrderByClause(sortDirective, FieldToColumn, "oparam");
     sql.Append(" ORDER BY ").Append(orderByClause);
-    foreach (var (key, value) in orderParams) parameters[key] = value;
+    foreach (var pair in orderParams) parameters[pair.Key] = pair.Value;
 }
 ```
 
@@ -103,9 +103,25 @@ var mapping = new SqlQueryMapping(
 var (whereClause, whereParams) = _transformer.RenderWhereClause(filterCriteria, mapping, "wparam");
 ```
 
-`FromClause` and `CorrelateSql` are your own SQL, so write them in your dialect. The renderer wraps them in `EXISTS` or scalar subqueries. The sample [BookRepository](../samples/Expresso.Sample.Shared/DataAccess/BookRepository.cs) shows a complete mapping, including nested collections.
+`FromClause` and `CorrelateSql` are your own SQL, so write them in your dialect. The renderer wraps them in `EXISTS` or scalar subqueries. See [Collection mapping](rendering.md#collection-mapping) for the mapping rules.
 
 To order a child collection with `sortfor`, call `RenderOrderByClause` again with the nested `SortDirective` and the item mapping. See [sortfor](functions/collection/sortfor.md).
+
+## Limit the result
+
+Use a `PagingDirective` for either paged or offset/number results. After building a deterministic `ORDER BY`, append the paging clause and merge its parameters before running the query:
+
+```csharp
+using Expresso.Core.Paging;
+
+var paging = new PagingDirective(page: 3, pageSize: 20);
+var (pagingClause, pagingParams) = _transformer.RenderPagingClause(paging, "pparam");
+if (pagingClause.Length > 0)
+    sql.Append(' ').Append(pagingClause);
+foreach (var pair in pagingParams) parameters.Add(pair.Key, pair.Value);
+```
+
+The distinct `pparam` prefix keeps paging bind names separate from `wparam` and `oparam`. The clause includes its own keywords. SQL Server requires an `ORDER BY`, even for an initial limit with offset 0. Append a unique key when the chosen sort can have ties; the renderer does not do this for you. See [Pagination](pagination.md) for both models, field mappings, and the clause each dialect emits.
 
 ## Run the query
 
@@ -116,11 +132,11 @@ With ADO.NET:
 ```csharp
 using var command = connection.CreateCommand();
 command.CommandText = sql.ToString();
-foreach (var (name, value) in parameters)
+foreach (var pair in parameters)
 {
     var parameter = command.CreateParameter();
-    parameter.ParameterName = name;   // keep the name as returned, including @ or :
-    parameter.Value = value;
+    parameter.ParameterName = pair.Key;   // keep the name as returned, including @ or :
+    parameter.Value = pair.Value;
     command.Parameters.Add(parameter);
 }
 
@@ -135,6 +151,7 @@ var books = await connection.QueryAsync<Book>(sql.ToString(), parameters);
 
 ## Next steps
 
+- [Pagination](pagination.md): the paging clause and a stable sort
 - [SQL rendering](rendering.md): quoting, parameters and sort keys per dialect
 - [Function reference](functions/README.md): the SQL each function produces on every dialect
 - [Filter behavior and database differences](semantics.md): NULL handling, collation and integer division

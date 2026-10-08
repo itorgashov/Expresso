@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Expresso.Core.Filtering;
+using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
 
 namespace Expresso.Rendering.Linq
@@ -98,6 +99,83 @@ namespace Expresso.Rendering.Linq
             return nested is null || nested.Items.Count == 0 ? items : items.OrderBy(transformer, nested, itemMapping);
         }
 
+        /// <summary>
+        /// Applies <paramref name="paging"/> with <c>Skip</c> and <c>Take</c>. Counts are read from a captured
+        /// <see cref="ParameterBox{T}"/> so EF Core and EF6 bind them as parameters. An empty directive returns <paramref name="source"/>.
+        /// <c>Skip</c> is omitted when the offset is 0, so a take-only query stays legal on unsorted EF6 input.
+        /// IBM EF Core 8 drops a non-zero offset; call <c>EfCorePaging.Page</c> with the provider name, which throws.
+        /// SQLite EF6 rejects <c>OFFSET</c> without <c>LIMIT</c>; call <c>Ef6Paging.Page</c> with <c>Ef6Provider.Sqlite</c>.
+        /// </summary>
+        /// <param name="source">Query to window.</param>
+        /// <param name="paging">Paging window.</param>
+        /// <returns>The windowed query, or <paramref name="source"/> when <paramref name="paging"/> is empty.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="paging"/> is <see langword="null"/>.</exception>
+        public static IQueryable<T> Page<T>(this IQueryable<T> source, PagingDirective paging)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            if (paging is null)
+            {
+                throw new ArgumentNullException(nameof(paging));
+            }
+
+            if (paging.IsEmpty)
+            {
+                return source;
+            }
+
+            var expression = source.Expression;
+            if (paging.Offset > 0)
+            {
+                expression = Expression.Call(typeof(Queryable), nameof(Queryable.Skip), new[] { typeof(T) }, expression, Count(paging.Offset));
+            }
+
+            if (paging.Limit is int limit)
+            {
+                expression = Expression.Call(typeof(Queryable), nameof(Queryable.Take), new[] { typeof(T) }, expression, Count(limit));
+            }
+
+            return source.Provider.CreateQuery<T>(expression);
+        }
+
+        /// <summary>In-memory form of <see cref="Page{T}(IQueryable{T}, PagingDirective)"/>.</summary>
+        /// <param name="source">Sequence to window.</param>
+        /// <param name="paging">Paging window.</param>
+        /// <returns>The windowed sequence, or <paramref name="source"/> when <paramref name="paging"/> is empty.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="paging"/> is <see langword="null"/>.</exception>
+        public static IEnumerable<T> Page<T>(this IEnumerable<T> source, PagingDirective paging)
+        {
+            if (source is null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            if (paging is null)
+            {
+                throw new ArgumentNullException(nameof(paging));
+            }
+
+            if (paging.IsEmpty)
+            {
+                return source;
+            }
+
+            if (paging.Offset > 0)
+            {
+                source = Enumerable.Skip(source, paging.Offset);
+            }
+
+            if (paging.Limit is int limit)
+            {
+                source = Enumerable.Take(source, limit);
+            }
+
+            return source;
+        }
+
         /// <summary>Finds the nested <c>sortfor</c> directive at <paramref name="path"/> (case-insensitive), or <see langword="null"/>.</summary>
         public static SortDirective? ResolveNested(this SortDirective? root, params string[] path)
         {
@@ -132,5 +210,11 @@ namespace Expresso.Rendering.Linq
 
         private static IExpressionToLinqTransformer Require(IExpressionToLinqTransformer transformer) =>
             transformer ?? throw new ArgumentNullException(nameof(transformer));
+
+        private static Expression Count(int value)
+        {
+            var box = new ParameterBox<int>(value);
+            return Expression.Field(Expression.Constant(box), nameof(ParameterBox<int>.Value));
+        }
     }
 }
