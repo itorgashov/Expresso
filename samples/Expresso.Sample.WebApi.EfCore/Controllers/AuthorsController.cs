@@ -14,7 +14,8 @@ public sealed class AuthorsController(
     IRepository<Author> repository,
     IFilterParser filterParser,
     ISortDirectiveParser sortDirectiveParser,
-    IRequestFieldsInfoProvider requestFieldsProvider,
+    ControllerQueryModels<AuthorsController> queryModels,
+    ILogger<AuthorsController> logger,
     IPagingDirectiveParser pagingParser) : ControllerBase
 {
     [HttpGet]
@@ -27,10 +28,13 @@ public sealed class AuthorsController(
         [FromQuery] string? take,
         CancellationToken cancellationToken)
     {
-        var parsed = QueryParametersParser.Parse(filter, sort, "author", filterParser, sortDirectiveParser, requestFieldsProvider);
+        var parsed = QueryParametersParser.Parse(filter, sort, filterParser, sortDirectiveParser, queryModels.Filter, queryModels.Sort);
         var paging = QueryParametersParser.ParsePaging(page, pageSize, skip, take, pagingParser);
         if (parsed.IsBadRequest || paging.IsBadRequest)
         {
+            if (parsed.PolicyViolation is { } violation)
+                logger.LogWarning("Query policy rejected {Target}: {Kind}; path={Path}; rule={Rule}; limit={Limit}",
+                    violation.Target, violation.Kind, violation.Path, violation.RuleText, violation.LimitName);
             return BadRequest();
         }
 

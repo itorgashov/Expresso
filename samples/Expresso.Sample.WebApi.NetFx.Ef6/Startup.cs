@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Web.Http;
-using Expresso.Core.Filtering;
 using Expresso.Parsing;
 using Expresso.Sample.WebApi.NetFx.Ef6.DataAccess;
 using Expresso.Sample.WebApi.NetFx.Ef6.Filtering;
@@ -48,7 +47,10 @@ public sealed class Startup
         services.AddSingleton(configuration);
         services.AddRequestParametersParsers();
         var engine = SampleEngineParser.Parse(configuration["ExpressoSample:Engine"]);
-        services.AddSingleton<IRequestFieldsInfoProvider>(_ => new RequestFieldsInfoProvider(engine));
+        var fieldsProvider = new RequestFieldsInfoProvider(engine);
+        SamplePolicySetup.Register<Controllers.BooksController>(services, configuration, "book", fieldsProvider, Console.WriteLine);
+        SamplePolicySetup.Register<Controllers.AuthorsController>(services, configuration, "author", fieldsProvider, Console.WriteLine);
+        SamplePolicySetup.Register<Controllers.PublishersController>(services, configuration, "publisher", fieldsProvider, Console.WriteLine);
         SampleEngineSetup.AddSampleEngine(services, configuration);
         services.AddTransient<Controllers.BooksController>();
         services.AddTransient<Controllers.AuthorsController>();

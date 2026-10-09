@@ -1,3 +1,4 @@
+using Expresso.Core.Policies;
 using Expresso.Core.Filtering;
 using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
@@ -14,24 +15,29 @@ public static class QueryParametersParser
         public SortDirective? SortDirective { get; init; }
 
         public bool IsBadRequest { get; init; }
+
+        /// <summary>The policy violation for server-side logging, when applicable.</summary>
+        public QueryPolicyException? PolicyViolation { get; init; }
     }
 
     public static ParseResult Parse(
         string? filter,
         string? sort,
-        string context,
         IFilterParser filterParser,
         ISortDirectiveParser sortDirectiveParser,
-        IRequestFieldsInfoProvider fieldsProvider)
+        QueryModel filterModel,
+        QueryModel sortModel)
     {
         FilterCriteria? filterCriteria = null;
         if (filter is not null)
         {
             try
             {
-                filterCriteria = fieldsProvider is IRequestQueryModelProvider modelProvider
-                    ? filterParser.Parse(filter, modelProvider.GetFilterModel(context))
-                    : filterParser.Parse(filter, fieldsProvider.GetValidFilterFields(context));
+                filterCriteria = filterParser.Parse(filter, filterModel);
+            }
+            catch (QueryPolicyException ex)
+            {
+                return new ParseResult { IsBadRequest = true, PolicyViolation = ex };
             }
             catch
             {
@@ -44,14 +50,16 @@ public static class QueryParametersParser
         {
             try
             {
-                var rawSortDirective = fieldsProvider is IRequestQueryModelProvider modelProvider
-                    ? sortDirectiveParser.Parse(sort, modelProvider.GetSortModel(context))
-                    : sortDirectiveParser.Parse(sort, fieldsProvider.GetValidSortFields(context));
+                var rawSortDirective = sortDirectiveParser.Parse(sort, sortModel);
                 sortDirective = rawSortDirective.RemoveDuplicates();
                 if (sortDirective.TotalSortKeyCount() < rawSortDirective.TotalSortKeyCount())
                 {
                     return new ParseResult { IsBadRequest = true };
                 }
+            }
+            catch (QueryPolicyException ex)
+            {
+                return new ParseResult { IsBadRequest = true, PolicyViolation = ex };
             }
             catch
             {

@@ -52,6 +52,8 @@ flowchart LR
 
 Every function checks its arguments when the tree is built (see [Error handling](error-handling.md)). Every field name is checked against an allow-list you provide (see [Field providers](field-providers.md)), so a client can never filter or sort on a column you did not expose. Both renderers follow the same rules for NULL handling and types. See [Filter behavior and database differences](semantics.md).
 
+An optional [query policy](query-policy.md) narrows the field catalog with allowed expression shapes, deny rules, and resource limits. It is compiled at startup and enforced after parsing, before either renderer receives the tree.
+
 ## Two ways to run a filter
 
 | | SQL renderers | LINQ renderers |

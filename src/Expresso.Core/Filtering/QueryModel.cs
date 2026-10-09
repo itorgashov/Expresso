@@ -1,6 +1,6 @@
 namespace Expresso.Core.Filtering
 {
-    public sealed class QueryModel
+    public sealed partial class QueryModel
     {
         public static QueryModel Empty { get; } = new QueryModel(Array.Empty<(string, Type)>());
 
@@ -56,6 +56,7 @@ namespace Expresso.Core.Filtering
 
             Fields = _fields.Select(pair => (pair.Key, pair.Value)).ToArray();
             Collections = _collections.Values.ToArray();
+            _catalogFingerprint = new Lazy<string>(BuildCatalogFingerprint);
         }
 
         public (string, Type)[] Fields { get; }

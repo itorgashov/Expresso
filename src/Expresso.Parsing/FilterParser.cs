@@ -17,6 +17,8 @@ namespace Expresso.Parsing
             _expressionParser = new ExpressionParser(options ?? LiteralParseOptions.Default);
         }
 
+        /// <summary>Parses a filter using the supplied fields.</summary>
+        /// <remarks>This overload has no policy. Pass a policy-bearing <see cref="QueryModel"/> to the other overload for enforcement.</remarks>
         public FilterCriteria Parse(string query, (string, Type)[] validFields)
         {
             if (validFields is null)
@@ -33,6 +35,8 @@ namespace Expresso.Parsing
 
             if (parsedExpression is BooleanFunction fn)
             {
+                if (queryModel.Policy is not null)
+                    Policies.Runtime.PolicyEnforcer.EnforceFilter(queryModel, fn);
                 return new FilterCriteria()
                 {
                     Expression = fn

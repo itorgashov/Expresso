@@ -123,3 +123,7 @@ The sample hosts implement both interfaces on the same class, in the two `Reques
 ## Keep field names separate from column names
 
 A field name declared here, such as `"createdat"`, is not necessarily a database column such as `b.created_at`. You give the renderer that mapping separately: a field-to-column dictionary or `SqlQueryMapping` for SQL (see [Render to SQL](getting-started-sql.md#map-fields-to-columns)), or a `LinqQueryMapping<T>` for LINQ (see [Render to LINQ and EF](getting-started-linq.md#map-fields-to-members)). Keeping them apart lets the vocabulary your clients type stay stable when you rename columns or change joins.
+
+## Narrow the catalog with a policy
+
+A catalog defines which fields exist. An optional [query policy](query-policy.md) restricts which functions and expression shapes clients may use over those fields. Compile against both catalogs once with `QueryPolicyCompiler.Compile`, then pass its `Filter` and `Sort` models to the parser's `QueryModel` overloads. `QueryModel.Policy` is null by default; `WithPolicy` returns a new model. The compiled policy is bound to the catalog, so reuse the returned models rather than copying the policy to a different catalog.

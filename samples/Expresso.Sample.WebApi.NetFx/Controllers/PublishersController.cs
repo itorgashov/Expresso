@@ -19,26 +19,26 @@ public sealed class PublishersController : ApiController
     private readonly IRepository<Publisher> _repository;
     private readonly IFilterParser _filterParser;
     private readonly ISortDirectiveParser _sortDirectiveParser;
-    private readonly IRequestFieldsInfoProvider _requestFieldsProvider;
+    private readonly ControllerQueryModels<PublishersController> _queryModels;
     private readonly IPagingDirectiveParser _pagingParser;
 
     /// <summary>Creates the controller.</summary>
     /// <param name="repository">Publisher store.</param>
     /// <param name="filterParser">Expresso filter parser.</param>
     /// <param name="sortDirectiveParser">Expresso sort parser.</param>
-    /// <param name="requestFieldsProvider">Publisher field catalog.</param>
+    /// <param name="queryModels">Publisher query models and policy.</param>
     /// <param name="pagingParser">Expresso paging parser.</param>
     public PublishersController(
         IRepository<Publisher> repository,
         IFilterParser filterParser,
         ISortDirectiveParser sortDirectiveParser,
-        IRequestFieldsInfoProvider requestFieldsProvider,
+        ControllerQueryModels<PublishersController> queryModels,
         IPagingDirectiveParser pagingParser)
     {
         _repository = repository;
         _filterParser = filterParser;
         _sortDirectiveParser = sortDirectiveParser;
-        _requestFieldsProvider = requestFieldsProvider;
+        _queryModels = queryModels;
         _pagingParser = pagingParser;
     }
 
@@ -55,10 +55,13 @@ public sealed class PublishersController : ApiController
     /// <returns>200 with the publishers, or 400 when the query string is invalid or both paging styles are set.</returns>
     public async Task<IHttpActionResult> GetAll(string? filter = null, string? sort = null, string? page = null, string? pagesize = null, string? skip = null, string? take = null, CancellationToken cancellationToken = default)
     {
-        var parsed = QueryParametersParser.Parse(filter, sort, "publisher", _filterParser, _sortDirectiveParser, _requestFieldsProvider);
+        var parsed = QueryParametersParser.Parse(filter, sort, _filterParser, _sortDirectiveParser, _queryModels.Filter, _queryModels.Sort);
         var paging = QueryParametersParser.ParsePaging(page, pagesize, skip, take, _pagingParser);
         if (parsed.IsBadRequest || paging.IsBadRequest)
         {
+            if (parsed.PolicyViolation is { } violation)
+                System.Diagnostics.Trace.TraceWarning("Query policy rejected {0}: {1}; path={2}; rule={3}; limit={4}",
+                    violation.Target, violation.Kind, violation.Path, violation.RuleText, violation.LimitName);
             return BadRequest();
         }
 

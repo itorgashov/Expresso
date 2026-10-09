@@ -18,6 +18,8 @@ namespace Expresso.Parsing
             _expressionParser = new ExpressionParser(options ?? LiteralParseOptions.Default);
         }
 
+        /// <summary>Parses a sort directive using the supplied fields.</summary>
+        /// <remarks>This overload has no policy. Pass a policy-bearing <see cref="QueryModel"/> to the other overload for enforcement.</remarks>
         public SortDirective Parse(string query, (string, Type)[] validFields)
         {
             if (validFields is null)
@@ -86,7 +88,10 @@ namespace Expresso.Parsing
             var nested = nestedBuilder.Children
                 .Select(kv => new CollectionSort(kv.Key, kv.Value.Build()))
                 .ToList();
-            return new SortDirective(items, nested);
+            var directive = new SortDirective(items, nested);
+            if (queryModel.Policy is not null)
+                Policies.Runtime.PolicyEnforcer.EnforceSort(queryModel, directive);
+            return directive;
         }
 
         private static SortDirection ParseDirection(string token)

@@ -89,7 +89,7 @@ flowchart TD
 ```
 
 - The shared layer ([Expresso.Sample.Shared](../samples/Expresso.Sample.Shared)): domain models, view models, repositories, and query-parameter parsing. Dialect table names and bind markers are in `ISampleSql`; hosts supply `ISampleDb`, thin controllers, and a field catalog.
-- In each host, the presentation layer: controllers parse `filter`/`sort` via `QueryParametersParser`, guarded by that host's `IRequestFieldsInfoProvider`. Parse failures → `400 Bad Request`.
+- In each host, the presentation layer: controllers parse `filter`/`sort` via `QueryParametersParser`, using injected `ControllerQueryModels<TController>` compiled from the host catalog and policy at startup. Parse failures → `400 Bad Request`.
 - In the shared layer, data access: repositories implement `IRepository<T>` and use `IExpressionToQueryClauseTransformer` with per-entity mappings. Books use `SqlQueryMapping` with nested `authors` and `authors.awards`. Parent `ORDER BY` runs only when `SortDirective.Items` is non-empty; child lists use `SortDirective.Nested` via `sortfor`.
 - To switch engines, `SampleEngineSetup` registers the dialect transformer and ADO.NET provider from `ExpressoSample:Engine`, and opens `ConnectionStrings:{Engine}` from user secrets. Db2 cannot `ORDER BY` a correlated collection aggregate (`count(authors)`).
 
@@ -116,6 +116,18 @@ Each host implements `IRequestFieldsInfoProvider` and `IRequestQueryModelProvide
 | `"author"` | `createdat` | `DateTime` | `DateTime` |
 | `"publisher"` | `name`, `country`, `location` | `string` | `string` |
 | `"publisher"` | `opens`, `closes` (SQL `time`) | `TimeOnly` | `TimeSpan` |
+
+## Query policies
+
+All four hosts carry the same book and author policy sections in `appsettings.json`, under `Expresso:Policies:book` and `author`. The publisher policy differs on the EF6 host because some EF6 providers omit its time fields. `Rules` is an array of lines, joined with a newline before compilation. `Limits` is optional; omitted limits retain library defaults. `ErrorDetail` defaults to `Generic`. Removing a context's section disables its policy.
+
+The book policy allows selected string and ordered comparisons, bounded AND/OR combinations, author/award predicates, and the listed root and nested sort keys. The author policy allows expressions by default but denies OR, NOT, selected string transformations over names, and date arithmetic over birth dates. The publisher policy allows equality/inequality on named fields, direct string searches on name/country/location, and sorting on those three fields. It does not allow computed expressions or constant-only comparisons. Each sample sets `MaxSortKeys` to 3.
+
+`SamplePolicySetup` compiles each context eagerly at startup and registers `ControllerQueryModels<BooksController>` (and the corresponding author/publisher holders). Controllers pass the compiled models to `QueryParametersParser`. Invalid configuration stops startup and names the context. Warnings are printed at startup. Policy violations are logged through `ILogger` in ASP.NET Core and `Trace` in OWIN; responses remain empty `400 Bad Request`.
+
+The field catalog is still authoritative. EF6 on Oracle and SQLite omits publisher `opens`/`closes`, because those providers cannot render those time fields. To keep the publisher allow rule explicit, the EF6 host policy limits equality to `name`, `country`, and `location` on every provider. The other three hosts also allow equality on `opens` and `closes`. The `eq(opens,"09:00")` example below applies to those hosts. Likewise, catalogued fields may be further restricted by a policy: the book policy does not allow `externalid` filters.
+
+See [Query policy](query-policy.md) for the language, limits, and examples of accepted and rejected requests.
 
 ## Endpoints
 

@@ -14,13 +14,15 @@ namespace Expresso.Sample.WebApi.Controllers;
 /// <param name="repository">Publisher store.</param>
 /// <param name="filterParser">Expresso filter parser.</param>
 /// <param name="sortDirectiveParser">Expresso sort parser.</param>
-/// <param name="requestFieldsProvider">Publisher field catalog.</param>
+/// <param name="queryModels">Publisher query models and policy.</param>
+/// <param name="logger">Policy violation logger.</param>
 /// <param name="pagingParser">Expresso paging parser.</param>
 public sealed class PublishersController(
     IRepository<Publisher> repository,
     IFilterParser filterParser,
     ISortDirectiveParser sortDirectiveParser,
-    IRequestFieldsInfoProvider requestFieldsProvider,
+    ControllerQueryModels<PublishersController> queryModels,
+    ILogger<PublishersController> logger,
     IPagingDirectiveParser pagingParser) : ControllerBase
 {
     [HttpGet]
@@ -42,10 +44,13 @@ public sealed class PublishersController(
         [FromQuery] string? take,
         CancellationToken cancellationToken)
     {
-        var parsed = QueryParametersParser.Parse(filter, sort, "publisher", filterParser, sortDirectiveParser, requestFieldsProvider);
+        var parsed = QueryParametersParser.Parse(filter, sort, filterParser, sortDirectiveParser, queryModels.Filter, queryModels.Sort);
         var paging = QueryParametersParser.ParsePaging(page, pageSize, skip, take, pagingParser);
         if (parsed.IsBadRequest || paging.IsBadRequest)
         {
+            if (parsed.PolicyViolation is { } violation)
+                logger.LogWarning("Query policy rejected {Target}: {Kind}; path={Path}; rule={Rule}; limit={Limit}",
+                    violation.Target, violation.Kind, violation.Path, violation.RuleText, violation.LimitName);
             return BadRequest();
         }
 

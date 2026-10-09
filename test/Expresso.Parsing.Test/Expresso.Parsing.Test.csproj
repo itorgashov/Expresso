@@ -17,6 +17,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3">
@@ -32,6 +33,20 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\samples\Expresso.Sample.Shared\Filtering\SamplePolicySetup.cs" Link="Samples\SamplePolicySetup.cs" />
+    <Compile Include="..\..\samples\Expresso.Sample.Shared\Filtering\ControllerQueryModels.cs" Link="Samples\ControllerQueryModels.cs" />
+    <Compile Include="..\..\samples\Expresso.Sample.Shared\Filtering\QueryParametersParser.cs" Link="Samples\QueryParametersParser.cs" />
+    <Compile Include="..\..\samples\Expresso.Sample.WebApi\Filtering\RequestFieldsInfoProvider.cs" Link="Samples\RequestFieldsInfoProvider.cs" Condition="'$(TargetFramework)' == 'net6.0'" />
+    <Compile Include="..\..\samples\Expresso.Sample.WebApi.NetFx\Filtering\RequestFieldsInfoProvider.cs" Link="Samples\RequestFieldsInfoProvider.cs" Condition="'$(TargetFramework)' == 'net48'" />
+    <None Include="..\..\docs\query-policy.md" Link="Docs\query-policy.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\sample-app.md" Link="Docs\sample-app.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/Expresso.Sample.WebApi/appsettings.json" Link="Samples/Expresso.Sample.WebApi.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/Expresso.Sample.WebApi.NetFx/appsettings.json" Link="Samples/Expresso.Sample.WebApi.NetFx.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/Expresso.Sample.WebApi.EfCore/appsettings.json" Link="Samples/Expresso.Sample.WebApi.EfCore.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/Expresso.Sample.WebApi.NetFx.Ef6/appsettings.json" Link="Samples/Expresso.Sample.WebApi.NetFx.Ef6.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

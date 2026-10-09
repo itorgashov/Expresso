@@ -1,6 +1,6 @@
 # Error handling
 
-Expresso throws standard .NET exceptions when it rejects input, instead of returning error codes. This page lists which exceptions to expect from parsing, from building the expression tree, and from rendering, and what to catch where. Each [function page](functions/README.md) also lists the validation for that function.
+Expresso throws .NET exceptions when it rejects input, including structured exceptions for query policies. This page lists which exceptions to expect from parsing, from building the expression tree, and from rendering, and what to catch where. Each [function page](functions/README.md) also lists the validation for that function.
 
 ## Recommended pattern
 
@@ -13,7 +13,8 @@ try
 }
 catch (Exception ex)
 {
-    return BadRequest(ex.Message);
+    // Log server-side details; keep the response empty.
+    return BadRequest();
 }
 ```
 
@@ -92,6 +93,14 @@ Paging has two additional provider restrictions:
 
 - EF6 requires ordered input for a positive offset. On SQLite EF6, use `Page(paging, Ef6Provider.Sqlite)` so an offset without a row count has an unlimited `LIMIT` rather than an invalid bare `OFFSET`.
 - `Page(paging, db.Database.ProviderName)` throws `NotSupportedException` for a positive offset on IBM EF Core 8. The provider drops that offset, so the overload rejects the query. It does not automatically retrieve and limit keys in memory. See [Pagination](pagination.md#ef-core) for the explicit fallback.
+
+## Query policies
+
+`QueryPolicyCompiler.Compile` throws `QueryPolicyCompileException` for invalid startup configuration. Its `Diagnostics` provide codes, severity, one-based line/column positions, and explanations. Do not treat compilation failures as request errors; fail startup and fix the policy.
+
+A parser can throw `QueryPolicyException` (an `ArgumentException`) after parsing a valid expression. `Kind` distinguishes `DenyRuleMatched`, `NotAllowed`, and `LimitExceeded`. Log `Target`, `Path`, `RuleText`, and `LimitName` where available. The default exception message is generic; detailed messages are opt-in. Keep policy diagnostics out of public error responses.
+
+A policy/catalog mismatch throws `InvalidOperationException` and indicates a host wiring error. Use the models returned by the compiler. See [Query policy](query-policy.md) for limits, matching, and startup examples.
 
 ## What to catch where
 

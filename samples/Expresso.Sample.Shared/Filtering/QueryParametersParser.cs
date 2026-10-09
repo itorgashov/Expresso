@@ -1,3 +1,4 @@
+using Expresso.Core.Policies;
 using Expresso.Core.Filtering;
 using Expresso.Core.Paging;
 using Expresso.Core.Sorting;
@@ -19,32 +20,37 @@ public static class QueryParametersParser
 
         /// <summary><see langword="true"/> when the query string is invalid or a sort key was duplicated.</summary>
         public bool IsBadRequest { get; init; }
+
+        /// <summary>The policy violation for server-side logging, when applicable.</summary>
+        public QueryPolicyException? PolicyViolation { get; init; }
     }
 
-    /// <summary>Parses <paramref name="filter"/> and <paramref name="sort"/> for <paramref name="context"/>.</summary>
+    /// <summary>Parses <paramref name="filter"/> and <paramref name="sort"/> against the startup-compiled models.</summary>
     /// <param name="filter">Filter query string, or <see langword="null"/> when the client omitted it.</param>
     /// <param name="sort">Sort query string, or <see langword="null"/> when the client omitted it.</param>
-    /// <param name="context">Field-catalog name, such as <c>book</c>, <c>author</c>, or <c>publisher</c>.</param>
     /// <param name="filterParser">Expresso filter parser.</param>
     /// <param name="sortDirectiveParser">Expresso sort parser.</param>
-    /// <param name="fieldsProvider">Catalog for <paramref name="context"/>. A query-model provider is used when the host implements one.</param>
+    /// <param name="filterModel">Startup filter catalog and policy.</param>
+    /// <param name="sortModel">Startup sort catalog and policy.</param>
     /// <returns>The parsed criteria, or a result with <see cref="ParseResult.IsBadRequest"/> set.</returns>
     public static ParseResult Parse(
         string? filter,
         string? sort,
-        string context,
         IFilterParser filterParser,
         ISortDirectiveParser sortDirectiveParser,
-        IRequestFieldsInfoProvider fieldsProvider)
+        QueryModel filterModel,
+        QueryModel sortModel)
     {
         FilterCriteria? filterCriteria = null;
         if (filter is not null)
         {
             try
             {
-                filterCriteria = fieldsProvider is IRequestQueryModelProvider modelProvider
-                    ? filterParser.Parse(filter, modelProvider.GetFilterModel(context))
-                    : filterParser.Parse(filter, fieldsProvider.GetValidFilterFields(context));
+                filterCriteria = filterParser.Parse(filter, filterModel);
+            }
+            catch (QueryPolicyException ex)
+            {
+                return new ParseResult { IsBadRequest = true, PolicyViolation = ex };
             }
             catch
             {
@@ -57,14 +63,16 @@ public static class QueryParametersParser
         {
             try
             {
-                var rawSortDirective = fieldsProvider is IRequestQueryModelProvider modelProvider
-                    ? sortDirectiveParser.Parse(sort, modelProvider.GetSortModel(context))
-                    : sortDirectiveParser.Parse(sort, fieldsProvider.GetValidSortFields(context));
+                var rawSortDirective = sortDirectiveParser.Parse(sort, sortModel);
                 sortDirective = rawSortDirective.RemoveDuplicates();
                 if (sortDirective.TotalSortKeyCount() < rawSortDirective.TotalSortKeyCount())
                 {
                     return new ParseResult { IsBadRequest = true };
                 }
+            }
+            catch (QueryPolicyException ex)
+            {
+                return new ParseResult { IsBadRequest = true, PolicyViolation = ex };
             }
             catch
             {

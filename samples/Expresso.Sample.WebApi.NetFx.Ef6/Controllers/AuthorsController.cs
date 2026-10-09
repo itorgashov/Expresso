@@ -18,20 +18,20 @@ public sealed class AuthorsController : ApiController
     private readonly IRepository<Author> _repository;
     private readonly IFilterParser _filterParser;
     private readonly ISortDirectiveParser _sortDirectiveParser;
-    private readonly IRequestFieldsInfoProvider _requestFieldsProvider;
+    private readonly ControllerQueryModels<AuthorsController> _queryModels;
     private readonly IPagingDirectiveParser _pagingParser;
 
     public AuthorsController(
         IRepository<Author> repository,
         IFilterParser filterParser,
         ISortDirectiveParser sortDirectiveParser,
-        IRequestFieldsInfoProvider requestFieldsProvider,
+        ControllerQueryModels<AuthorsController> queryModels,
         IPagingDirectiveParser pagingParser)
     {
         _repository = repository;
         _filterParser = filterParser;
         _sortDirectiveParser = sortDirectiveParser;
-        _requestFieldsProvider = requestFieldsProvider;
+        _queryModels = queryModels;
         _pagingParser = pagingParser;
     }
 
@@ -39,10 +39,13 @@ public sealed class AuthorsController : ApiController
     [Route("")]
     public async Task<IHttpActionResult> GetAll(string? filter = null, string? sort = null, string? page = null, string? pagesize = null, string? skip = null, string? take = null, CancellationToken cancellationToken = default)
     {
-        var parsed = QueryParametersParser.Parse(filter, sort, "author", _filterParser, _sortDirectiveParser, _requestFieldsProvider);
+        var parsed = QueryParametersParser.Parse(filter, sort, _filterParser, _sortDirectiveParser, _queryModels.Filter, _queryModels.Sort);
         var paging = QueryParametersParser.ParsePaging(page, pagesize, skip, take, _pagingParser);
         if (parsed.IsBadRequest || paging.IsBadRequest)
         {
+            if (parsed.PolicyViolation is { } violation)
+                System.Diagnostics.Trace.TraceWarning("Query policy rejected {0}: {1}; path={2}; rule={3}; limit={4}",
+                    violation.Target, violation.Kind, violation.Path, violation.RuleText, violation.LimitName);
             return BadRequest();
         }
 

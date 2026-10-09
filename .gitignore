@@ -77,3 +77,6 @@ publish/
 plans/
 CONTEXT.md
 IMPLEMENTATION.md
+/.local/
+/POLICYWORKBENCHPLAN.md
+/PolicyWorkbench.slnx
