@@ -61,6 +61,7 @@ New to Expresso? Start with the [overview](docs/overview.md), then [Get started]
   - [Render to SQL](docs/getting-started-sql.md) for ADO.NET and Dapper
   - [Render to LINQ and EF](docs/getting-started-linq.md) for EF Core, EF6 and in-memory collections
 - [Packages](docs/packages.md): each NuGet package and which ones you need
+- [Query policy](docs/query-policy.md): endpoint allow rules, deny rules, and resource limits
 - [Query syntax](docs/query-syntax.md): filter and sort grammar, literals, supported types
 - [Pagination](docs/pagination.md): paged and offset/number results, ordering, and totals
 - [Field providers](docs/field-providers.md): the field allow-list and query model
