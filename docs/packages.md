@@ -104,3 +104,7 @@ For a DB2 limitation on sorting by a collection aggregate, see [SQL rendering](r
 - Not supported: `float`, `decimal`.
 
 See [Query syntax](query-syntax.md).
+
+## Projection APIs (0.13.0)
+
+Core supplies immutable `ProjectionDirective`/`ProjectionSelection`, the projection catalog provider, and structural composite identity. Parsing supplies `IProjectionDirectiveParser`. Common and every SQL dialect expose `IProjectionToSqlTransformer`, `SqlProjectionMapping`, and recursive `RenderedSqlProjection` plans. Linq supplies typed mappings, `IProjectionToLinqTransformer`, the shared collection executor, and `ProjectionShaper`; both EF packages provide their `ToProjectedListAsync` adapters. Projection adds no external runtime dependency. See [Field projection](projection.md).

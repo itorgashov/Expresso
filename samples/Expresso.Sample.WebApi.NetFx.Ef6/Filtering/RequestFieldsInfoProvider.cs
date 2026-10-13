@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
 using Expresso.Core.Filtering;
+using Expresso.Core.Projection;
 using Expresso.Sample.WebApi.NetFx.Ef6.DataAccess;
 
 namespace Expresso.Sample.WebApi.NetFx.Ef6.Filtering;
 
-public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IRequestQueryModelProvider
+public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IRequestQueryModelProvider, IRequestProjectionModelProvider
 {
     private static readonly (string, Type)[] BookFilterFields =
     {
@@ -111,4 +112,16 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
             "publisher" => new QueryModel(_publisherFields),
             _ => QueryModel.Empty,
         };
+    private static readonly QueryModel BookProjection = SampleProjectionMappings.Books.GetProjectionModel();
+    private static readonly QueryModel AuthorProjection = SampleProjectionMappings.Authors.GetProjectionModel();
+    private static readonly QueryModel PublisherProjection = PublisherRepository.GetMapping(Expresso.Rendering.EntityFramework.Ef6Provider.SqlServer).GetProjectionModel();
+
+    /// <inheritdoc />
+    public QueryModel GetProjectionModel(string context) => context.ToLowerInvariant() switch
+    {
+        "book" => BookProjection,
+        "author" => AuthorProjection,
+        "publisher" => PublisherProjection,
+        _ => QueryModel.Empty,
+    };
 }

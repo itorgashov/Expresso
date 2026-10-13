@@ -10,7 +10,9 @@ namespace Expresso.Rendering
         /// <returns>The same <paramref name="services"/> instance.</returns>
         public static IServiceCollection AddPostgreSqlExpressionTransformations(this IServiceCollection services)
         {
-            services.AddSingleton<IExpressionToQueryClauseTransformer, ExpressionToPostgreSqlQueryClauseTransformer>();
+            services.AddSingleton<ExpressionToPostgreSqlQueryClauseTransformer>();
+            services.AddSingleton<IExpressionToQueryClauseTransformer>(sp => sp.GetRequiredService<ExpressionToPostgreSqlQueryClauseTransformer>());
+            services.AddSingleton<IProjectionToSqlTransformer>(sp => sp.GetRequiredService<ExpressionToPostgreSqlQueryClauseTransformer>());
             return services;
         }
     }

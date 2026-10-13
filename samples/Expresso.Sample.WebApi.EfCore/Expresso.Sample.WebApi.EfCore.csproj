@@ -25,4 +25,5 @@
     <ProjectReference Include="..\..\src\Rendering\Expresso.Rendering.EntityFrameworkCore\Expresso.Rendering.EntityFrameworkCore.csproj" />
   </ItemGroup>
 
+  <ItemGroup><InternalsVisibleTo Include="Expresso.Sample.Test" /></ItemGroup>
 </Project>

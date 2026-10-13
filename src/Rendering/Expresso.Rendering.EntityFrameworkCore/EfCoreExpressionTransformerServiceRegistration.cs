@@ -19,6 +19,7 @@ namespace Expresso.Rendering.EntityFrameworkCore
         {
             services.AddScoped(sp => new EfCoreExpressionToLinqTransformer(sp.GetRequiredService<TContext>().Database.ProviderName));
             services.AddScoped<IExpressionToLinqTransformer>(sp => sp.GetRequiredService<EfCoreExpressionToLinqTransformer>());
+            services.AddScoped<IProjectionToLinqTransformer>(sp => sp.GetRequiredService<EfCoreExpressionToLinqTransformer>());
             return services;
         }
     }

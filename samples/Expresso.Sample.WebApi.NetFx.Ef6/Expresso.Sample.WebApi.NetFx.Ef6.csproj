@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Expresso.Rendering.EntityFramework.Test" />
+    <InternalsVisibleTo Include="Expresso.Sample.NetFx.Test" />
   </ItemGroup>
 
   <ItemGroup>

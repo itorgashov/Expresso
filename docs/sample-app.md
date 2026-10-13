@@ -1,6 +1,6 @@
 # Sample app walkthrough
 
-The sample app is four runnable Web APIs on the same `Expresso_Sample` database: two **ADO.NET** hosts (SQL renderer → parameterized SQL) and two **EF** hosts (LINQ renderer → `IQueryable`). All use the same routes, `filter`/`sort` query strings, and `ExpressoSample:Engine` switch. This page focuses on the ADO pair; the EF pair is described in [Render to LINQ and EF](getting-started-linq.md) and each project's README.
+The sample app is four runnable Web APIs on the same `Expresso_Sample` database: two **ADO.NET** hosts (SQL renderer → parameterized SQL) and two **EF** hosts (LINQ renderer → `IQueryable`). All use the same routes, `filter`/`sort`/`fields` query strings, and `ExpressoSample:Engine` switch. This page focuses on the ADO pair; the EF pair is described in [Render to LINQ and EF](getting-started-linq.md) and each project's README.
 
 | Project | Path | Host | TFM |
 |---|---|---|---|
@@ -59,7 +59,7 @@ flowchart TD
         NetFxFields["net48 field catalog\nTimeSpan / DateTime"]
     end
     subgraph shared ["Expresso.Sample.Shared"]
-        ControllersLogic["QueryParametersParser\nViewModelMapper"]
+        ControllersLogic["QueryParametersParser\nProjection plans + sparse results"]
         Repositories["ADO.NET repositories\nIRepository of T"]
     end
     CoreHost --> CoreFields
@@ -95,7 +95,7 @@ flowchart TD
 
 ## Field catalog
 
-Each host implements `IRequestFieldsInfoProvider` and `IRequestQueryModelProvider` (same query field names, different CLR types). Book context includes nested `authors` (with nested `awards` on author items). Author context includes collection `awards`. See [Field providers](field-providers.md).
+Each host implements `IRequestFieldsInfoProvider`, `IRequestQueryModelProvider`, and the independent response allow-list `IRequestProjectionModelProvider` (same query field names, different CLR types). Book context includes nested `authors` (with nested `awards` on author items). Author context includes collection `awards`. See [Field providers](field-providers.md).
 
 | Host | Implementation |
 |---|---|
@@ -125,7 +125,7 @@ The book policy allows selected string and ordered comparisons, bounded AND/OR c
 
 `SamplePolicySetup` compiles each context eagerly at startup and registers `ControllerQueryModels<BooksController>` (and the corresponding author/publisher holders). Controllers pass the compiled models to `QueryParametersParser`. Invalid configuration stops startup and names the context. Warnings are printed at startup. Policy violations are logged through `ILogger` in ASP.NET Core and `Trace` in OWIN; responses remain empty `400 Bad Request`.
 
-The field catalog is still authoritative. EF6 on Oracle and SQLite omits publisher `opens`/`closes`, because those providers cannot render those time fields. To keep the publisher allow rule explicit, the EF6 host policy limits equality to `name`, `country`, and `location` on every provider. The other three hosts also allow equality on `opens` and `closes`. The `eq(opens,"09:00")` example below applies to those hosts. Likewise, catalogued fields may be further restricted by a policy: the book policy does not allow `externalid` filters.
+The field catalog is still authoritative. EF6 on Oracle and SQLite omits publisher `opens`/`closes` from its filter/sort catalog because those providers cannot render those time expressions. Its projection catalog still exposes them through scalar conversion or selected clock queries. To keep the publisher allow rule explicit, the EF6 host policy limits equality to `name`, `country`, and `location` on every provider. The other three hosts also allow equality on `opens` and `closes`. The `eq(opens,"09:00")` example below applies to those hosts. Likewise, catalogued fields may be further restricted by a policy: the book policy does not allow `externalid` filters.
 
 See [Query policy](query-policy.md) for the language, limits, and examples of accepted and rejected requests.
 
@@ -133,9 +133,9 @@ See [Query policy](query-policy.md) for the language, limits, and examples of ac
 
 | Controller | GET all | GET by id |
 |---|---|---|
-| Books | `GET /api/books?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/books/{id}` |
-| Authors | `GET /api/authors?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/authors/{id}` |
-| Publishers | `GET /api/publishers?filter=&sort=&page=&pagesize=&skip=&take=` | `GET /api/publishers/{id}` |
+| Books | `GET /api/books?filter=&sort=&page=&pagesize=&skip=&take=&fields=` | `GET /api/books/{id}?fields=` |
+| Authors | `GET /api/authors?filter=&sort=&page=&pagesize=&skip=&take=&fields=` | `GET /api/authors/{id}?fields=` |
+| Publishers | `GET /api/publishers?filter=&sort=&page=&pagesize=&skip=&take=&fields=` | `GET /api/publishers/{id}?fields=` |
 
 ### Pagination contract
 
@@ -207,3 +207,20 @@ On net48, configure `LiteralParseOptions` with `CultureName = "nl-NL"` and `Date
 - Web API 2 controller: [Controllers/BooksController.cs](../samples/Expresso.Sample.WebApi.NetFx/Controllers/BooksController.cs)
 - Repository pattern: [DataAccess/BookRepository.cs](../samples/Expresso.Sample.Shared/DataAccess/BookRepository.cs)
 - Grammar and functions: [Query syntax](query-syntax.md), [Function reference](functions/README.md)
+
+## Selecting response fields
+
+Every list and by-id action in all four hosts accepts `fields`. Omit it for the current full response; a present empty value returns 400. Examples:
+
+```http
+GET /api/books?fields=title,year,authors.lastname
+GET /api/books/1?fields=title,authors.awards.title
+GET /api/authors?fields=lastname,awards
+GET /api/publishers?fields=name,opens
+```
+
+The ADO repositories use [SampleProjectionMappings](../samples/Expresso.Sample.Shared/DataAccess/SampleProjectionMappings.cs) and [ProjectedSampleRepository](../samples/Expresso.Sample.Shared/DataAccess/ProjectedSampleRepository.cs) to limit select lists and skip unrequested child queries. The EF hosts declare typed mappings and call the renderer's collection executor instead of loading complete entity graphs. Response dictionaries omit unselected properties and retain selected nulls. Swagger's DTOs describe the superset response shape; properties may be omitted when `fields` is supplied. See [Field projection](projection.md).
+
+The EF samples pass unwindowed DbSets for child key lookup; the root page is not repeated in descendant queries. The DB2 EF Core sample reads ordered keys, pages them in memory, then reads bounded DTO batches and restores known-key order in memory (no CASE ranking or 2N key parameters). These are sample-specific provider workarounds, not additional library paging semantics.
+
+The EF6 publisher mapping is cached per provider. SQLite clock text is converted after projection. Oracle reads only requested clock columns in bounded supplemental queries; missing rows or SQL NULL clocks remain selected nulls and never expose placeholder publisher ids. Samples cache projection catalogs separately from filter/sort catalogs and use an internal award-id ordering tie-breaker.

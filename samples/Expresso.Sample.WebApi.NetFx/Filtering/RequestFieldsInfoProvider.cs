@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Expresso.Core.Filtering;
 
 namespace Expresso.Sample.WebApi.NetFx.Filtering;
@@ -7,7 +8,7 @@ namespace Expresso.Sample.WebApi.NetFx.Filtering;
 /// Field catalog for the .NET Framework sample. Book and author queries include nested collections.
 /// <c>dateofbirth</c> is <see cref="DateTime"/> and publisher open/close times are <see cref="TimeSpan"/>.
 /// </summary>
-public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IRequestQueryModelProvider
+public sealed partial class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IRequestQueryModelProvider
 {
     private static readonly (string, Type)[] BookFilterFields =
     {

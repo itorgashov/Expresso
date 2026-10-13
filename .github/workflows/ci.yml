@@ -17,7 +17,12 @@ jobs:
             9.0.x
             10.0.x
       - name: Test (net6.0)
-        run: dotnet test Expresso.slnx -c Release -f net6.0 --nologo --filter "Category!=Integration"
+        run: dotnet test Expresso.slnx -c Release -f net6.0 --nologo -m:1 --filter "Category!=Integration&FullyQualifiedName!~PolicyEvaluationScaleTests" --collect "XPlat Code Coverage" --settings test/projection.runsettings --logger "trx;LogFilePrefix=coverage" --results-directory artifacts/projection-coverage-net6
+      - name: Projection coverage gate (net6 path)
+        shell: pwsh
+        run: ./scripts/Test-ProjectionCoverage.ps1 -ReportDirectory artifacts/projection-coverage-net6 -Framework net6.0
+      - name: Uninstrumented scale test
+        run: dotnet test test/Expresso.Parsing.Test/Expresso.Parsing.Test.csproj -c Release -f net6.0 --no-build --filter "FullyQualifiedName~PolicyEvaluationScaleTests"
       - name: Pack
         run: dotnet pack Expresso.slnx -c Release -o artifacts --nologo
 
@@ -32,7 +37,12 @@ jobs:
             8.0.x
             9.0.x
             10.0.x
-      - name: Test (net48)
-        run: dotnet test Expresso.slnx -c Release -f net48 --nologo --filter "Category!=Integration"
+      - name: Test and projection coverage (net48 and EF Core)
+        run: |
+          dotnet test Expresso.slnx -c Release -f net48 --nologo -m:1 --filter "Category!=Integration&FullyQualifiedName!~PolicyEvaluationScaleTests" --collect "XPlat Code Coverage" --settings test/projection.runsettings --logger "trx;LogFilePrefix=coverage" --results-directory artifacts/projection-coverage-net48
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Test-ProjectionCoverage.ps1 -ReportDirectory artifacts/projection-coverage-net48 -Framework net48
+      - name: Uninstrumented scale test
+        run: dotnet test test/Expresso.Parsing.Test/Expresso.Parsing.Test.csproj -c Release -f net48 --no-build --filter "FullyQualifiedName~PolicyEvaluationScaleTests"
       - name: Build NetFx sample
         run: dotnet build samples/Expresso.Sample.WebApi.NetFx/Expresso.Sample.WebApi.NetFx.csproj -c Release --nologo

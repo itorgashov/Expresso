@@ -26,7 +26,7 @@ Use the plan–review–execute–validate task list for multi-step work.
 ## Product rules
 
 - Public library types ship XML documentation (`GenerateDocumentationFile` in [Directory.Build.props](Directory.Build.props)). Package version is `Version` in that file.
-- A new IR function touches every layer: a Core node that validates in its constructor, parser registration, each SQL dialect walker, the LINQ visitor, EF Core and EF6 overrides where they diverge, unit tests, and a function page. See [src/Rendering/AGENTS.md](src/Rendering/AGENTS.md) and [docs/AGENTS.md](docs/AGENTS.md).
+- A new IR function touches every layer: a Core node that validates in its constructor, parser registration, the policy `FunctionCatalog` entry and visitor (checked by catalog completeness tests), each SQL dialect walker, the LINQ visitor, EF Core and EF6 overrides where they diverge, unit tests, and a function page. See [src/Rendering/AGENTS.md](src/Rendering/AGENTS.md) and [docs/AGENTS.md](docs/AGENTS.md).
 - Libraries target `netstandard2.0;net6.0` (EF Core package `net8.0`, EF6 package `net48`). `DateOnly` / `TimeOnly` code sits behind `#if NET6_0_OR_GREATER`.
 - `samples/database/*/schema.sql` drops and recreates databases. Never run those scripts. Never generate or run DDL or DML against a real server. Integration tests own their own `widget*` tables.
 - SQL Server MCP is read-only. If a change needs a write, print the statement for the user to run.

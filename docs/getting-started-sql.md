@@ -156,3 +156,7 @@ var books = await connection.QueryAsync<Book>(sql.ToString(), parameters);
 - [Function reference](functions/README.md): the SQL each function produces on every dialect
 - [Filter behavior and database differences](semantics.md): NULL handling, collation and integer division
 - [Render to LINQ and EF](getting-started-linq.md): the other way to run a filter
+
+## Project the SELECT list
+
+Inject `IProjectionToSqlTransformer` from the same dialect registration. Its `RenderProjection(directive, SqlProjectionMapping)` returns a `SELECT` list, visible reader ordinals, hidden identity components, and only requested child plans. Append it to your application-owned FROM/join clauses, then execute and attach child plans. The [projection guide](projection.md#sql-select-list-plans) shows SQL Server output and composite correlation mappings.

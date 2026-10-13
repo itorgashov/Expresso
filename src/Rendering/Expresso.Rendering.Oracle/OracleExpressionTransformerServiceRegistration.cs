@@ -10,7 +10,9 @@ namespace Expresso.Rendering
         /// <returns>The same <paramref name="services"/> instance.</returns>
         public static IServiceCollection AddOracleExpressionTransformations(this IServiceCollection services)
         {
-            services.AddSingleton<IExpressionToQueryClauseTransformer, ExpressionToOracleQueryClauseTransformer>();
+            services.AddSingleton<ExpressionToOracleQueryClauseTransformer>();
+            services.AddSingleton<IExpressionToQueryClauseTransformer>(sp => sp.GetRequiredService<ExpressionToOracleQueryClauseTransformer>());
+            services.AddSingleton<IProjectionToSqlTransformer>(sp => sp.GetRequiredService<ExpressionToOracleQueryClauseTransformer>());
             return services;
         }
     }

@@ -54,6 +54,8 @@ Every function checks its arguments when the tree is built (see [Error handling]
 
 An optional [query policy](query-policy.md) narrows the field catalog with allowed expression shapes, deny rules, and resource limits. It is compiled at startup and enforced after parsing, before either renderer receives the tree.
 
+The separate [projection pipeline](projection.md) parses selected response paths against its own allow-list, renders minimal SQL select lists or typed LINQ selectors, and loads only requested collection levels. It supports composite keys and does not change filtering, sorting, or paging.
+
 ## Two ways to run a filter
 
 | | SQL renderers | LINQ renderers |
@@ -78,14 +80,15 @@ Pick the one that matches how your application reads data. EF Core and EF6 add p
 
 Expresso is deliberately narrow. It does not replace:
 
-- OData or another full query protocol. There is no `$expand`, `$select`, or standard wire format. Expresso supports [paged and offset/number results](pagination.md), but your application defines how callers supply the values and how results and totals are returned. If you need a broad, standards-based protocol with an existing client ecosystem, use OData.
-- An ORM. Expresso renders `WHERE` and `ORDER BY` fragments, or LINQ predicates and sort keys. You still write the base `SELECT` and joins, or supply the `IQueryable<T>`. Collection filters add correlated `EXISTS` and aggregate subqueries from your `CollectionSqlMapping`, or use the navigation in your `LinqQueryMapping<T>`. They do not load related rows for you.
+- OData or another full query protocol. Expresso has its own [field projection](projection.md) grammar rather than OData `$expand`/`$select` or a standard wire format. Expresso supports [paged and offset/number results](pagination.md), but your application defines how callers supply the values and how results and totals are returned. If you need a broad, standards-based protocol with an existing client ecosystem, use OData.
+- An ORM. Expresso renders `WHERE` and `ORDER BY` fragments, or LINQ predicates and sort keys. You still supply the FROM/joins or the `IQueryable<T>`. Projection renderers can create the SQL select list or typed DTO selector. Collection filters add correlated `EXISTS` and aggregate subqueries from your `CollectionSqlMapping`, or use the navigation in your `LinqQueryMapping<T>`. Collection filters do not load related rows. The optional EF projection executor separately loads requested collection projections.
 
 If your API surface is small and fixed, plain parameters can be simpler than a query language. Expresso fits the middle ground: more filter and sort combinations than you want to code by hand, but not so open-ended that you need a full protocol.
 
 ## Next steps
 
 - [Get started](getting-started.md): install, register, parse, then choose [SQL](getting-started-sql.md) or [LINQ and EF](getting-started-linq.md)
+- [Field projection](projection.md): selected columns, sparse responses, nested collections, and composite keys
 - [Pagination](pagination.md): paged and offset/number results
 - [Packages](packages.md): the NuGet packages and which ones you need
 - [LINQ rendering](linq-rendering.md): profiles, EF Core, EF6 and provider limits

@@ -1,4 +1,6 @@
 using Expresso.Core.Filtering;
+using Expresso.Core.Projection;
+using Expresso.Sample.WebApi.EfCore.DataAccess;
 
 namespace Expresso.Sample.WebApi.EfCore.Filtering;
 
@@ -6,7 +8,7 @@ namespace Expresso.Sample.WebApi.EfCore.Filtering;
 /// Field catalog for the EF Core sample. Book and author queries include nested collections.
 /// <c>dateofbirth</c> is <see cref="DateOnly"/> and publisher open/close times are <see cref="TimeOnly"/>.
 /// </summary>
-public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IRequestQueryModelProvider
+public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IRequestQueryModelProvider, IRequestProjectionModelProvider
 {
     private static readonly (string, Type)[] BookFilterFields =
     {
@@ -103,4 +105,16 @@ public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IReq
             "publisher" => new QueryModel(PublisherFields),
             _ => QueryModel.Empty,
         };
+    private static readonly QueryModel BookProjection = SampleProjectionMappings.Books.GetProjectionModel();
+    private static readonly QueryModel AuthorProjection = SampleProjectionMappings.Authors.GetProjectionModel();
+    private static readonly QueryModel PublisherProjection = SampleProjectionMappings.Publishers.GetProjectionModel();
+
+    /// <inheritdoc />
+    public QueryModel GetProjectionModel(string context) => context.ToLowerInvariant() switch
+    {
+        "book" => BookProjection,
+        "author" => AuthorProjection,
+        "publisher" => PublisherProjection,
+        _ => QueryModel.Empty,
+    };
 }

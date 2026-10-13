@@ -113,3 +113,17 @@ Oracle `concat` fails in the database instead (ORA-12704: EF6's own NULL guard e
 - [Pagination](pagination.md): limiting models, provider-aware calls, and totals
 - [Render to LINQ and EF](getting-started-linq.md): configure providers and map entities
 - [Error handling](error-handling.md): validation and provider restrictions
+
+## Typed projections and sparse responses
+
+`IProjectionToLinqTransformer` builds typed scalar `Select` expressions from a `LinqProjectionMapping<TEntity, TResult>`. EF Core and EF6 also provide `ToProjectedListAsync` to batch and attach requested collections using all composite-key components. Keys remain outside public DTOs unless separately selected. Use `ProjectionShaper.ToSparseObjects` after materialization to omit unselected properties. Existing `IncludeSorted` and `OrderByNested` remain available for applications that load entities. See [Field projection](projection.md).
+
+Supply an authorized, unwindowed `keySource` so child queries do not repeat the root page or request filter.
+If an implicit child source retains outer Skip/Take behind an unsupported wrapper, execution throws before I/O.
+The EF adapters resolve unique parent entity sources before navigation expansion and retain the original authorization scope
+through key-only membership checks. No full-entity `Distinct()` is required, even for default responses or unselected XML/LOB columns.
+Custom execution providers can supply the optional `IProjectionEntitySourceProvider` capability; see the projection guide for its contract.
+Without a resolver, the first collection level retains the authorized key source without grouping; deeper provider-backed levels still
+need entity-source resolution or key-grouping/navigation translation. EF6 resolves derived parents through the base set plus `OfType` for TPH/TPT.
+Oracle EF6 can retain unrequested entity columns inside its paging subquery even though the outer SELECT is projected;
+the projection guide explains this provider limitation and split-query consistency.

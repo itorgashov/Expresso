@@ -261,3 +261,7 @@ Pass the actual provider for other EF6 databases. EF6 requires an `OrderBy` befo
 - [Filter behavior and database differences](semantics.md): NULL handling, types and EF6 limits
 - [Function reference](functions/README.md): the LINQ, EF Core and EF6 form of every function
 - [Render to SQL](getting-started-sql.md): the other way to run a filter
+
+## Project typed DTOs
+
+Use `LinqProjectionMapping<TEntity, TResult>` to register scalar DTO members, all identity components, and initialized collection destinations. EF Core and EF6 `ToProjectedListAsync(transformer, projection, mapping, ...)` project filtered/ordered/paged root queries and execute requested child projections. Serialize `ProjectionShaper.ToSparseObjects(result)` to omit unselected members while keeping selected nulls. See [Field projection](projection.md#typed-linq-and-ef-mappings).

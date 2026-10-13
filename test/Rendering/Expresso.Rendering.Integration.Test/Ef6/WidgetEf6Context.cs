@@ -29,6 +29,7 @@ namespace Expresso.Rendering.Integration.Test.Ef6
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
+            ProjectionModelConfiguration.Configure(modelBuilder);
             var provider = Ef6Providers.Resolve(Database.Connection);
             if (_schema is not null)
             {

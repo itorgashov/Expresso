@@ -1,0 +1,158 @@
+[
+  {
+    "path": "src/Rendering/Expresso.Rendering.EntityFrameworkCore/EfCoreProjectionSourceValidator.Expressions.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Expresso.Core/Projection/CompositeProjectionKeyComparer.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.EntityFrameworkCore/EfCoreProjectionSourceValidator.Composition.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.EntityFrameworkCore/EfCoreProjectionSourceValidator.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Linq/Projection/ProjectionParentSource.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.EntityFrameworkCore/EfCoreProjectionEntitySource.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.EntityFramework/Ef6ProjectionEntitySource.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.SqlServer/SqlServerExpressionTransformerServiceRegistration.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Sqlite/SqliteExpressionTransformerServiceRegistration.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.PostgreSql/PostgreSqlExpressionTransformerServiceRegistration.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Oracle/OracleExpressionTransformerServiceRegistration.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Common/Projection/SqlProjectionMapping.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Common/Projection/SqlProjectionExecutor.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Common/Projection/RenderedSqlProjection.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Common/Projection/IProjectionToSqlTransformer.cs",
+    "executable": false
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Common/ExpressionToSqlQueryClauseTransformerBase.Projection.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.EntityFramework/Ef6ExpressionTransformerServiceRegistration.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.EntityFramework/Ef6ProjectionExtensions.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Expresso.Parsing/SortDirectiveParser.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Expresso.Parsing/ProjectionDirectiveParser.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Db2/Db2ExpressionTransformerServiceRegistration.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Expresso.Parsing/IProjectionDirectiveParser.cs",
+    "executable": false
+  },
+  {
+    "path": "src/Expresso.Parsing/ISortDirectiveParser.cs",
+    "executable": false
+  },
+  {
+    "path": "src/Expresso.Parsing/ParserRegistration.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.EntityFrameworkCore/EfCoreProjectionExtensions.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.EntityFrameworkCore/EfCoreExpressionTransformerServiceRegistration.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.MySql/MySqlExpressionTransformerServiceRegistration.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Linq/ExpressionToLinqTransformerBase.Projection.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Linq/LinqExpressionTransformerServiceRegistration.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Linq/Projection/ProjectionKeySource.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Linq/Projection/ProjectionExpressions.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Linq/Projection/ProjectionCollection.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Linq/Projection/LinqProjectionPlan.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Linq/Projection/LinqProjectionMapping.Execution.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Rendering/Expresso.Rendering.Linq/Projection/LinqProjectionMapping.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Expresso.Core/Projection/ProjectionSelection.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Expresso.Core/Projection/ProjectionDirective.cs",
+    "executable": true
+  },
+  {
+    "path": "src/Expresso.Core/Projection/IRequestProjectionModelProvider.cs",
+    "executable": false
+  },
+  {
+    "path": "src/Expresso.Core/Projection/CompositeProjectionKey.cs",
+    "executable": true
+  }
+]

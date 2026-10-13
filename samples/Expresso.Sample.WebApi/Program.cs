@@ -1,6 +1,7 @@
-using Expresso.Sample.Shared.Filtering;
+using Expresso.Core.Projection;
 using Expresso.Parsing;
 using Expresso.Sample.Shared.DataAccess;
+using Expresso.Sample.Shared.Filtering;
 using Expresso.Sample.WebApi.DataAccess;
 using Expresso.Sample.WebApi.Filtering;
 
@@ -14,6 +15,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddRequestParametersParsers();
 var fieldsProvider = new RequestFieldsInfoProvider();
+builder.Services.AddSingleton<IRequestProjectionModelProvider, RequestProjectionModelProvider>();
 SamplePolicySetup.Register<Expresso.Sample.WebApi.Controllers.BooksController>(builder.Services, builder.Configuration, "book", fieldsProvider, Console.WriteLine);
 SamplePolicySetup.Register<Expresso.Sample.WebApi.Controllers.AuthorsController>(builder.Services, builder.Configuration, "author", fieldsProvider, Console.WriteLine);
 SamplePolicySetup.Register<Expresso.Sample.WebApi.Controllers.PublishersController>(builder.Services, builder.Configuration, "publisher", fieldsProvider, Console.WriteLine);

@@ -17,6 +17,7 @@ namespace Expresso.Rendering.EntityFramework
         {
             services.AddSingleton(new Ef6ExpressionToLinqTransformer(providerInvariantName));
             services.AddSingleton<IExpressionToLinqTransformer>(sp => sp.GetRequiredService<Ef6ExpressionToLinqTransformer>());
+            services.AddSingleton<IProjectionToLinqTransformer>(sp => sp.GetRequiredService<Ef6ExpressionToLinqTransformer>());
             return services;
         }
     }

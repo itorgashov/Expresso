@@ -16,6 +16,8 @@
     <Project Path="src/Rendering/Expresso.Rendering.SqlServer/Expresso.Rendering.SqlServer.csproj" />
   </Folder>
   <Folder Name="/test/">
+    <Project Path="test/Expresso.Sample.NetFx.Test/Expresso.Sample.NetFx.Test.csproj" />
+    <Project Path="test/Expresso.Sample.Test/Expresso.Sample.Test.csproj" />
     <Project Path="test/Expresso.Core.Test/Expresso.Core.Test.csproj" />
     <Project Path="test/Expresso.Parsing.Test/Expresso.Parsing.Test.csproj" />
   </Folder>

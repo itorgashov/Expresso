@@ -112,3 +112,26 @@ A policy/catalog mismatch throws `InvalidOperationException` and indicates a hos
 - [Pagination](pagination.md): limiting semantics and provider-aware calls
 - [Get started](getting-started.md): register parsers and parse input
 - [Function reference](functions/README.md): validation for individual functions
+
+## Projection errors
+
+`IProjectionDirectiveParser.Parse` expands only the supplied catalog for omitted input. Distinguish parameter presence from model-bound null: both MVC and Web API can bind `?fields=` to null. Normalize present null to `string.Empty` before parsing; see [controller wiring](projection.md#wire-it-into-a-controller).
+
+| Input / situation | Exception or message | Sample status |
+|---|---|---|
+| Missing `fields` | Explicit complete catalog selection; an empty catalog returns `ProjectionDirective.Empty` | 200 |
+| Empty / whitespace-only value | `ArgumentException`: `fields must not be empty.` | 400 |
+| `authors.` or `title,,year` | `ArgumentException`: `Projection paths must not have empty segments.` | 400 |
+| Unknown name or `title.length` | `ArgumentException`: `Unknown projection path: …` | 400 |
+| Null catalog | `ArgumentNullException` | Server configuration error |
+| Invalid key/DTO/collection mapping | Argument exception | Server configuration error |
+| Change a rendered LINQ mapping | `InvalidOperationException` | Server configuration error |
+| Requested collection with an implicit source retaining outer Skip/Take behind an unsupported operator | `InvalidOperationException` before query execution; supply an explicit authorized, unpaged `keySource` | Server configuration error |
+| EF Core collection projection with a temporal root/key source or selected collection mapping, including a captured query | `NotSupportedException` before any I/O at every selected depth; scalar-only temporal projection remains supported | Unsupported host query |
+| EF Core collection scope contains an opaque query/expression-producing value (including properties, factory/delegate calls, query- or expression-valued lookups, constructors, custom conversions, recursive expression arguments, or uninspectable deferred captures) | `NotSupportedException` before any I/O; store an inspectable `IQueryable` or expression tree in a local variable before composing the scope; mapped reference/collection paths, saved current lambdas, EF wrappers, inspectable conditional projections and left joins remain supported | Unsupported host query |
+| SQL key comparer component count differs from the mapping | `ArgumentException` during rendering | Server configuration error |
+| Non-positive key budget | `ArgumentOutOfRangeException` when setting options / executing SQL | Server configuration error |
+| Positive budget smaller than a composite key | `ArgumentException` during execution | Server configuration error |
+| Unsupported provider translation | Provider exception | Server configuration error |
+
+Samples reject malformed paths before database access and return an empty HTTP 400 response. Do not catch provider/mapping errors as malformed requests. See [Field projection](projection.md).

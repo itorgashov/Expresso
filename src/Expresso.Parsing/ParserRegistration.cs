@@ -31,6 +31,7 @@ namespace Expresso.Parsing
             services.AddSingleton<IFilterParser, FilterParser>();
             services.AddSingleton<ISortDirectiveParser, SortDirectiveParser>();
             services.AddSingleton<IPagingDirectiveParser, PagingDirectiveParser>();
+            services.AddSingleton<IProjectionDirectiveParser, ProjectionDirectiveParser>();
             return services;
         }
     }

@@ -1,8 +1,8 @@
 using System;
 using System.Data.Common;
+using Expresso.Rendering;
 using Expresso.Sample.Shared.DataAccess;
 using Expresso.Sample.Shared.Models;
-using Expresso.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
@@ -67,6 +67,7 @@ public static class SampleEngineSetup
                 throw new InvalidOperationException("Unsupported sample engine: " + engine);
         }
 
+        services.AddSingleton(sp => new SampleProjectionMappings(sp.GetRequiredService<ISampleSql>()));
         services.AddTransient<IRepository<Book>, BookRepository>();
         services.AddTransient<IRepository<Author>, AuthorRepository>();
         services.AddTransient<IRepository<Publisher>, PublisherRepository>();

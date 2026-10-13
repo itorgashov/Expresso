@@ -10,6 +10,7 @@ namespace Expresso.Rendering.Integration.Test
     public abstract class EngineItTests
     {
         protected abstract IEngineSession Session { get; }
+        protected virtual bool PagingRetainsUnusedEntityColumns => false;
 
         [SkippableTheory]
         [MemberData(nameof(RendererIntegrationCases.FilterCases), MemberType = typeof(RendererIntegrationCases))]
@@ -46,6 +47,66 @@ namespace Expresso.Rendering.Integration.Test
         /// <summary>Asserts the query result; sessions with documented provider gaps assert those instead.</summary>
         protected virtual void AssertOutcome<T>(string caseId, IReadOnlyList<T> expected, Func<IReadOnlyList<T>> query) =>
             Assert.Equal(expected, query());
+
+        [SkippableFact]
+        public async Task Projection_CompositeKeysAndNestedSparseShape()
+        {
+            Skip.IfNot(IntegrationEnabled.IsOn, IntegrationEnabled.SkipReason);
+            var result = await ((IProjectionEngineSession)Session).QueryProjectionAsync(Expresso.Rendering.TestCases.ProjectionFixture.Nested());
+            Assert.Equal(3, result.Count);
+            var one = result.Single(r => Equals(r["title"], "one"));
+            var two = result.Single(r => Equals(r["title"], "two"));
+            Assert.DoesNotContain("id", one.Keys);
+            var first = ((IEnumerable<IReadOnlyDictionary<string, object?>>)one["children"]!).Single(c => Equals(c["name"], "beta"));
+            var second = ((IEnumerable<IReadOnlyDictionary<string, object?>>)two["children"]!).First();
+            Assert.Equal("first", ((IEnumerable<IReadOnlyDictionary<string, object?>>)first["leaves"]!).Single()["value"]);
+            Assert.Equal("second", ((IEnumerable<IReadOnlyDictionary<string, object?>>)second["leaves"]!).Single()["value"]);
+            Assert.All(((IProjectionEngineSession)Session).ProjectionCommands, command =>
+            {
+                Assert.DoesNotContain("payload", command.ToLowerInvariant());
+                Assert.DoesNotContain("DISTINCT", command.ToUpperInvariant());
+            });
+            var scalar = await ((IProjectionEngineSession)Session).QueryProjectionAsync(new Expresso.Core.Projection.ProjectionDirective(
+                new[] { new Expresso.Core.Projection.ProjectionSelection("notes") }));
+            Assert.All(scalar, row => Assert.Single(row));
+            Assert.Contains(scalar, row => row["notes"] is null);
+            Assert.Single(((IProjectionEngineSession)Session).ProjectionCommands);
+            // Scenario: default projection loads every requested level while an unselected middle column is XML/LOB/JSON.
+            var full = await ((IProjectionEngineSession)Session).QueryProjectionAsync(Expresso.Core.Projection.ProjectionDirective.All);
+            Assert.Equal(3, full.Count);
+            Assert.All(((IProjectionEngineSession)Session).ProjectionCommands, command =>
+            {
+                Assert.DoesNotContain("payload", command.ToLowerInvariant());
+                Assert.DoesNotContain("DISTINCT", command.ToUpperInvariant());
+            });
+        }
+
+        [SkippableFact]
+        public async Task Projection_FilteredOrderedPage_LoadsOnlyKnownKeysAndRequestedColumns()
+        {
+            // Scenario: a filtered composite-key page with two child levels; output columns are minimal and children ordered.
+            Skip.IfNot(IntegrationEnabled.IsOn, IntegrationEnabled.SkipReason);
+            var projectionSession = (IProjectionEngineSession)Session;
+            var rows = await projectionSession.QueryProjectionAsync(ProjectionFixture.Nested(), windowed: true);
+            var root = Assert.Single(rows);
+            Assert.Equal("one", root["title"]);
+            var children = ((IEnumerable<IReadOnlyDictionary<string, object?>>)root["children"]!).ToArray();
+            Assert.Equal(new[] { "alpha", "beta" }, children.Select(c => c["name"]));
+            Assert.Equal("first", Assert.Single((IEnumerable<IReadOnlyDictionary<string, object?>>)children[1]["leaves"]!)["value"]);
+            Assert.InRange(projectionSession.ProjectionCommands.Count, 3, 4); // DB2 EF adds its ordered-key paging workaround.
+            if (PagingRetainsUnusedEntityColumns)
+            {
+                // Oracle EF6 retains notes only inside its ROW_NUMBER input, not in the projected outer SELECT.
+                Assert.Contains("\"Extent1\".\"notes\" AS \"notes\"", projectionSession.ProjectionCommands[0]);
+                Assert.DoesNotContain("\"Filter1\".\"notes\"", projectionSession.ProjectionCommands[0]);
+            }
+            Assert.All(projectionSession.ProjectionCommands.Skip(PagingRetainsUnusedEntityColumns ? 1 : 0), command => Assert.True(
+                command.IndexOf("notes", StringComparison.OrdinalIgnoreCase) < 0, command));
+            Assert.All(projectionSession.ProjectionCommands.Skip(1), command => Assert.DoesNotContain("OFFSET", command.ToUpperInvariant()));
+            await Assert.ThrowsAsync<ArgumentException>(() => projectionSession.QueryProjectionAsync(
+                new Expresso.Core.Projection.ProjectionDirective(new[] { new Expresso.Core.Projection.ProjectionSelection("unknown") })));
+            Assert.Empty(projectionSession.ProjectionCommands);
+        }
     }
 
     public interface IEngineSession
@@ -55,7 +116,7 @@ namespace Expresso.Rendering.Integration.Test
         IReadOnlyList<string> QueryTagLabels(int widgetId, SortDirective sort);
     }
 
-    public sealed class EngineSession : IEngineSession
+    public sealed partial class EngineSession : IEngineSession
     {
         private readonly DbConnection _connection;
         private readonly IExpressionToQueryClauseTransformer _transformer;

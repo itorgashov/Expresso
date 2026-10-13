@@ -53,3 +53,7 @@ A boolean sort key renders as `CASE WHEN … THEN 1 ELSE 0 END` on every dialect
 - [Pagination](pagination.md): paged and offset/number clauses and ordering requirements
 - [Render to SQL](getting-started-sql.md): compose and execute a query
 - [LINQ rendering](linq-rendering.md): the alternative rendering path
+
+## Projection
+
+Dialect registrations expose `IProjectionToSqlTransformer` alongside the existing clause renderer. Projection plans contain minimal selected columns, hidden ordered key components, and requested child-query metadata. They support composite parent/foreign-key correlation in all six dialects. Applications still execute the plans and own FROM/joins and readers. See [Field projection](projection.md#sql-select-list-plans).

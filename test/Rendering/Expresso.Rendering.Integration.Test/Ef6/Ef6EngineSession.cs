@@ -10,7 +10,7 @@ using Expresso.Rendering.Linq;
 namespace Expresso.Rendering.Integration.Test.Ef6
 {
     /// <summary>Runs the shared catalog through EF6 on its own provider connection to an ADO fixture's seeded database.</summary>
-    public sealed class Ef6EngineSession : IEngineSession
+    public sealed partial class Ef6EngineSession : IEngineSession
     {
         private readonly Func<DbConnection> _connect;
         private readonly string? _schema;

@@ -1,9 +1,10 @@
-using Expresso.Sample.Shared.Filtering;
 using System;
 using System.IO;
 using System.Web.Http;
+using Expresso.Core.Projection;
 using Expresso.Parsing;
 using Expresso.Sample.Shared.DataAccess;
+using Expresso.Sample.Shared.Filtering;
 using Expresso.Sample.WebApi.NetFx.DataAccess;
 using Expresso.Sample.WebApi.NetFx.Filtering;
 using Expresso.Sample.WebApi.NetFx.Infrastructure;
@@ -32,6 +33,7 @@ public sealed class Startup
         };
 
         config.MapHttpAttributeRoutes();
+        config.Formatters.JsonFormatter.SerializerSettings.ContractResolver = new Infrastructure.ProjectionJsonContractResolver();
         config
             .EnableSwagger(c => c.SingleApiVersion("v1", "Expresso Sample API"))
             .EnableSwaggerUi(c => c.DocumentTitle("Expresso Sample API"));
@@ -52,6 +54,7 @@ public sealed class Startup
         services.AddSingleton(configuration);
         services.AddRequestParametersParsers();
         var fieldsProvider = new RequestFieldsInfoProvider();
+        services.AddSingleton<IRequestProjectionModelProvider, RequestProjectionModelProvider>();
         SamplePolicySetup.Register<Controllers.BooksController>(services, configuration, "book", fieldsProvider, Console.WriteLine);
         SamplePolicySetup.Register<Controllers.AuthorsController>(services, configuration, "author", fieldsProvider, Console.WriteLine);
         SamplePolicySetup.Register<Controllers.PublishersController>(services, configuration, "publisher", fieldsProvider, Console.WriteLine);

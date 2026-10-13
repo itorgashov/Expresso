@@ -122,3 +122,7 @@ You can use both in the same application, for example SQL for reports and EF Cor
 - [Pagination](pagination.md): paged and offset/number results, ordering, and totals
 - [Query syntax](query-syntax.md): the filter and sort grammar and literal rules
 - [Function reference](functions/README.md): every supported function
+
+## Choose response fields
+
+`AddRequestParametersParsers()` also registers `IProjectionDirectiveParser`. Parse a comma-separated list against a separate response catalog, then pass the resulting directive to a SQL select-list renderer or the typed EF projection executor. See [Field projection](projection.md) for mappings, composite keys, and sparse response shaping.

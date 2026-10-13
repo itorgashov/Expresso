@@ -1,4 +1,5 @@
 using Expresso.Core.Filtering;
+using Expresso.Core.Projection;
 using Expresso.Parsing;
 using Expresso.Sample.WebApi.EfCore.DataAccess;
 using Expresso.Sample.WebApi.EfCore.Entities;
@@ -16,21 +17,27 @@ public sealed class AuthorsController(
     ISortDirectiveParser sortDirectiveParser,
     ControllerQueryModels<AuthorsController> queryModels,
     ILogger<AuthorsController> logger,
-    IPagingDirectiveParser pagingParser) : ControllerBase
+    IPagingDirectiveParser pagingParser,
+    IProjectionDirectiveParser projectionParser,
+    IRequestProjectionModelProvider projectionModels) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<AuthorViewModel>>> GetAll(
+    [ProducesResponseType(typeof(IReadOnlyList<AuthorViewModel>), 200)]
+    public async Task<ActionResult<IReadOnlyList<IReadOnlyDictionary<string, object?>>>> GetAll(
         [FromQuery] string? filter,
         [FromQuery] string? sort,
         [FromQuery] string? page,
         [FromQuery(Name = "pagesize")] string? pageSize,
         [FromQuery] string? skip,
         [FromQuery] string? take,
+        [FromQuery] string? fields,
         CancellationToken cancellationToken)
     {
         var parsed = QueryParametersParser.Parse(filter, sort, filterParser, sortDirectiveParser, queryModels.Filter, queryModels.Sort);
         var paging = QueryParametersParser.ParsePaging(page, pageSize, skip, take, pagingParser);
-        if (parsed.IsBadRequest || paging.IsBadRequest)
+        var projection = QueryParametersParser.ParseProjection(fields, projectionParser,
+            projectionModels.GetProjectionModel("author"), isPresent: ProjectionRequest.HasFields(Request));
+        if (parsed.IsBadRequest || paging.IsBadRequest || projection.IsBadRequest)
         {
             if (parsed.PolicyViolation is { } violation)
                 logger.LogWarning("Query policy rejected {Target}: {Kind}; path={Path}; rule={Rule}; limit={Limit}",
@@ -38,7 +45,7 @@ public sealed class AuthorsController(
             return BadRequest();
         }
 
-        var authors = await repository.GetAllAsync(parsed.FilterCriteria, parsed.SortDirective, paging.Paging, cancellationToken);
+        var authors = await repository.GetAllAsync(parsed.FilterCriteria, parsed.SortDirective, paging.Paging, projection.Projection, cancellationToken);
         if (!paging.Paging.IsEmpty)
         {
             var total = await repository.CountAsync(parsed.FilterCriteria, cancellationToken);
@@ -48,18 +55,23 @@ public sealed class AuthorsController(
             }
         }
 
-        return Ok(authors.Select(ViewModelMapper.ToViewModel).ToList());
+        return Ok(authors);
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<AuthorViewModel>> GetById(int id, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(AuthorViewModel), 200)]
+    public async Task<ActionResult<IReadOnlyDictionary<string, object?>>> GetById(int id, [FromQuery] string? fields, CancellationToken cancellationToken)
     {
-        var author = await repository.GetByIdAsync(id, cancellationToken);
+        var projection = QueryParametersParser.ParseProjection(fields, projectionParser,
+            projectionModels.GetProjectionModel("author"), isPresent: ProjectionRequest.HasFields(Request));
+        if (projection.IsBadRequest) return BadRequest();
+        var author = await repository.GetByIdAsync(id, projection.Projection, cancellationToken);
         if (author is null)
         {
             return NotFound();
         }
 
-        return Ok(ViewModelMapper.ToViewModel(author));
+        return Ok(author);
     }
+
 }

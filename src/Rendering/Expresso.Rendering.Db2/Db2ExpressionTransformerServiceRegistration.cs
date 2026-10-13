@@ -10,7 +10,9 @@ namespace Expresso.Rendering
         /// <returns>The same <paramref name="services"/> instance.</returns>
         public static IServiceCollection AddDb2ExpressionTransformations(this IServiceCollection services)
         {
-            services.AddSingleton<IExpressionToQueryClauseTransformer, ExpressionToDb2QueryClauseTransformer>();
+            services.AddSingleton<ExpressionToDb2QueryClauseTransformer>();
+            services.AddSingleton<IExpressionToQueryClauseTransformer>(sp => sp.GetRequiredService<ExpressionToDb2QueryClauseTransformer>());
+            services.AddSingleton<IProjectionToSqlTransformer>(sp => sp.GetRequiredService<ExpressionToDb2QueryClauseTransformer>());
             return services;
         }
     }

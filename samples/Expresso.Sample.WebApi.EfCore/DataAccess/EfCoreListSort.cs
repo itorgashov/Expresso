@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Expresso.Core.CriteriaExpressions;
 using Expresso.Core.Paging;
+using Expresso.Core.Projection;
 using Expresso.Core.Sorting;
 using Expresso.Rendering.EntityFrameworkCore;
 using Expresso.Rendering.Linq;
@@ -8,69 +9,55 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Expresso.Sample.WebApi.EfCore.DataAccess;
 
-/// <summary>DB2 cannot correlate sort keys in <c>ORDER BY</c>; other engines use normal <c>OrderBy</c>.</summary>
+/// <summary>Projects root pages; DB2 reads ordered keys then bounded DTO batches without CASE rank parameters.</summary>
 internal static class EfCoreListSort
 {
-    public static async Task<IReadOnlyList<T>> ToSortedListAsync<T>(
-        IQueryable<T> query,
-        SortDirective? sortDirective,
-        LinqQueryMapping<T> mapping,
-        IExpressionToLinqTransformer transformer,
-        SampleDbContext db,
-        Func<IQueryable<T>, IQueryable<T>> withIncludes,
-        PagingDirective paging,
-        CancellationToken cancellationToken)
-        where T : class
+    internal static async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> ReadAsync<T, TResult>(
+        IQueryable<T> query, IQueryable<T> keySource, SortDirective? sort, LinqQueryMapping<T> mapping,
+        IExpressionToLinqTransformer transformer, EfCoreProvider provider, PagingDirective paging,
+        ProjectionDirective projection, LinqProjectionMapping<T, TResult> projectionMapping,
+        CancellationToken cancellationToken, IProjectionQueryExecutor? executor = null, int keyBudget = 500)
+        where T : class where TResult : new()
     {
-        var effective = paging.IsEmpty
-            ? sortDirective
-            : (sortDirective ?? new SortDirective(Array.Empty<SortDirectiveItem>())).ThenBy(new Field("id", typeof(int)));
-
-        if (effective is null || effective.Items.Count == 0)
-        {
-            return await withIncludes(query.OrderBy(IdSelector<T>())).ToListAsync(cancellationToken);
-        }
-
-        if (EfCoreProviders.Resolve(db.Database.ProviderName) != EfCoreProvider.Db2)
-        {
-            var ordered = query.OrderBy(transformer, effective, mapping);
-            var windowed = paging.IsEmpty ? ordered : ordered.Page(paging);
-            return await withIncludes(windowed).ToListAsync(cancellationToken);
-        }
-
-        // IBM EF Core drops OFFSET, so EfCorePaging.Page throws. Page the ordered keys in memory.
+        if (keyBudget <= 0) throw new ArgumentOutOfRangeException(nameof(keyBudget));
+        var io = executor ?? new Executor();
         var id = IdSelector<T>();
-        var ids = await query.OrderedKeys(transformer, effective, mapping, id).ToListAsync(cancellationToken);
-        if (!paging.IsEmpty)
+        var effective = (sort ?? new SortDirective(Array.Empty<SortDirectiveItem>())).ThenBy(new Field("id", typeof(int)));
+        var projectionTransformer = transformer as IProjectionToLinqTransformer ?? new QueryableExpressionToLinqTransformer();
+        var plan = projectionTransformer.RenderProjection(projection, projectionMapping);
+        var options = new ProjectionExecutionOptions { MaxKeyParameters = keyBudget };
+        if (provider != EfCoreProvider.Db2)
         {
-            ids = ids.Page(paging).ToList();
-        }
-        if (ids.Count == 0)
-        {
-            return Array.Empty<T>();
+            var source = query.OrderBy(transformer, effective, mapping).Page(paging).AsNoTracking();
+            return ProjectionShaper.ToSparseObjects(await plan.ExecuteAsync(source, io, transformer, sort, options,
+                cancellationToken, keySource.AsNoTracking()));
         }
 
-        var items = await withIncludes(query.Where(MatchesIds<T>(ids))).ToListAsync(cancellationToken);
-        return EfCoreLiftedSort.OrderByKeys(ids, items, id.Compile());
+        var orderedKeys = await io.ToListAsync(query.OrderedKeys(transformer, effective, mapping, id), cancellationToken);
+        var ids = orderedKeys.Page(paging).ToArray();
+        var rows = new Dictionary<int, IReadOnlyDictionary<string, object?>>();
+        for (var start = 0; start < ids.Length; start += keyBudget)
+        {
+            var batch = ids.Skip(start).Take(keyBudget).ToArray();
+            var capture = Expression.Field(Expression.Constant(new ParameterBox<int[]>(batch)), "Value");
+            var contains = Expression.Call(typeof(Enumerable), nameof(Enumerable.Contains), new[] { typeof(int) }, capture, id.Body);
+            var source = keySource.Where(Expression.Lambda<Func<T, bool>>(contains, id.Parameters)).AsNoTracking();
+            var result = await plan.ExecuteAsync(source, io, transformer, sort, options, cancellationToken, keySource.AsNoTracking());
+            var sparse = ProjectionShaper.ToSparseObjects(result);
+            for (var index = 0; index < sparse.Count; index++) rows.Add((int)result.GetKey(index)[0]!, sparse[index]);
+        }
+        return ids.Where(rows.ContainsKey).Select(key => rows[key]).ToArray();
     }
 
-    private static Expression<Func<T, int>> IdSelector<T>() where T : class
+    private static Expression<Func<T, int>> IdSelector<T>()
     {
-        var parameter = Expression.Parameter(typeof(T), "e");
-        var property = typeof(T).GetProperty("Id")
-            ?? throw new InvalidOperationException(typeof(T).Name + " has no Id property for DB2 sort restoration.");
-        return Expression.Lambda<Func<T, int>>(Expression.Property(parameter, property), parameter);
+        var parameter = Expression.Parameter(typeof(T), "entity");
+        return Expression.Lambda<Func<T, int>>(Expression.Property(parameter, "Id"), parameter);
     }
 
-    private static Expression<Func<T, bool>> MatchesIds<T>(IReadOnlyList<int> ids) where T : class
+    private sealed class Executor : IProjectionQueryExecutor
     {
-        var selector = IdSelector<T>();
-        Expression body = Expression.Constant(false);
-        foreach (var value in ids)
-        {
-            body = Expression.OrElse(body, Expression.Equal(selector.Body, Expression.Constant(value)));
-        }
-
-        return Expression.Lambda<Func<T, bool>>(body, selector.Parameters);
+        public async Task<IReadOnlyList<T>> ToListAsync<T>(IQueryable<T> query, CancellationToken cancellationToken) =>
+            await query.ToListAsync(cancellationToken);
     }
 }

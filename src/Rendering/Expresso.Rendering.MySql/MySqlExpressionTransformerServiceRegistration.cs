@@ -10,7 +10,9 @@ namespace Expresso.Rendering
         /// <returns>The same <paramref name="services"/> instance.</returns>
         public static IServiceCollection AddMySqlExpressionTransformations(this IServiceCollection services)
         {
-            services.AddSingleton<IExpressionToQueryClauseTransformer, ExpressionToMySqlQueryClauseTransformer>();
+            services.AddSingleton<ExpressionToMySqlQueryClauseTransformer>();
+            services.AddSingleton<IExpressionToQueryClauseTransformer>(sp => sp.GetRequiredService<ExpressionToMySqlQueryClauseTransformer>());
+            services.AddSingleton<IProjectionToSqlTransformer>(sp => sp.GetRequiredService<ExpressionToMySqlQueryClauseTransformer>());
             return services;
         }
     }

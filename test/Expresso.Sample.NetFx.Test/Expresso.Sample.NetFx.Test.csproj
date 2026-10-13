@@ -1,0 +1,49 @@
+<!-- CI runs `dotnet test Expresso.slnx -f net6.0|net48`; this project always builds net48 and runs only on Windows. -->
+<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="TargetFramework">
+  <ItemGroup>
+    <Compile Include="../Expresso.Sample.Test/ProjectionEndpointTests.cs" Link="ProjectionEndpointTests.cs" />
+    <Compile Include="../Expresso.Sample.Test/ProjectionEngineConfigurationTests.cs" Link="ProjectionEngineConfigurationTests.cs" />
+    <Compile Include="../Expresso.Sample.Test/ProjectionModelBindingTests.cs" Link="ProjectionModelBindingTests.cs" />
+    <Compile Include="../Expresso.Sample.Test/AdoProjectionRepositoryTests.cs" Link="AdoProjectionRepositoryTests.cs" />
+    <ProjectReference Include="../../samples/Expresso.Sample.WebApi.NetFx/Expresso.Sample.WebApi.NetFx.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <IsTestProject Condition="'$(OS)' != 'Windows_NT'">false</IsTestProject>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\Compatibility\IsExternalInit.cs" Link="Compatibility\IsExternalInit.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\samples\Expresso.Sample.WebApi.NetFx.Ef6\Expresso.Sample.WebApi.NetFx.Ef6.csproj" />
+    <PackageReference Include="EntityFramework6.Npgsql" Version="6.4.3" />
+    <PackageReference Include="Npgsql" Version="6.0.11" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
+    <PackageReference Include="System.Data.SQLite.EF6" Version="1.0.119" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

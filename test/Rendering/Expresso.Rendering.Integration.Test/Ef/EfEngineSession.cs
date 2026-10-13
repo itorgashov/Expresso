@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Expresso.Rendering.Integration.Test.Ef
 {
     /// <summary>Runs the shared catalog through EF Core on the connection (and seed) of an ADO fixture.</summary>
-    public sealed class EfEngineSession : IEngineSession
+    public sealed partial class EfEngineSession : IEngineSession
     {
         private readonly DbContextOptions<WidgetDbContext> _options;
         private readonly LinqQueryMapping<Widget> _mapping = WidgetLinqMapping.Create();

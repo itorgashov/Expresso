@@ -1,210 +1,26 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Expresso.Core.Filtering;
-using Expresso.Core.Paging;
-using Expresso.Core.Sorting;
-using Expresso.Sample.Shared.Models;
 using Expresso.Rendering;
+using Expresso.Sample.Shared.Models;
 
 namespace Expresso.Sample.Shared.DataAccess;
 
-/// <summary>Loads books, their authors, and those authors' awards from the sample database.</summary>
-public sealed class BookRepository : IRepository<Book>
+/// <summary>Reads books with minimal projection and conditional related queries.</summary>
+public sealed class BookRepository : ProjectedSampleRepository<Book>
 {
-    private const string WhereParamPrefix = "wparam";
-    private const string OrderParamPrefix = "oparam";
-
-    private readonly ISampleDb _db;
-    private readonly IExpressionToQueryClauseTransformer _criteriaTransformer;
-    private readonly SqlQueryMapping _queryMapping;
-    private readonly string _baseFrom;
-    private readonly string _baseSelect;
-
-    /// <summary>Creates the repository.</summary>
-    /// <param name="db">Open and bind helper for the selected engine.</param>
-    /// <param name="criteriaTransformer">Renderer that turns filters and sorts into SQL.</param>
-    public BookRepository(
-        ISampleDb db,
-        IExpressionToQueryClauseTransformer criteriaTransformer)
-    {
-        _db = db;
-        _criteriaTransformer = criteriaTransformer;
-        var sql = db.Sql;
-        var mappings = new SampleSqlMappings(sql);
-        _queryMapping = new SqlQueryMapping(
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "title", sql.Col("b", "title") },
-                { "year", sql.Col("b", "year") },
-                { "isbn", sql.Col("b", "isbn") },
-                { "publisher", sql.Col("p", "name") },
-                { "price", sql.Col("b", "price") },
-                { "rating", sql.Col("b", "rating") },
-                { "createdat", sql.Col("b", "created_at") },
-                { "externalid", sql.Col("b", "external_id") },
-                { "id", sql.Col("b", "id") },
-            },
-            new[] { mappings.BookAuthors });
-        _baseFrom =
-            " FROM " + sql.TableAs("book", "b") +
-            " INNER JOIN " + sql.TableAs("publisher", "p") + " ON " + sql.Col("p", "id") + " = " + sql.Col("b", "publisher_id");
-        _baseSelect =
-            "SELECT" +
-            " " + sql.Col("b", "id") + "," +
-            " " + sql.Col("b", "title") + "," +
-            " " + sql.Col("b", "year") + "," +
-            " " + sql.Col("b", "isbn") + "," +
-            " " + sql.Col("b", "price") + "," +
-            " " + sql.Col("b", "rating") + "," +
-            " " + sql.Col("b", "created_at") + "," +
-            " " + sql.Col("b", "external_id") + "," +
-            " " + sql.Col("p", "name") + " AS publisher_name" +
-            _baseFrom;
-    }
-
-    /// <inheritdoc />
-    public async Task<IReadOnlyList<Book>> GetAllAsync(
-        FilterCriteria? filterCriteria,
-        SortDirective? sortDirective,
-        PagingDirective paging,
-        CancellationToken cancellationToken = default)
-    {
-        var connection = await _db.OpenAsync(cancellationToken);
-        using (connection)
+    /// <summary>Creates the repository for the selected engine.</summary>
+    public BookRepository(ISampleDb db, IExpressionToQueryClauseTransformer renderer,
+        IProjectionToSqlTransformer projection, SampleProjectionMappings mappings) :
+        base(db, renderer, projection, Query(db.Sql), mappings.Books,
+            db.Sql.TableAs("book", "b") + " INNER JOIN " + db.Sql.TableAs("publisher", "p") +
+            " ON " + db.Sql.Col("p", "id") + " = " + db.Sql.Col("b", "publisher_id"), db.Sql.Col("b", "id")) { }
+    private static SqlQueryMapping Query(ISampleSql sql) => new SqlQueryMapping(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            var (sql, parameters) = BuildSelectQuery(filterCriteria, SampleStableSort.ForPaging(sortDirective, paging), paging);
-
-            var books = new List<Book>();
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = sql;
-                _db.BindAll(command, parameters);
-                using (var reader = await command.ExecuteReaderAsync(cancellationToken))
-                {
-                    while (await reader.ReadAsync(cancellationToken))
-                    {
-                        books.Add(ReadBook(reader));
-                    }
-                }
-            }
-
-            await BookChildLoader.LoadAuthorsAndAwardsAsync(
-                connection,
-                _db,
-                books,
-                sortDirective,
-                _criteriaTransformer,
-                cancellationToken);
-            return books;
-        }
-    }
-
-    /// <inheritdoc />
-    public async Task<Book?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var connection = await _db.OpenAsync(cancellationToken);
-        using (connection)
-        {
-            var sql = _baseSelect + " WHERE " + _db.Sql.Col("b", "id") + " = " + _db.Sql.Param("id");
-
-            Book? book = null;
-            using (var command = connection.CreateCommand())
-            {
-                command.CommandText = sql;
-                _db.Bind(command, _db.Sql.Param("id"), id);
-                using (var reader = await command.ExecuteReaderAsync(cancellationToken))
-                {
-                    if (await reader.ReadAsync(cancellationToken))
-                    {
-                        book = ReadBook(reader);
-                    }
-                }
-            }
-
-            if (book is null)
-            {
-                return null;
-            }
-
-            await BookChildLoader.LoadAuthorsAndAwardsAsync(
-                connection,
-                _db,
-                new List<Book> { book },
-                sortDirective: null,
-                _criteriaTransformer,
-                cancellationToken);
-            return book;
-        }
-    }
-
-    /// <inheritdoc />
-    public Task<long> CountAsync(FilterCriteria? filterCriteria, CancellationToken cancellationToken = default)
-    {
-        var (sql, parameters) = BuildCountQuery(filterCriteria);
-        return SampleCount.ReadAsync(_db, sql, parameters, cancellationToken);
-    }
-
-    private (string sql, Dictionary<string, object>? parameters) BuildSelectQuery(
-        FilterCriteria? filterCriteria,
-        SortDirective? sortDirective,
-        PagingDirective paging)
-    {
-        var sql = new StringBuilder(_baseSelect);
-        Dictionary<string, object>? parameters = null;
-
-        if (filterCriteria is not null)
-        {
-            var result = _criteriaTransformer.RenderWhereClause(filterCriteria, _queryMapping, WhereParamPrefix);
-            sql.Append(" WHERE ");
-            sql.Append(result.whereClause);
-            parameters = new Dictionary<string, object>(result.parameters);
-        }
-
-        if (sortDirective is not null && sortDirective.Items.Count > 0)
-        {
-            var result = _criteriaTransformer.RenderOrderByClause(sortDirective, _queryMapping, OrderParamPrefix);
-            sql.Append(" ORDER BY ");
-            sql.Append(result.orderByClause);
-            parameters ??= new Dictionary<string, object>();
-            ParameterMerge.Merge(parameters, result.parameters);
-        }
-
-        SamplePagingSql.Append(sql, ref parameters, _criteriaTransformer, paging);
-        return (sql.ToString(), parameters);
-    }
-
-    private (string sql, Dictionary<string, object>? parameters) BuildCountQuery(FilterCriteria? filterCriteria)
-    {
-        var sql = new StringBuilder("SELECT COUNT(*)");
-        sql.Append(_baseFrom);
-        Dictionary<string, object>? parameters = null;
-        if (filterCriteria is not null)
-        {
-            var result = _criteriaTransformer.RenderWhereClause(filterCriteria, _queryMapping, WhereParamPrefix);
-            sql.Append(" WHERE ");
-            sql.Append(result.whereClause);
-            parameters = new Dictionary<string, object>(result.parameters);
-        }
-
-        return (sql.ToString(), parameters);
-    }
-
-    private static Book ReadBook(DbDataReader reader) =>
-        new Book
-        {
-            Id = SampleDbValues.GetInt32(reader, 0),
-            Title = reader.GetString(1),
-            Year = SampleDbValues.GetInt16(reader, 2),
-            Isbn = reader.IsDBNull(3) ? null : reader.GetString(3),
-            Price = SampleDbValues.GetDecimal(reader, 4),
-            Rating = SampleDbValues.GetDouble(reader, 5),
-            CreatedAt = SampleDbValues.GetDateTime(reader, 6),
-            ExternalId = SampleDbValues.GetGuid(reader, 7),
-            Publisher = reader.GetString(8),
-        };
+            ["id"] = sql.Col("b", "id"), ["title"] = sql.Col("b", "title"), ["year"] = sql.Col("b", "year"),
+            ["isbn"] = sql.Col("b", "isbn"), ["publisher"] = sql.Col("p", "name"), ["price"] = sql.Col("b", "price"),
+            ["rating"] = sql.Col("b", "rating"), ["createdat"] = sql.Col("b", "created_at"), ["externalid"] = sql.Col("b", "external_id")
+        }, new[] { new SampleSqlMappings(sql).BookAuthors });
 }

@@ -1,12 +1,12 @@
-using Expresso.Core.Policies;
 using Expresso.Core.Filtering;
 using Expresso.Core.Paging;
+using Expresso.Core.Policies;
 using Expresso.Core.Sorting;
 using Expresso.Parsing;
 
 namespace Expresso.Sample.WebApi.NetFx.Ef6.Filtering;
 
-public static class QueryParametersParser
+public static partial class QueryParametersParser
 {
     public sealed class ParseResult
     {

@@ -122,3 +122,13 @@ They have no pages of their own in the [function reference](functions/README.md)
 - [Get started](getting-started.md): parse filter and sort expressions
 - [Pagination](pagination.md): apply result limits independently of the grammar
 - [Function reference](functions/README.md): syntax and behavior of each function
+
+## Projection paths
+
+```text
+fields = path *("," path)
+path   = name *("." name)
+name   = non-empty catalog name excluding "," and "."
+```
+
+Projection has a separate comma-separated grammar: `title,year,authors.lastname`. Names use the projection catalog, ignoring case; dots traverse collections. Whitespace is normalized, duplicates are removed, and a bare collection requests its complete catalog-permitted subtree. Missing input selects all catalog-permitted fields and collections, never extra renderer-mapping entries; a present empty value, unknown name, or malformed path is invalid. The samples expose it as `fields`. A repeated query parameter binds its first value in both sample frameworks; send one comma-separated value. See [Field projection](projection.md).

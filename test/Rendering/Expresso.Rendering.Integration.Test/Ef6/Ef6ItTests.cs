@@ -189,6 +189,7 @@ namespace Expresso.Rendering.Integration.Test.Ef6
     [Collection("OracleIT")]
     public sealed class OracleEf6ItTests : Ef6EngineItTests
     {
+        protected override bool PagingRetainsUnusedEntityColumns => true;
         public OracleEf6ItTests(OracleItFixture f) : base(f.Session, f.Ef6Session, Ef6ProviderGaps.Oracle) { }
     }
 }

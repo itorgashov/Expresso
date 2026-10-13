@@ -6,6 +6,7 @@ namespace Expresso.Sample.WebApi.EfCore.DataAccess;
 internal static class BookLinqMappings
 {
     public static readonly LinqQueryMapping<Award> Awards = new LinqQueryMapping<Award>()
+        .Field("id", a => a.Id)
         .Field("title", a => a.Title)
         .Field("year", a => (int)a.Year);
 

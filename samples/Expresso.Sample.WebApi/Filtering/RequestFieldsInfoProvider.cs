@@ -6,7 +6,7 @@ namespace Expresso.Sample.WebApi.Filtering;
 /// Field catalog for the net10 sample. Book and author queries include nested collections.
 /// <c>dateofbirth</c> is <see cref="DateOnly"/> and publisher open/close times are <see cref="TimeOnly"/>.
 /// </summary>
-public sealed class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IRequestQueryModelProvider
+public sealed partial class RequestFieldsInfoProvider : IRequestFieldsInfoProvider, IRequestQueryModelProvider
 {
     private static readonly (string, Type)[] BookFilterFields =
     {

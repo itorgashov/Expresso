@@ -13,7 +13,9 @@ namespace Expresso.Rendering.Linq
         /// <returns>The same <paramref name="services"/> instance.</returns>
         public static IServiceCollection AddLinqExpressionTransformations(this IServiceCollection services)
         {
-            services.AddSingleton<IExpressionToLinqTransformer, QueryableExpressionToLinqTransformer>();
+            services.AddSingleton<QueryableExpressionToLinqTransformer>();
+            services.AddSingleton<IExpressionToLinqTransformer>(sp => sp.GetRequiredService<QueryableExpressionToLinqTransformer>());
+            services.AddSingleton<IProjectionToLinqTransformer>(sp => sp.GetRequiredService<QueryableExpressionToLinqTransformer>());
             services.AddSingleton<InMemoryExpressionToLinqTransformer>();
             return services;
         }

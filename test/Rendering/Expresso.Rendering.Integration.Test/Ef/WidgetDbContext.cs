@@ -21,6 +21,7 @@ namespace Expresso.Rendering.Integration.Test.Ef
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            ProjectionModelConfiguration.Configure(modelBuilder);
             modelBuilder.HasExpressoFunctions(Database.ProviderName);
             var provider = EfCoreProviders.Resolve(Database.ProviderName);
 

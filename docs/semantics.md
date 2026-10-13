@@ -78,7 +78,7 @@ A literal in the filter is never written into the SQL text. It is bound as a par
 - A boolean sort key sorts as `1` when TRUE and `0` otherwise, so `desc` puts the matches first.
 - `sortfor` orders the rows of a child collection. It does not add a key to the parent `ORDER BY`. How you apply it depends on how you load children:
   - SQL: load the children in a second query and apply the nested sort to it.
-  - EF Core: `IncludeSorted` loads each child collection in `sortfor` order.
+  - EF Core: `IncludeSorted` orders loaded entity collections; the [projection executor](projection.md) applies `sortfor` to requested child queries. EF6 projection uses the same child-query ordering.
   - EF6 has no filtered include. Order the child query with `OrderByNested`.
 
   See [`sortfor`](functions/collection/sortfor.md).

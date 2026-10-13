@@ -25,3 +25,16 @@ dotnet run --project samples/Expresso.Sample.WebApi.NetFx.Ef6
 ```
 
 Default URL: `http://localhost:5081/` (Swagger at `/swagger`). List routes accept the sample API's `page` / `pagesize` or `skip` / `take` parameters. A positive offset or a limit adds `X-Total-Count`, even for an empty result. Only page-based requests add `X-Total-Pages`. Requests that combine the two models or supply `page` without `pagesize` return HTTP 400. See the [sample contract](../../docs/sample-app.md#pagination-contract) and [library semantics](../../docs/pagination.md).
+
+## Response projection (0.13.0)
+
+Use `fields` on list or by-id endpoints. Missing `fields` returns the full response. An empty value or unknown/malformed path returns 400.
+
+```http
+GET /api/books?fields=title,year,authors.lastname
+GET /api/books/1?fields=title,authors.awards.title
+GET /api/authors?fields=lastname,awards
+GET /api/publishers?fields=name,opens
+```
+
+A root selection such as `fields=title,year` returns objects like `{"Title":"Example","Year":2024}`. A selected null, such as `isbn`, remains `"Isbn":null`; omitting the field removes the property. `fields=authors` selects the complete author/award subtree. `fields=` and `fields=unknown` return 400 before database access. Database projections select requested scalars plus hidden correlation keys and execute only requested collection levels. See [Field projection](../../docs/projection.md).

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Expresso.Core.Filtering;
 using Expresso.Core.Paging;
+using Expresso.Core.Projection;
 using Expresso.Core.Sorting;
 
 namespace Expresso.Sample.Shared.DataAccess;
@@ -17,10 +18,11 @@ public interface IRepository<T>
     /// <param name="paging">Page or skip/take window. Empty means no limit.</param>
     /// <param name="cancellationToken">Token that cancels the database calls.</param>
     /// <returns>The matching entities.</returns>
-    Task<IReadOnlyList<T>> GetAllAsync(
+    Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GetAllAsync(
         FilterCriteria? filterCriteria,
         SortDirective? sortDirective,
         PagingDirective paging,
+        ProjectionDirective projection,
         CancellationToken cancellationToken = default);
 
     /// <summary>Counts rows that match <paramref name="filterCriteria"/>, ignoring sort and paging.</summary>
@@ -33,5 +35,5 @@ public interface IRepository<T>
     /// <param name="id">Primary key.</param>
     /// <param name="cancellationToken">Token that cancels the database calls.</param>
     /// <returns>The entity, or <see langword="null"/> when no row has that key.</returns>
-    Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyDictionary<string, object?>?> GetByIdAsync(int id, ProjectionDirective projection, CancellationToken cancellationToken = default);
 }

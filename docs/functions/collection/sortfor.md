@@ -103,6 +103,8 @@ EF6 `Include` cannot filter or order a collection, so there is no `IncludeSorted
 
 Every EF6 provider supports `sortfor`.
 
+With [field projection](../../projection.md), EF Core and EF6 `ToProjectedListAsync` apply each requested collection's nested sort inside its typed child query. Sorting fields need not be returned; an unselected collection is not loaded solely for `sortfor`.
+
 ## Notes
 
 - Multiple `sortfor` calls with the same path append to that node's `Items` in the order they appear.

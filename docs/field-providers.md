@@ -127,3 +127,15 @@ A field name declared here, such as `"createdat"`, is not necessarily a database
 ## Narrow the catalog with a policy
 
 A catalog defines which fields exist. An optional [query policy](query-policy.md) restricts which functions and expression shapes clients may use over those fields. Compile against both catalogs once with `QueryPolicyCompiler.Compile`, then pass its `Filter` and `Sort` models to the parser's `QueryModel` overloads. `QueryModel.Policy` is null by default; `WithPolicy` returns a new model. The compiled policy is bound to the catalog, so reuse the returned models rather than copying the policy to a different catalog.
+
+## Projection catalog
+
+Implement `Expresso.Core.Projection.IRequestProjectionModelProvider` to provide `GetProjectionModel(context)`, or pass a `QueryModel` directly to `IProjectionDirectiveParser.Parse`. This allow-list is independent of filter/sort policy and contains public response fields plus nested `CollectionModel`s. Query names may differ from JSON output names: the samples use `opens` for `opensAt`. Internal correlation keys do not need to be public fields. SQL and typed LINQ response mappings offer `GetProjectionModel()`; cache these catalogs independently of filtering. See [Field projection](projection.md).
+
+The ADO samples use a separate singleton projection catalog provider, injected with the same mappings as their repositories.
+Those mappings follow `ExpressoSample:Engine`; catalog construction does not hardcode a database engine.
+See the [modern provider](../samples/Expresso.Sample.WebApi/Filtering/RequestProjectionModelProvider.cs) and
+[.NET Framework provider](../samples/Expresso.Sample.WebApi.NetFx/Filtering/RequestProjectionModelProvider.cs).
+
+Missing input and bare collections expand only this catalog, not additional fields in a reusable renderer mapping.
+An empty catalog selects no public values. Trusted hand-built `ProjectionDirective.All` is mapping-wide and bypasses this parser boundary.

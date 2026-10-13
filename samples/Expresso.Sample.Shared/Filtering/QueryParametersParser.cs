@@ -1,13 +1,13 @@
-using Expresso.Core.Policies;
 using Expresso.Core.Filtering;
 using Expresso.Core.Paging;
+using Expresso.Core.Policies;
 using Expresso.Core.Sorting;
 using Expresso.Parsing;
 
 namespace Expresso.Sample.Shared.Filtering;
 
 /// <summary>Parses sample <c>filter</c> and <c>sort</c> query strings against a field catalog.</summary>
-public static class QueryParametersParser
+public static partial class QueryParametersParser
 {
     /// <summary>Outcome of parsing one request. A failed parse sets <see cref="IsBadRequest"/> and leaves the criteria unset.</summary>
     public sealed class ParseResult

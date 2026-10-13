@@ -51,6 +51,7 @@ namespace Expresso.Rendering.Integration.Test
             {
                 Insert(connection, bind, insertMetaSql, ("id", m.Id), ("tagId", m.TagId), ("kind", m.Kind), ("value", m.Value));
             }
+            ProjectionDdl.Reset(connection, bind);
         }
 
         private static void Insert(DbConnection connection, Action<DbCommand, string, object> bind, string sql, params (string Name, object Value)[] values)

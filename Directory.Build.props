@@ -8,12 +8,12 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>0.12.0</Version>
+    <Version>0.13.0</Version>
     <Authors>itorgashov</Authors>
     <Company>itorgashov</Company>
     <Copyright>Copyright (c) 2026 itorgashov</Copyright>
-    <Description>Dynamic filtering and sorting: parse a function-call query string into an expression tree and render parameterized SQL.</Description>
-    <PackageTags>filter;sort;sql;query;expression;dapper</PackageTags>
+    <Description>Dynamic filtering, sorting, and field projection: parse query directives and render parameterized SQL or typed LINQ/EF queries.</Description>
+    <PackageTags>filter;sort;projection;sql;query;expression;dapper</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/itorgashov/Expresso</PackageProjectUrl>

@@ -2,7 +2,9 @@
 
 [GitHub repository](https://github.com/itorgashov/Expresso)
 
-Expresso is a .NET library for dynamic filtering and sorting. It parses a function-call query string into a validated expression tree, then renders the tree as parameterized SQL or as LINQ. It replaces hand-written `WHERE` and `ORDER BY` string concatenation, and piles of optional `Where` clauses, with one tested pipeline.
+Expresso is a .NET library for dynamic filtering, sorting, and field projection. It parses function-call expressions into validated expression trees and projection paths into allow-listed selections, then renders parameterized SQL or typed LINQ queries. It replaces hand-written `WHERE` and `ORDER BY` string concatenation, and piles of optional `Where` clauses, with one tested pipeline.
+
+The filter/sort pipeline:
 
 ```text
 Query string → Expresso.Parsing → expression tree (Expresso.Core) ─┬→ SQL renderer (one per dialect) → SQL + parameters
@@ -90,3 +92,7 @@ dotnet pack .\Expresso.slnx -c Release -o .\artifacts
 ```
 
 Tests that need a running database engine skip unless `EXPRESSO_IT=1`. See [test/Rendering/Expresso.Rendering.Integration.Test/README.md](test/Rendering/Expresso.Rendering.Integration.Test/README.md).
+
+## Field projection (0.13.0)
+
+Limit selected database columns and response properties with a validated projection. The four samples accept `fields=title,year,authors.lastname`; missing `fields` keeps the full response, while an empty value returns 400. SQL select-list plans and typed EF Core/EF6 execution support nested collections and composite keys. See [Field projection](docs/projection.md).
