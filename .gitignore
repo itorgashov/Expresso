@@ -78,5 +78,24 @@ plans/
 CONTEXT.md
 IMPLEMENTATION.md
 /.local/
+/PRIVACYPLAN.md
 /POLICYWORKBENCHPLAN.md
 /PolicyWorkbench.slnx
+
+# Internal planning and local work.
+/research/spikes/2-integration-support-matrix/
+
+# Private development material is excluded from this publication checkout.
+/openspec/
+/.agents/
+/.claude/
+/.cursor/
+/research/
+/planning/
+/publication/
+AGENTS.md
+/*PLAN.md
+/*REPORT.md
+/review-*.md
+/UI_INTEGRATION_CONTEXT.md
+/.e2e-pagination/

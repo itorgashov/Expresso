@@ -16,8 +16,8 @@
     <PackageTags>filter;sort;projection;sql;query;expression;dapper</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageProjectUrl>https://github.com/itorgashov/Expresso</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/itorgashov/Expresso.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/singletonica/expresso</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/singletonica/expresso.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>

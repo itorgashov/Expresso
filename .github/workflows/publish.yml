@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   test:
+    if: github.repository == 'singletonica/expresso'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +36,7 @@ jobs:
         run: dotnet test Expresso.slnx -c Release -f net6.0 --nologo --filter "Category!=Integration"
 
   publish-core-first:
+    if: github.repository == 'singletonica/expresso'
     needs: test
     runs-on: ubuntu-latest
     permissions:
@@ -50,8 +52,8 @@ jobs:
       - name: Rewrite README links for NuGet
         run: |
           TAG="${{ github.ref_name }}"
-          BLOB="https://github.com/itorgashov/Expresso/blob/${TAG}/"
-          TREE="https://github.com/itorgashov/Expresso/tree/${TAG}/"
+          BLOB="https://github.com/singletonica/expresso/blob/${TAG}/"
+          TREE="https://github.com/singletonica/expresso/tree/${TAG}/"
           sed -i "s|](docs/|](${BLOB}docs/|g" README.md
           sed -i "s|](samples/Expresso.Sample.WebApi/README.md)|](${BLOB}samples/Expresso.Sample.WebApi/README.md)|g" README.md
           sed -i "s|](samples/Expresso.Sample.WebApi)|](${TREE}samples/Expresso.Sample.WebApi)|g" README.md
@@ -63,7 +65,7 @@ jobs:
             project=$(python3 -c "import pathlib; t=pathlib.Path('$file').read_text(); print([l.split(':',1)[1].strip() for l in t.splitlines() if l.startswith('project:')][0])")
             dotnet pack "$project" -c Release -o artifacts \
               /p:Version=${{ env.VERSION }} \
-              /p:PackageProjectUrl=https://github.com/itorgashov/Expresso/tree/${{ github.ref_name }}/docs \
+              /p:PackageProjectUrl=https://github.com/singletonica/expresso/tree/${{ github.ref_name }}/docs \
               --nologo
           }
           pack .github/harness/packages/Expresso.Core.yaml
@@ -81,6 +83,7 @@ jobs:
           dotnet nuget push artifacts/*.snupkg --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate
 
   publish-renderers:
+    if: github.repository == 'singletonica/expresso'
     needs: publish-core-first
     runs-on: ubuntu-latest
     permissions:
@@ -109,8 +112,8 @@ jobs:
       - name: Rewrite README links for NuGet
         run: |
           TAG="${{ github.ref_name }}"
-          BLOB="https://github.com/itorgashov/Expresso/blob/${TAG}/"
-          TREE="https://github.com/itorgashov/Expresso/tree/${TAG}/"
+          BLOB="https://github.com/singletonica/expresso/blob/${TAG}/"
+          TREE="https://github.com/singletonica/expresso/tree/${TAG}/"
           sed -i "s|](docs/|](${BLOB}docs/|g" README.md
           sed -i "s|](samples/Expresso.Sample.WebApi/README.md)|](${BLOB}samples/Expresso.Sample.WebApi/README.md)|g" README.md
           sed -i "s|](samples/Expresso.Sample.WebApi)|](${TREE}samples/Expresso.Sample.WebApi)|g" README.md
@@ -123,7 +126,7 @@ jobs:
         run: |
           dotnet pack "${{ steps.harness.outputs.project }}" -c Release -o artifacts \
             /p:Version=${{ env.VERSION }} \
-            /p:PackageProjectUrl=https://github.com/itorgashov/Expresso/tree/${{ github.ref_name }}/docs \
+            /p:PackageProjectUrl=https://github.com/singletonica/expresso/tree/${{ github.ref_name }}/docs \
             --nologo
       - name: NuGet login (OIDC)
         uses: NuGet/login@v1
